@@ -1,0 +1,7 @@
+config-local.properties
+# .idea but not runConfigurations
+.idea/*
+!/.idea/runConfigurations
+# any __pycache__ and .pyc files
+__pycache__/
+*.pyc
