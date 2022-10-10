@@ -1,0 +1,51 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH
+
+.build:
+  stage: build
+  variables:
+    PUSH: "true"
+  script:
+    - export TAG=${CI_COMMIT_TAG:-$CI_PIPELINE_ID}
+    - export CI_REGISTRY_IMAGE=$(echo $CI_REGISTRY_IMAGE | tr '[:upper:]' '[:lower:]')
+    - export FULL_TAG=$CI_REGISTRY_IMAGE:$TAG
+    - if [ "$PUSH" = "true" ]; then docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY; fi
+    - docker build -t $FULL_TAG .
+    - if [ "$PUSH" = "true" ]; then docker push $FULL_TAG; fi
+
+build-push:
+  extends: .build
+  image: docker:latest
+
+build:
+  extends: .build
+  variables:
+    PUSH: "false"
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+
+.kube-job:
+  stage: deploy
+  needs: [build-push]
+  image:
+    name: registry.gitlab.com/shipquerymasters/utils:0.0.3
+    entrypoint: ['']
+  before_script:
+    - export JOB_ID=$(date +%F-%H-%M-%S)
+    - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-$CI_PIPELINE_ID}
+    - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
+  when: manual
+
+nfs-init:
+    extends: .kube-job
+    script:
+        - kubectl apply -f kubernetes/nfs.yml
+
+init:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/init-job.yml | kubectl apply -f -
