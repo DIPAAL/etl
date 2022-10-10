@@ -40,11 +40,6 @@ build:
     - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
   when: manual
 
-nfs-init:
-    extends: .kube-job
-    script:
-        - kubectl apply -f kubernetes/nfs.yml
-
 init:
   extends: .kube-job
   script:
