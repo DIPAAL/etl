@@ -8,9 +8,13 @@
             "name": "Clean data",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/etl/clean_data.py",
+            "program": "${workspaceFolder}\\main.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "args": [
+                "--clean",
+                "--file",
+                "aisdk-2021-09-07_reduced.csv"
+            ]
         }
     ]
 }
