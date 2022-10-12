@@ -52,7 +52,7 @@ SELECT
     j,
     geom
 FROM
-    ST_SquareGrid(5000, (SELECT geom FROM seawaters));
+    ST_SquareGrid(50, (SELECT geom FROM seawaters));
 
 -- Create the 100m grid
 WITH seawaters AS (
@@ -64,7 +64,7 @@ SELECT
     j,
     geom
 FROM
-    ST_SquareGrid(10000, (SELECT geom FROM seawaters));
+    ST_SquareGrid(100, (SELECT geom FROM seawaters));
 
 -- Create the 500m grid
 WITH seawaters AS (
@@ -76,7 +76,7 @@ SELECT
     j,
     geom
 FROM
-    ST_SquareGrid(50000, (SELECT geom FROM seawaters));
+    ST_SquareGrid(500, (SELECT geom FROM seawaters));
 
 -- Create the 1000m grid
 WITH seawaters AS (
@@ -88,7 +88,7 @@ SELECT
     j,
     geom
 FROM
-    ST_SquareGrid(100000, (SELECT geom FROM seawaters));
+    ST_SquareGrid(1000, (SELECT geom FROM seawaters));
 
 -- update relation such that each 500m cell knows which 1000m cell it is a part of
 UPDATE dim_grid_500m
