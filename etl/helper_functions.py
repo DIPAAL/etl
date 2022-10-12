@@ -12,17 +12,13 @@ def wrap_with_timings(name: str, func) -> None:
     print(f"{name} finished at {datetime.now()}")
     print(f"{name} took {timedelta(seconds=(end - start))}")
 
-global conn
 def get_connection(config):
-    global conn
-    if conn is not None:
-        return conn
-
+    host, port = config["Database"]["host"].split(":")
     conn = psycopg2.connect(
-        host=config['Database']['host'],
+        host=host,
         database=config['Database']['database'],
         user=config['Database']['user'],
         password=config['Database']['password'],
-        port=config['Database']['port']
+        port=port
     )
     return conn

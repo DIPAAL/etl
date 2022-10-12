@@ -1,4 +1,4 @@
-CREATE UNLOGGED TABLE dim_grid_1000m (
+CREATE TABLE dim_grid_1000m (
     grid_id serial PRIMARY KEY,
     i int NOT NULL,
     j int NOT NULL,
@@ -9,7 +9,7 @@ CREATE UNLOGGED TABLE dim_grid_1000m (
 CREATE INDEX dim_grid_1000m_geom_idx ON dim_grid_1000m USING gist (geom);
 
 
-CREATE UNLOGGED TABLE dim_grid_500m (
+CREATE TABLE dim_grid_500m (
     grid_id serial PRIMARY KEY,
     i int NOT NULL,
     j int NOT NULL,
@@ -20,7 +20,7 @@ CREATE UNLOGGED TABLE dim_grid_500m (
 -- Create spatial index
 CREATE INDEX dim_grid_500m_geom_idx ON dim_grid_500m USING gist (geom);
 
-CREATE UNLOGGED TABLE dim_grid_100m (
+CREATE TABLE dim_grid_100m (
     grid_id serial PRIMARY KEY,
     i int NOT NULL,
     j int NOT NULL,
@@ -31,7 +31,7 @@ CREATE UNLOGGED TABLE dim_grid_100m (
 -- Create spatial index
 CREATE INDEX dim_grid_100m_geom_idx ON dim_grid_100m USING gist (geom);
 
-CREATE UNLOGGED TABLE dim_grid_50m (
+CREATE TABLE dim_grid_50m (
     grid_id serial PRIMARY KEY,
     i int NOT NULL,
     j int NOT NULL,

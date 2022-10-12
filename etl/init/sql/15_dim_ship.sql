@@ -4,13 +4,13 @@ CREATE TABLE dim_ship (
     mmsi int NOT NULL,
     mobile_type char(10) NOT NULL,
     ship_type char(20),
-    ship_name char(100)
-    ship_callsign char(20)
-    a float
-    b float
-    c float
+    ship_name char(100),
+    ship_callsign char(20),
+    a float,
+    b float,
+    c float,
     d float
-)
+);
 
 -- Create index on mmsi
 CREATE INDEX dim_ship_mmsi_idx ON dim_ship (mmsi);

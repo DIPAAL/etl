@@ -8,16 +8,27 @@ def setup_citus_instance(host, config):
     host, port = host.split(':')
     conn = psycopg2.connect(
         host=host,
+        database="postgres",
+        user=config['Database']['user'],
+        password=config['Database']['password'],
+        port=port
+    )
+    conn.set_session(autocommit=True)
+    run_sql_file_with_timings('etl/init/setup_database.sql', config, conn)
+
+    conn = psycopg2.connect(
+        host=host,
         database=config['Database']['database'],
         user=config['Database']['user'],
         password=config['Database']['password'],
         port=port
     )
+    conn.set_session(autocommit=True)
     run_sql_file_with_timings('etl/init/citus_ready.sql', config, conn)
 
 def setup_citus_instances(config):
     hosts = config['Database']['worker_connection_hosts'].split(',')
-    hosts.append(f"config['Database']['host']:config['Database']['port']")
+    hosts.append(config['Database']['host'])
     for host in hosts:
         wrap_with_timings(f"Setup worker {host}", lambda: setup_citus_instance(host, config))
 
@@ -25,7 +36,7 @@ def setup_citus_instances(config):
 
 def setup_master(config):
     conn = get_connection(config)
-    workers = config['Database']['worker_connection_hosts'].split(',')
+    workers = config['Database']['worker_connection_internal_hosts'].split(',')
     for worker in workers:
         worker, port = worker.split(':')
         conn.cursor().execute(f"SELECT citus_add_node('{worker}', {port});")
