@@ -1,7 +1,7 @@
 CREATE TABLE dim_grid_1000m (
     grid_id serial PRIMARY KEY,
-    i int NOT NULL,
-    j int NOT NULL,
+    row int NOT NULL,
+    col int NOT NULL,
     geom geometry NOT NULL
 );
 
@@ -11,8 +11,8 @@ CREATE INDEX dim_grid_1000m_geom_idx ON dim_grid_1000m USING gist (geom);
 
 CREATE TABLE dim_grid_500m (
     grid_id serial PRIMARY KEY,
-    i int NOT NULL,
-    j int NOT NULL,
+    row int NOT NULL,
+    col int NOT NULL,
     geom geometry NOT NULL,
     supercell_id int REFERENCES dim_grid_1000m (grid_id)
 );
@@ -22,8 +22,8 @@ CREATE INDEX dim_grid_500m_geom_idx ON dim_grid_500m USING gist (geom);
 
 CREATE TABLE dim_grid_100m (
     grid_id serial PRIMARY KEY,
-    i int NOT NULL,
-    j int NOT NULL,
+    row int NOT NULL,
+    col int NOT NULL,
     geom geometry NOT NULL,
     supercell_id int REFERENCES dim_grid_500m (grid_id)
 );
@@ -33,8 +33,8 @@ CREATE INDEX dim_grid_100m_geom_idx ON dim_grid_100m USING gist (geom);
 
 CREATE TABLE dim_grid_50m (
     grid_id serial PRIMARY KEY,
-    i int NOT NULL,
-    j int NOT NULL,
+    row int NOT NULL,
+    col int NOT NULL,
     geom geometry NOT NULL,
     supercell_id int REFERENCES dim_grid_100m (grid_id)
 );
@@ -46,10 +46,10 @@ CREATE INDEX dim_grid_50m_geom_idx ON dim_grid_50m USING gist (geom);
 WITH seawaters AS (
     SELECT ST_Transform(geom, 25832) as geom FROM danish_waters
 )
-INSERT INTO dim_grid_50m (i, j, geom)
+INSERT INTO dim_grid_50m (row, col, geom)
 SELECT
-    i,
-    j,
+    i AS row,
+    j AS col,
     geom
 FROM
     ST_SquareGrid(50, (SELECT geom FROM seawaters));
