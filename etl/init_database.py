@@ -5,24 +5,11 @@ from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_ti
 
 
 def setup_citus_instance(host, config):
-    host, port = host.split(':')
-    conn = psycopg2.connect(
-        host=host,
-        database="postgres",
-        user=config['Database']['user'],
-        password=config['Database']['password'],
-        port=port
-    )
+    conn = get_connection(config, host=host, database='postgres')
     conn.set_session(autocommit=True)
     run_sql_file_with_timings('etl/init/setup_database.sql', config, conn)
 
-    conn = psycopg2.connect(
-        host=host,
-        database=config['Database']['database'],
-        user=config['Database']['user'],
-        password=config['Database']['password'],
-        port=port
-    )
+    conn = get_connection(config, host=host)
     conn.set_session(autocommit=True)
     run_sql_file_with_timings('etl/init/citus_ready.sql', config, conn)
 

@@ -5,14 +5,11 @@ CREATE TABLE dim_direction (
     UNIQUE ("from", "to")
 );
 
--- Directions is the array of north, south, east, west
 WITH directions as (
     SELECT
         unnest(ARRAY['North', 'South', 'East', 'West', 'Unknown']) as direction
 )
 INSERT INTO dim_direction ("from", "to")
-
--- Insert all combinations of directions
 SELECT
     from_direction.direction,
     to_direction.direction
