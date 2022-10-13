@@ -1,20 +1,18 @@
-from typing import List
 import pandas as pd
 import geopandas as gpd
-import numpy as np
-from etl.helper_functions import get_connection, get_queries_from_sql_file
+from etl.helper_functions import get_queries_from_sql_file
 from sqlalchemy import create_engine
 
 CSV_EXTENSION = '.csv'
 COORDINATE_REFERENCE_SYSTEM = 'epsg:4326'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
 
-def clean_data(config, ais_file_path: str) -> List[str]:
+def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     if ais_file_path.endswith(CSV_EXTENSION):
         return _clean_csv_data(config, ais_file_path)
 
 
-def _clean_csv_data(config, ais_file_path_csv: str) -> List[str]:
+def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     # Read into pandas
     # Keep dictionary of known entities (mimicking staging DB)
     # Coarse cleaning
@@ -26,7 +24,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> List[str]:
     #   - Remove where not with geometri of Danish_waters
     
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
-    # Then uses that to filter on latitude and longtitude
+    # Then uses that to filter on latitude and longitude
     danish_waters_gdf = _get_danish_waters_boundary(config)
 
     # Read from georeferenced AIS dataframe from csv file
@@ -39,6 +37,10 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> List[str]:
     clean_gdf = gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf)
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf)))
 
+    return clean_gdf
+
+
+
 def _get_danish_waters_boundary(config) -> gpd.GeoDataFrame:
     conn = _create_pandas_postgresql_connection(config)
 
@@ -48,7 +50,7 @@ def _get_danish_waters_boundary(config) -> gpd.GeoDataFrame:
 
 def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> gpd.GeoDataFrame:
     dirty_frame = pd.read_csv(csv_path)
-    return gpd.GeoDataFrame(data=dirty_frame, geometry=gpd.points_from_xy(dirty_frame.Latitude, dirty_frame.Longitude), crs=crs)
+    return gpd.GeoDataFrame(data=dirty_frame, geometry=gpd.points_from_xy(dirty_frame.Longitude, dirty_frame.Latitude), crs=crs)
 
 def _ais_df_initial_cleaning(dirty_dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     print('Number of rows in dataframe before initial clean: ' + str(len(dirty_dataframe)))
@@ -65,6 +67,9 @@ def _ais_df_initial_cleaning(dirty_dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFr
     return dirty_dataframe
 
 def _create_pandas_postgresql_connection(config):
+    """
+    Creates a connection to the database using SQLalchemy as it is the only connection type supported by pandas
+    """
     host, port = config['Database']['host'].split(':')
     connection_url = f"postgresql://{config['Database']['user']}:{config['Database']['password']}@{host}:{port}/{config['Database']['database']}"
     return create_engine(connection_url)
