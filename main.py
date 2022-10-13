@@ -4,9 +4,7 @@ import argparse
 import configparser
 import os
 
-from time import perf_counter
-from datetime import datetime, timedelta
-
+from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
 from etl.load_data import load_data
 from etl.cleaning.clean_data import clean_data
@@ -22,14 +20,6 @@ def get_config():
 
     return config
 
-def wrap_in_timings(name: str, func) -> None:
-    print(f"{name} started at {datetime.now()}")
-    start = perf_counter()
-    func()
-    end = perf_counter()
-    print(f"{name} finished at {datetime.now()}")
-    print(f"{name} took {timedelta(seconds=(end - start))}")
-
 
 def main(argv):
     config = get_config()
@@ -43,20 +33,20 @@ def main(argv):
     args = parser.parse_args()
 
     if args.init:
-        wrap_in_timings("Database init", lambda: init_database(config))
+        wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.load:
         if args.file is None or not os.path.isfile(os.path.join(config['DataSource']['ais_path'], args.file)):
             print("Please specify a valid file to load")
             exit(2)
 
-        wrap_in_timings("Loading", lambda: load_data(config))
+        wrap_with_timings("Loading", lambda: load_data(config))
     if args.clean:
         if args.file is None or not os.path.isfile(os.path.join(config['DataSource']['ais_path'], args.file)):
             print("Please specify a valid file to load")
             exit(2)
         
-        wrap_in_timings("Data Cleaning", lambda: clean_data(config, os.path.join(config['DataSource']['ais_path'], args.file)))
+        wrap_with_timings("Data Cleaning", lambda: clean_data(config, os.path.join(config['DataSource']['ais_path'], args.file)))
 
 
 if __name__ == '__main__':
