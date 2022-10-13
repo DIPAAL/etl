@@ -58,10 +58,10 @@ FROM
 WITH seawaters AS (
     SELECT ST_Transform(geom, 25832) as geom FROM danish_waters
 )
-INSERT INTO dim_grid_100m (i, j, geom)
+INSERT INTO dim_grid_100m (row, col, geom)
 SELECT
-    i,
-    j,
+    i AS row,
+    j AS col,
     geom
 FROM
     ST_SquareGrid(100, (SELECT geom FROM seawaters));
