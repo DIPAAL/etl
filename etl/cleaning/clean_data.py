@@ -40,7 +40,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     initial_cleaned_dataframe = initial_cleaned_dataframe.set_crs(COORDINATE_REFERENCE_SYSTEM)
     lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute())
-    print('Number of rows in boundary cleaned dataframe: ' + str(clean_gdf.count(axis='columns').size))
+    print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf
 
@@ -55,13 +55,11 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
 
 def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> d_gpd.GeoDataFrame:
     dirty_frame = dd.read_csv(csv_path, dtype={'Callsign': 'object', 'Cargo type': 'object', 'Destination': 'object', 'ETA': 'object', 'Name': 'object'})
-    #dirty_frame = pd.read_csv(csv_path)
 
-    # dirty_geopandas = gpd.GeoDataFrame(data=dirty_frame, geometry=gpd.points_from_xy(dirty_frame.Longitude, dirty_frame.Latitude), crs=crs)
     return d_gpd.from_dask_dataframe(df=dirty_frame, geometry=d_gpd.points_from_xy(df=dirty_frame, x='Longitude', y='Latitude', crs=crs))
 
 def _ais_df_initial_cleaning(dirty_dataframe: d_gpd.GeoDataFrame) -> d_gpd.GeoDataFrame:
-    print('Number of rows in dataframe before initial clean: ' + str(dirty_dataframe.count(axis='columns').size.compute()))#+ str(dirty_dataframe.size.compute()))
+    print('Number of rows in dataframe before initial clean: ' + str(len(dirty_dataframe.index)))
     dirty_dataframe = dirty_dataframe.query(expr=(
                                 '(Draught < 28.5 | Draught.isna()) & '
                                 '(Width < 75) & '
@@ -71,7 +69,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: d_gpd.GeoDataFrame) -> d_gpd.GeoDa
                                 '(MMSI <= 111000000 | MMSI >= 112000000)'
                                 )).compute()
     dirty_dataframe = d_gpd.from_geopandas(data=dirty_dataframe, npartitions=NUM_PARTITIONS)
-    print('Number of rows in dataframe after initial clean: ' + str(dirty_dataframe.count(axis='columns').size.compute()))
+    print('Number of rows in dataframe after initial clean: ' + str(len(dirty_dataframe.index)))
     return dirty_dataframe
 
 def _create_pandas_postgresql_connection(config):
