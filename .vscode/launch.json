@@ -13,7 +13,7 @@
             "args": [
                 "--clean",
                 "--file",
-                "aisdk-2021-09-07_500k.csv"
+                "aisdk-2021-09-07_reduced.csv"
             ]
         }
     ]

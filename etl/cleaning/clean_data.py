@@ -38,7 +38,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters 
     initial_cleaned_dataframe = initial_cleaned_dataframe.set_crs(COORDINATE_REFERENCE_SYSTEM)
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within'))
-    print('Number of rows in boundary cleaned dataframe: ' + str(clean_gdf.size.compute()))
+    print('Number of rows in boundary cleaned dataframe: ' + str(clean_gdf.count(axis='columns').size.compute()))
 
     return clean_gdf
 
@@ -59,7 +59,7 @@ def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> d_gpd.GeoDataFrame
     return d_gpd.from_dask_dataframe(df=dirty_frame, geometry=d_gpd.points_from_xy(df=dirty_frame, x='Longitude', y='Latitude', crs=crs))
 
 def _ais_df_initial_cleaning(dirty_dataframe: d_gpd.GeoDataFrame) -> d_gpd.GeoDataFrame:
-    print('Number of rows in dataframe before initial clean: ' + str(dirty_dataframe.size.compute()))
+    print('Number of rows in dataframe before initial clean: ' + str(dirty_dataframe.count(axis='columns').size.compute()))#+ str(dirty_dataframe.size.compute()))
     dirty_dataframe.query(expr=(
                                 '(Draught < 28.5 | Draught.isna()) & '
                                 '(Width < 75) & '
@@ -68,7 +68,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: d_gpd.GeoDataFrame) -> d_gpd.GeoDa
                                 '(MMSI > 99999999) & '
                                 '(MMSI <= 111000000 | MMSI >= 112000000)'
                                 ), inplace=True)
-    print('Number of rows in dataframe after initial clean: ' + str(dirty_dataframe.size.compute()))
+    print('Number of rows in dataframe after initial clean: ' + str(dirty_dataframe.count(axis='columns').size.compute()))
     return dirty_dataframe
 
 def _create_pandas_postgresql_connection(config):
