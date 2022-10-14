@@ -13,6 +13,7 @@ def get_sql_files(folder):
 
 
 def run_sql_file_with_timings(sql_file, config, conn = None):
+    conn.set_session(autocommit=True)
     conn = get_connection(config) if conn is None else conn
 
     file_contents = open(sql_file, 'r').read()
