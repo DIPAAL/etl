@@ -13,6 +13,8 @@ NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     if ais_file_path.endswith(CSV_EXTENSION):
         return _clean_csv_data(config, ais_file_path)
+    
+    raise NotImplementedError(f'Extension of file provided {ais_file_path}, is not supported in this version of the project.')
 
 
 def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
