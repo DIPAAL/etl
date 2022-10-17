@@ -6,3 +6,5 @@ config-local.properties
 # any __pycache__ and .pyc files
 __pycache__/
 *.pyc
+# folder for temp files
+.tmp
