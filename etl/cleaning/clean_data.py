@@ -31,13 +31,18 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     danish_waters_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_danish_waters_boundary(config))
 
     # Read from georeferenced AIS dataframe from csv file
-    dirty_geo_dataframe = wrap_with_timings('Create Geodataframe from CSV', lambda: _create_dirty_df_from_ais_cvs(csv_path=ais_file_path_csv, crs=COORDINATE_REFERENCE_SYSTEM))
+    dirty_geo_dataframe = wrap_with_timings(
+        'Create Geodataframe from CSV',
+        lambda: _create_dirty_df_from_ais_cvs(csv_path=ais_file_path_csv, crs=COORDINATE_REFERENCE_SYSTEM)
+    )
 
     # Initial cleaning of AIS dataframe
-    initial_cleaned_dataframe = wrap_with_timings('Initial clean', lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe))
+    initial_cleaned_dataframe = wrap_with_timings(
+        'Initial clean',
+        lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe)
+    )
 
     # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters 
-    initial_cleaned_dataframe = initial_cleaned_dataframe.set_crs(COORDINATE_REFERENCE_SYSTEM)
     lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute())
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
