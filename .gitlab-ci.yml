@@ -52,18 +52,18 @@ init:
   script:
     - envsubst < jobs/init-job.yml | kubectl apply -f -
 
-pytest:
-  stage: test
-  image: docker:latest
-  needs: [build]
-  services:
-    - docker:dind
-  script:
-    - echo ${FULL_TAG}
-    - docker run ${FULL_TAG} pytest --junit-xml=p_test.xml
-  artifacts:
-    when: always
-    paths:
-      - p_test.xml
-    reports:
-      junit: p_test.xml
+#pytest:
+#  stage: test
+#  image: docker:latest
+#  needs: [build]
+#  services:
+#    - docker:dind
+#  script:
+#    - echo ${FULL_TAG}
+#    - docker run ${FULL_TAG} pytest --junit-xml=p_test.xml
+#  artifacts:
+#    when: always
+#    paths:
+#      - p_test.xml
+#    reports:
+#      junit: p_test.xml
