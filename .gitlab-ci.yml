@@ -60,10 +60,10 @@ pytest:
     - docker:dind
   script:
     - echo ${FULL_TAG}
-    - docker run ${FULL_TAG} pytest --junit-xml=p_test.xml
+    - docker run ${FULL_TAG} pytest --junit-xml=p_result.xml
   artifacts:
     when: always
     paths:
-      - ./p_test.xml
+      - p_result.xml
     reports:
-      junit: p_test.xml
+      junit: p_result.xml
