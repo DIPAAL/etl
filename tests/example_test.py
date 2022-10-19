@@ -3,5 +3,5 @@
 def not_included():
     return True
 
-def example_pass_test():
+def test_example_pass():
     assert not_included()
