@@ -56,8 +56,10 @@ pytest:
   stage: test
   image: docker:latest
   needs: [build]
+  services:
+    - docker:dind
   script:
-    - env
+    - echo ${FULL_TAG}
     - docker run ${FULL_TAG} pytest --junit-xml=p_test.xml
   artifacts:
     when: always

@@ -8,3 +8,5 @@ __pycache__/
 *.pyc
 # folder for temp files
 .tmp
+# Folder for gitlab-ci-local (run pipeline locally)
+.gitlab-ci-local
