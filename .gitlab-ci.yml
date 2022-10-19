@@ -66,4 +66,5 @@ pytest:
     paths:
       - p_result.xml
     reports:
-      junit: p_result.xml
+      junit: /p_result.xml
+    expire_in: "1 week"
