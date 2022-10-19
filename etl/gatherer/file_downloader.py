@@ -8,13 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 from etl.helper_functions import wrap_with_timings
 
-AIS_URL = "https://web.ais.dk/aisdata/"
-
 @dataclass
 class AisFile:
     name: str
     url: str
-    size: int # number of bytes
 
 def ensure_file_for_date(date: datetime, config) -> str:
     """
@@ -29,11 +26,11 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
     # First, check if the file exists.
     if os.path.isfile(path):
-        print(f"File already exists: {path}"
+        print(f"File already exists: {path}")
         return path
 
     # The file does not exist, check what files are available from DMA.
-    file_names = get_file_names()
+    file_names = get_file_names(config['DataSource']['ais_url'])
 
     # Check if our current date is in the list of available files, if not, check if the month is in the list of available files.
     if not date in file_names:
@@ -53,8 +50,6 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
     return path
 
-
-
 def date_from_filename(file_name):
     """
         Eg "aisdk-2007-04.zip" -> datetime(2007, 4, 1), "aisdk-2007-04-03.zip" -> datetime(2007, 4, 3)
@@ -71,42 +66,25 @@ def date_from_filename(file_name):
     return datetime(year=year, month=month, day=day)
 
 
-def get_file_names():
+def get_file_names(ais_url: str) -> dict:
     # Fetch the HTML from DMA.
-    response = requests.get(AIS_URL)
-
+    response = requests.get(ais_url)
     soup = BeautifulSoup(response.content, 'html.parser')
-
-    # Find all rows in the table.
-    rows = soup.find_all('tr')
-
-    # Create a dictionary from datetime to AisFile objects.
+    # Find all links in the HTML.
+    anchors = soup.find_all('a')
     ais_files = {}
 
-    for row in rows:
-        cols = row.find_all('td')
-        if len(cols) == 5:
-            # The second column contains the anchor
-            anchor = cols[1].find('a')
-            if anchor is None:
-                continue
+    for anchor in anchors:
+        name = anchor['href']
+        url = ais_url + name
 
-            name = anchor['href']
-            url = AIS_URL + name
+        # Skip if name is not zip or rar
+        if not name.endswith('.zip') and not name.endswith('.rar'):
+            continue
 
-            # skip if name is not zip or rar
-            if not name.endswith('.zip') and not name.endswith('.rar'):
-                continue
-
-            # Size is in the fourth column
-            size_human_readable = cols[3].text
-            # either measured in M or G for Mega or Giga bytes.
-            size = int(float(size_human_readable[:-1]) * 1024 * 1024 if size_human_readable[-1] == 'M' else float(size_human_readable[:-1]) * 1024 * 1024 * 1024)
-
-            ais_file = AisFile(name, url, size)
-            ais_files[date_from_filename(name)] = ais_file
+        ais_file = AisFile(name, url)
+        ais_files[date_from_filename(name)] = ais_file
     return ais_files
-
 
 def extract(file, config):
     path = os.path.join(config['DataSource']['ais_path'], file.name)
@@ -116,14 +94,10 @@ def extract(file, config):
     elif path.endswith('.rar'):
         patoolib.extract_archive(path, config['DataSource']['ais_path'])
 
-
-
-
 def ensure_file(file: AisFile, config):
     # Download the file if it does not exist.
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if not os.path.isfile(path):
-        wrap_with_timings(f"Downloading file: {file.name} ({file.size} bytes)" , lambda: wget.download(file.url, out=path))
+        wrap_with_timings(f"Downloading file: {file.name}" , lambda: wget.download(file.url, out=path))
     else:
         print(f"File already exists: {path}")
-
