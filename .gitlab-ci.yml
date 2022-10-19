@@ -64,6 +64,7 @@ pytest:
     - docker cp test_runner-${CI_PIPELINE_ID}:p_result.xml ./
     - docker cp test_runner-${CI_PIPELINE_ID}:p_coverage.xml ./
     - docker rm test_runner-${CI_PIPELINE_ID}
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     when: always
     paths:
