@@ -16,6 +16,43 @@ class AisFile:
     url: str
     size: int # number of bytes
 
+def ensure_file_for_date(date: datetime, config) -> str:
+    """
+        Ensures that the file for the given date exists.
+        If it does not exist, try every trick in the book to gather it. If it still does not exist, raise an exception.
+    :param date: The date to ensure the file for.
+    :param config:
+    :return: The path to the file.
+    """
+    expected_filename = f"aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv"
+    path = os.path.join(config['DataSource']['ais_path'], expected_filename)
+
+    # First, check if the file exists.
+    if os.path.isfile(path):
+        print(f"File already exists: {path}"
+        return path
+
+    # The file does not exist, check what files are available from DMA.
+    file_names = get_file_names()
+
+    # Check if our current date is in the list of available files, if not, check if the month is in the list of available files.
+    if not date in file_names:
+        print(f"File not found for date: {date}. Trying first day of month.")
+        date = datetime(year=date.year, month=date.month, day=1)
+        if not date in file_names:
+            raise Exception(f"File for {date} not found as existing on Danish Maritime Authority website.")
+
+    # The file exists, download it.
+    file = file_names[date]
+    ensure_file(file, config)
+    extract(file, config)
+
+    # In case the downloaded file did not actually contain the desired date, raise an exception.
+    if not os.path.isfile(os.path.join(config['DataSource']['ais_path'], expected_filename)):
+        raise Exception(f"Expected file {expected_filename} was not found in {config['DataSource']['ais_path']}")
+
+    return path
+
 
 
 def date_from_filename(file_name):
@@ -29,7 +66,7 @@ def date_from_filename(file_name):
 
     year = int(file_name[0])
     month = int(file_name[1])
-    day = int(file_name[2]) if len(file_name) == 3 else 1
+    day = int(file_name[2]) if len(file_name) == 3 else 1 # If the file name does not contain a day, assume the first day of the month.
 
     return datetime(year=year, month=month, day=day)
 
@@ -80,34 +117,7 @@ def extract(file, config):
         patoolib.extract_archive(path, config['DataSource']['ais_path'])
 
 
-def ensure_file_for_date(date: datetime, config) -> True:
-    expected_filename = f"aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv"
-    if os.path.isfile(os.path.join(config['DataSource']['ais_path'], expected_filename)):
-        print(f"File already exists: {expected_filename}")
-        return True
 
-    # Get the file names from the web page.
-    file_names = get_file_names()
-
-    # First check if the file for the given date exists
-    if not date in file_names:
-        print(f"File not found for date: {date}. Trying first day of month.")
-        # try the first day of the month
-        date = datetime(year=date.year, month=date.month, day=1)
-        if not date in file_names:
-            print(f"File not found for date: {date}")
-            return False
-
-    if date in file_names:
-        file = file_names[date]
-        ensure_file(file, config)
-        extract(file, config)
-        if not os.path.isfile(os.path.join(config['DataSource']['ais_path'], expected_filename)):
-            raise Exception(f"Expected file {expected_filename} was not found in {config['DataSource']['ais_path']}")
-
-        return True
-
-    raise Exception("No file for date: " + str(date))
 
 def ensure_file(file: AisFile, config):
     # Download the file if it does not exist.

@@ -3,7 +3,9 @@ import sys
 import argparse
 import configparser
 import os
+from datetime import datetime
 
+from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
 from etl.load_data import load_data
@@ -28,24 +30,17 @@ def main(argv):
     parser.add_argument("--init", help="Initialize database", action="store_true")
     parser.add_argument("--load", help="Perform loading of the dates", action="store_true")
     parser.add_argument("--clean", help="Clean the given AIS data file", action="store_true")
-    parser.add_argument("--file", help="File to load")
+    parser.add_argument("--date", help="The date to load", type=str)
 
     args = parser.parse_args()
+
+    date = datetime.strptime(args.date, '%Y-%m-%d') if args.date else None
 
     if args.init:
         wrap_with_timings("Database init", lambda: init_database(config))
 
-    if args.load:
-        if args.file is None or not os.path.isfile(os.path.join(config['DataSource']['ais_path'], args.file)):
-            print("Please specify a valid file to load")
-            exit(2)
-
-        wrap_with_timings("Loading", lambda: load_data(config))
     if args.clean:
-        if args.file is None or not os.path.isfile(os.path.join(config['DataSource']['ais_path'], args.file)):
-            print("Please specify a valid file to load")
-            exit(2)
-        
+        wrap_with_timings("Ensuring file for current date exists", ensure_file_for_date(date, config))
         wrap_with_timings("Data Cleaning", lambda: clean_data(config, os.path.join(config['DataSource']['ais_path'], args.file)))
 
 
