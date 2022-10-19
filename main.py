@@ -40,8 +40,8 @@ def main(argv):
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
-        path = wrap_with_timings("Ensuring file for current date exists", ensure_file_for_date(date, config))
-        wrap_with_timings("Data Cleaning", lambda: clean_data(config, path))
+        file_path = wrap_with_timings("Ensuring file for current date exists", ensure_file_for_date(date, config))
+        wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
 
 
 if __name__ == '__main__':
