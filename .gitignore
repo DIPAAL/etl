@@ -12,5 +12,6 @@ __pycache__/
 .gitlab-ci-local
 
 # Code coverage reports
-coverage.xml
+p_coverage.xml
+p_result.xml
 .coverage
