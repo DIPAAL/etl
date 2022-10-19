@@ -64,6 +64,6 @@ pytest:
   artifacts:
     when: always
     paths:
-      - p_test.xml
+      - ./p_test.xml
     reports:
       junit: p_test.xml
