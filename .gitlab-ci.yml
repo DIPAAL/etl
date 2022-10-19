@@ -60,11 +60,12 @@ pytest:
     - docker:dind
   script:
     - echo ${FULL_TAG}
-    - docker run ${FULL_TAG} pytest --junit-xml=p_result.xml
+    - docker run --name test_runner ${FULL_TAG} pytest --junit-xml=p_result.xml
+    - docker cp test_runner:p_result.xml ./
   artifacts:
     when: always
     paths:
       - p_result.xml
     reports:
-      junit: /p_result.xml
+      junit: p_result.xml
     expire_in: "1 week"
