@@ -60,9 +60,10 @@ pytest:
     - docker:dind
   script:
     - echo ${FULL_TAG}
-    - docker run --name test_runner ${FULL_TAG} pytest --cov-report=xml:p_coverage.xml --junit-xml=p_result.xml
-    - docker cp test_runner:p_result.xml ./
-    - docker cp test_runner:p_coverage.xml ./
+    - docker run --name test_runner-${CI_PIPELINE_ID} ${FULL_TAG} pytest --cov-report=xml:p_coverage.xml --junit-xml=p_result.xml
+    - docker cp test_runner-${CI_PIPELINE_ID}:p_result.xml ./
+    - docker cp test_runner-${CI_PIPELINE_ID}:p_coverage.xml ./
+    - docker rm test_runner-${CI_PIPELINE_ID}
   artifacts:
     when: always
     paths:
