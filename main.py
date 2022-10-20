@@ -41,6 +41,7 @@ def main(argv):
             exit(2)
 
         wrap_with_timings("Loading", lambda: load_data(config))
+
     if args.clean:
         if args.file is None or not os.path.isfile(os.path.join(config['DataSource']['ais_path'], args.file)):
             print("Please specify a valid file to load")

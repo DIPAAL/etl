@@ -10,6 +10,13 @@ from etl.helper_functions import get_connection
 
 
 def insert_bulk(data_frame, target_table, config):
+    """Takes a data frame and attempts an insertion of its content into a table through a connection to the database
+
+    Keyword arguments:
+        data_frame -- A pandas or geopandas data frame
+        target_table -- Name of the table which the data should be inserted into
+        config -- A psycopg2 config"""
+
     conn = get_connection(config)
     cursor = conn.cursor()
 
@@ -18,6 +25,7 @@ def insert_bulk(data_frame, target_table, config):
     data_frame.to_csv(buffer, index_label='id', header=False)
     buffer.seek(0)
 
+    print("Attempting insertion")
     try:
         cursor.copy_from(buffer, target_table, sep=",")
         conn.commit()

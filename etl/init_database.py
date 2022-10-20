@@ -20,7 +20,6 @@ def setup_citus_instances(config):
         wrap_with_timings(f"Setup worker {host}", lambda: setup_citus_instance(host, config))
 
 
-
 def setup_master(config):
     conn = get_connection(config)
     workers = config['Database']['worker_connection_internal_hosts'].split(',')
