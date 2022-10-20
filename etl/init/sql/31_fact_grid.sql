@@ -1,5 +1,4 @@
 CREATE TABLE fact_grid (
-    id bigserial PRIMARY KEY,
     grid_id integer NOT NULL,
     ship_id integer NOT NULL,
     entry_date_id integer NOT NULL,
@@ -8,6 +7,7 @@ CREATE TABLE fact_grid (
     exit_time_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
+    PRIMARY KEY (grid_id, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id),
 
     sog float NOT NULL,
     cog float NOT NULL,
@@ -21,4 +21,4 @@ CREATE TABLE fact_grid (
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id)
-);
+) PARTITION BY RANGE (entry_date_id);
