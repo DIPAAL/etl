@@ -10,3 +10,8 @@ __pycache__/
 .tmp
 # Folder for gitlab-ci-local (run pipeline locally)
 .gitlab-ci-local
+
+# Code coverage reports
+p_coverage.xml
+p_result.xml
+.coverage

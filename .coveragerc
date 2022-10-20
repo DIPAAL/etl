@@ -1,4 +1,4 @@
 [run]
 branch = True
-source = etl
+source = .
 omit = '*/venv/*'
