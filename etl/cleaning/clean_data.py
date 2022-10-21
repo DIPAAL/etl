@@ -3,12 +3,14 @@ import dask.dataframe as dd
 import dask_geopandas as d_gpd
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
 from sqlalchemy import create_engine
+from datetime import datetime
 import multiprocessing
 
 CSV_EXTENSION = '.csv'
 COORDINATE_REFERENCE_SYSTEM = 'epsg:4326'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
 NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
+CVS_TIMESTAMP_FORMAT='%d/%m/%Y %H:%M:%S' #07/09/2021 00:00:00
 
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     if ais_file_path.endswith(CSV_EXTENSION):
@@ -62,6 +64,8 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
 
 def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> d_gpd.GeoDataFrame:
     dirty_frame = dd.read_csv(csv_path, dtype={'Callsign': 'object', 'Cargo type': 'object', 'Destination': 'object', 'ETA': 'object', 'Name': 'object'})
+    dirty_frame['timestamp'] = dirty_frame['# Timestamp'].apply(func=lambda t: datetime.strptime(t, CVS_TIMESTAMP_FORMAT), axis='columns')
+    dirty_frame['ETA'] = dirty_frame['ETA'].apply(func=lambda t: datetime.strptime(t, CVS_TIMESTAMP_FORMAT) if t is not None else None, axis='columns')
 
     return d_gpd.from_dask_dataframe(df=dirty_frame, geometry=d_gpd.points_from_xy(df=dirty_frame, x='Longitude', y='Latitude', crs=crs))
 
