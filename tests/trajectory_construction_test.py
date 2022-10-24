@@ -74,9 +74,9 @@ def pointcompare_to_pd_series(long:float, lat:float, timestamp:str, sog:float):
     }).to_frame().T
 
 test_data_is_outlier = [
-        ((_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5))), (_PointCompare(pointcompare_to_pd_series(55.8079,10.7168, "07/09/2021 00:00:00", 2.5)), 100, _euclidian_dist, True)), #Same timestammp
-        ((_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5))), (_PointCompare(pointcompare_to_pd_series(57.8079,12.7168, "07/09/2021 00:06:02", 2.5)), 1, _euclidian_dist, True)), #SOG is above threshold
-        ((_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5))), (_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), 100, _euclidian_dist, True)), #All is well
+        (_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), _PointCompare(pointcompare_to_pd_series(55.8079,10.7168, "07/09/2021 00:00:00", 2.5)), 100, _euclidian_dist, True), #Same timestammp
+        (_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), _PointCompare(pointcompare_to_pd_series(57.8079,12.7168, "07/09/2021 00:06:02", 2.5)), 1, _euclidian_dist, True), #SOG is above threshold
+        (_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), _PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), 100, _euclidian_dist, True), #All is well
         ]
 
 @pytest.mark.parametrize("prev_point, curr_point, speed_tresshold, distance_func, expected", test_data_is_outlier)
