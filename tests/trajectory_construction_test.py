@@ -41,9 +41,9 @@ def test_euclidian_dist(a_long, a_lat, b_long, b_lat, expected):
 
 def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
-    columns_dtype_int64 = ['start_date_id', 'start_time_id', 'end_date_id', 'end_time_id', 'eta_date_id', 'eta_time_id']
-    columns_dtype_float64 = ['draught']
-    columns_dtype_object = ['nav_status', 'trajectory', 'destination', 'rot', 'heading']
+    columns_dtype_int64 = ['start_date_id', 'start_time_id', 'end_date_id', 'end_time_id', 'eta_date_id', 'eta_time_id', 'imo', 'mmsi', ]
+    columns_dtype_float64 = ['draught', 'a', 'b', 'c', 'd']
+    columns_dtype_object = ['nav_status', 'trajectory', 'destination', 'rot', 'heading', 'mobile_type', 'ship_type', 'ship_name', 'ship_callsign']
     columns_dtype_timedelta = ['duration']
     columns_dtype_bool = ['infer_stopped']
 
