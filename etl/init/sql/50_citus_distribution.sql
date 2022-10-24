@@ -9,8 +9,8 @@ SELECT create_reference_table('dim_grid_50m');
 SELECT create_reference_table('danish_waters');
 
 -- Distribute the fact tables and ship dimension
-SELECT create_distributed_table('dim_ship', 'ship_id');
-SELECT create_distributed_table('fact_trajectory', 'ship_id', colocate_with=>'dim_ship');
-SELECT create_distributed_table('fact_grid', 'ship_id', colocate_with=>'dim_ship');
+SELECT create_distributed_table('dim_ship', 'mmsi');
+SELECT create_distributed_table('fact_trajectory', 'mmsi', colocate_with=>'dim_ship');
+SELECT create_distributed_table('fact_grid', 'mmsi', colocate_with=>'dim_ship');
 
 

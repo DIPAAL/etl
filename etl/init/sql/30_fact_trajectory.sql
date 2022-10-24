@@ -1,5 +1,6 @@
 CREATE TABLE fact_trajectory (
-    ship_id integer NOT NULL,
+    mmsi integer NOT NULL,
+    mmsi_subkey integer NOT NULL,
     start_date_id integer NOT NULL,
     start_time_id integer NOT NULL,
     end_date_id integer NOT NULL,
@@ -7,7 +8,7 @@ CREATE TABLE fact_trajectory (
     eta_date_id integer NOT NULL,
     eta_time_id integer NOT NULL,
     nav_status_id smallint NOT NULL,
-    PRIMARY KEY (ship_id, start_date_id, start_time_id, end_date_id, end_time_id, eta_date_id, eta_time_id, nav_status_id),
+    PRIMARY KEY (mmsi, mmsi_subkey, start_date_id, start_time_id, end_date_id, end_time_id, eta_date_id, eta_time_id, nav_status_id),
 
     duration interval NOT NULL,
     trajectory tgeompoint NOT NULL,
@@ -17,7 +18,7 @@ CREATE TABLE fact_trajectory (
     heading tfloat NOT NULL,
     draught float NOT NULL,
 
-    FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
+    FOREIGN KEY (mmsi, mmsi_subkey) REFERENCES dim_ship(mmsi, mmsi_subkey),
     FOREIGN KEY (start_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (start_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (end_date_id) REFERENCES dim_date(date_id),

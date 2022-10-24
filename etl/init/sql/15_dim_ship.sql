@@ -1,7 +1,7 @@
 CREATE TABLE dim_ship (
-    ship_id serial PRIMARY KEY,
     imo int NOT NULL,
     mmsi int NOT NULL,
+    mmsi_subkey int NOT NULL,
     mobile_type text NOT NULL,
     ship_type text,
     ship_name text,
@@ -9,7 +9,10 @@ CREATE TABLE dim_ship (
     a float,
     b float,
     c float,
-    d float
+    d float,
+
+    PRIMARY KEY (mmsi, mmsi_subkey),
+    UNIQUE (imo, mmsi, mobile_type, ship_type, ship_name, ship_callsign, a, b, c, d)
 );
 
 -- Create index on mmsi
