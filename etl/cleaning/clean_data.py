@@ -65,7 +65,7 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
 
 def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> d_gpd.GeoDataFrame:
     dirty_frame = dd.read_csv(csv_path, dtype={'Callsign': 'object', 'Cargo type': 'object', 'Destination': 'object', 'ETA': 'object', 'Name': 'object'})
-    dirty_frame['timestamp'] = dirty_frame['# Timestamp'].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
+    dirty_frame['Timestamp'] = dirty_frame['# Timestamp'].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
     dirty_frame['ETA'] = dirty_frame['ETA'].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
 
     return d_gpd.from_dask_dataframe(df=dirty_frame, geometry=d_gpd.points_from_xy(df=dirty_frame, x='Longitude', y='Latitude', crs=crs))
