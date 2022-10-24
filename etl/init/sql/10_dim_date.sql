@@ -10,7 +10,7 @@
             year int NOT NULL
         );
 
-    -- Insert all days since 2005 to 2035
+    -- Insert all days since 2015 to 2026
     INSERT INTO dim_date (date_id, date, day_of_week, day_of_month, day_of_year, week_of_year, month_of_year, year)
     SELECT
         -- create smart id such that 2022-09-01 gets id 20220901
@@ -23,4 +23,4 @@
         EXTRACT(MONTH FROM date),
         EXTRACT(YEAR FROM date)
     FROM
-        generate_series('2005-01-01'::date, '2035-01-01'::date, '1 day') AS date;
+        generate_series('2015-01-01'::date, '2026-01-01'::date, '1 day') AS date;
