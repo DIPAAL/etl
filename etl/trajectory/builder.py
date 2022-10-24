@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 from etl.cleaning.clean_data import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT
 import math
 from datetime import datetime
@@ -15,6 +15,9 @@ COMPUTED_VS_SOG_KNOTS_THRESHOLD=2
 STOPPED_KNOTS_THRESHOLD=0.5
 STOPPED_TIME_SECONDS_THRESHOLD=5*60 # 5 minutes
 SPLIT_GAP_SECONDS_THRESHOLD=5*60 # 5 minutes
+UNKNOWN_STRING_VALUE = 'Unknown'
+UNKNOWN_INT_VALUE = -1
+UNKNOWN_FLOAT_VALUE = -1.0
 
 class _PointCompare:
     def __init__(self, row: gpd.GeoDataFrame) -> None:
@@ -31,7 +34,6 @@ class _PointCompare:
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     grouped_data = clean_sorted_ais.groupby(by='MMSI')
-    pd.set_option('display.max_columns', 100)
 
     result_frames = []
     for mmsi, ship_data in grouped_data:
@@ -43,9 +45,9 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 def _create_trajectory(mmsi: int, data: gpd.GeoDataFrame) -> pd.DataFrame:
     dataframe = _remove_outliers(dataframe=data)
 
-    return _construct_moving_trajectory(dataframe, 0)
+    return _construct_moving_trajectory(mmsi, dataframe, 0)
         
-def _construct_moving_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     idx_cannot_handle = None
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
@@ -54,15 +56,15 @@ def _construct_moving_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_id
             if idx_cannot_handle is not None:
                 current_date = row['Timestamp']
                 if (current_date - trajectory_dataframe.iloc[idx_cannot_handle]['Timestamp']).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
-                    trajectory = _finalize_trajectory(trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
-                    trajectories = _construct_stopped_trajectory(trajectory_dataframe, idx_cannot_handle)
+                    trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
+                    trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat(trajectory, trajectories)
         else:
             idx_cannot_handle = None
     
-    return _finalize_trajectory(trajectory_dataframe, from_idx, len(trajectory_dataframe.index), infer_stopped=False)
+    return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index), infer_stopped=False)
 
-def _finalize_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int, infer_stopped: bool) -> pd.DataFrame:
+def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int, infer_stopped: bool) -> pd.DataFrame:
     to_idx -= 1 # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
     working_dataframe = trajectory_dataframe.truncate(before=from_idx, after=to_idx)
@@ -72,7 +74,8 @@ def _finalize_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, 
     end_datetime = trajectory_dataframe.iloc[to_idx]['Timestamp']
 
     # Groupby: eta, nav_status, draught, destination
-    sorted_series_by_frequency = _find_most_recuring(working_dataframe)
+    column_subset = ['ETA', 'Navigational status', 'Draught', 'Destination']
+    sorted_series_by_frequency = _find_most_recuring(working_dataframe, column_subset=column_subset, drop_na = False)
     eta = sorted_series_by_frequency['ETA'][0]
     nav_status = sorted_series_by_frequency['Navigational status'][0]
     draught = sorted_series_by_frequency['Draught'][0]
@@ -90,6 +93,37 @@ def _finalize_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, 
     rot = _tfloat_from_dataframe(working_dataframe, 'ROT')
     heading = _tfloat_from_dataframe(working_dataframe, 'Heading')
 
+    # Ship information
+    # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
+    trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['IMO'], drop_na=True)
+    imo = most_recuring['IMO'][0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Type of position fixing device'], drop_na=True)
+    mobile_type = most_recuring['Type of position fixing device'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Ship type'], drop_na=True)
+    ship_type = most_recuring['Ship type'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Name'], drop_na=True)
+    ship_name = most_recuring['Name'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Callsign'], drop_na=True)
+    ship_callsign = most_recuring['Callsign'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['A'], drop_na=True)
+    a = most_recuring['A'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['B'], drop_na=True)
+    b = most_recuring['B'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['C'], drop_na=True)
+    c = most_recuring['C'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['D'], drop_na=True)
+    d = most_recuring['D'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+
+
     return pd.concat([dataframe, pd.Series(data={
                                            'start_date_id': start_date_id, 'start_time_id': start_time_id,
                                            'end_date_id':end_date_id, 'end_time_id':end_time_id,
@@ -97,7 +131,11 @@ def _finalize_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, 
                                            'nav_status':nav_status, 'duration':duration,
                                            'trajectory':trajectory, 'infer_stopped':infer_stopped,
                                            'destination':destination, 'rot':rot,
-                                           'heading':heading, 'draught':draught
+                                           'heading':heading, 'draught':draught,
+                                           'mmsi': mmsi, 'imo': imo,
+                                           'mobile_type': mobile_type, 'ship_type': ship_type,
+                                           'ship_name': ship_name, 'ship_callsign': ship_callsign,
+                                           'a': a, 'b': b, 'c': c, 'd': d
                                         }).to_frame().T])
 
 def _extract_date_smart_id(datetime: datetime) -> int:
@@ -115,19 +153,19 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column:str) -> TFl
     
     TFloatInstSet(*tfloat_lst)
 
-def _find_most_recuring(trajectory_dataframe: gpd.GeoDataFrame) -> pd.Series:
-    return trajectory_dataframe.value_counts(subset=['ETA', 'Navigational status', 'Draught', 'Destination'], sort=True, dropna=False).index.to_frame()
+def _find_most_recuring(trajectory_dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
+    return trajectory_dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
-def _construct_stopped_trajectory(trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
         if row['SOG'] >= STOPPED_KNOTS_THRESHOLD:
-            stopped_trajectory = _finalize_trajectory(trajectory_dataframe, from_idx, idx, infer_stopped=True)
-            trajectories = _construct_moving_trajectory(trajectory_dataframe, idx)
+            stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
+            trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat(stopped_trajectory, trajectories)
 
-    stopped_trajectory = _finalize_trajectory(trajectory_dataframe, from_idx, len(trajectory_dataframe.index), infer_stopped=True)
+    stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index), infer_stopped=True)
     return stopped_trajectory 
 
 def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeomPointSeq:
@@ -221,7 +259,19 @@ def _create_trajectory_db_df() -> pd.DataFrame:
         'destination': pd.Series(dtype='object'),
         'rot': pd.Series(dtype='object'),
         'heading': pd.Series(dtype='object'),
-        'draught': pd.Series(dtype='float64')
+        'draught': pd.Series(dtype='float64'),
+        # Ship
+        'imo': pd.Series(dtype='int64'),
+        'mmsi': pd.Series(dtype='int64'),
+        'mobile_type': pd.Series(dtype='object'),
+        'ship_type': pd.Series(dtype='object'),
+        'ship_name': pd.Series(dtype='object'),
+        'ship_callsign': pd.Series(dtype='object'),
+        'a': pd.Series(dtype='float64'),
+        'b': pd.Series(dtype='float64'),
+        'c': pd.Series(dtype='float64'),
+        'd': pd.Series(dtype='float64')
+
     })
 
 # Outline
