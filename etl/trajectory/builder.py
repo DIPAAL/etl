@@ -5,6 +5,7 @@ from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
 from typing import Callable, Optional, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL
+from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, T_START_TIME_COL, T_START_DATE_COL, T_END_TIME_COL, T_END_DATE_COL
 
 SPEED_THRESHOLD_KNOTS=100
 
@@ -44,6 +45,8 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
 def _create_trajectory(mmsi: int, data: gpd.GeoDataFrame) -> pd.DataFrame:
     dataframe = _remove_outliers(dataframe=data)
+    # Reset the index as some rows might have been classified as outliers and removed
+    dataframe.reset_index(inplace=True)
 
     return _construct_moving_trajectory(mmsi, dataframe, 0)
         
@@ -58,7 +61,9 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
                 if (current_date - trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                     trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
-                    return pd.concat(trajectory, trajectories)
+                    return pd.concat([trajectory, trajectories])
+            else:
+                idx_cannot_handle = idx
         else:
             idx_cannot_handle = None
     
@@ -67,6 +72,10 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
 def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int, infer_stopped: bool) -> pd.DataFrame:
     to_idx -= 1 # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
+    # In the case that there is no points in a trajectory, return empty dataframe
+    if to_idx < from_idx:
+        return dataframe
+
     working_dataframe = trajectory_dataframe.truncate(before=from_idx, after=to_idx)
 
     trajectory = _convert_dataframe_to_trajectory(working_dataframe)
@@ -97,19 +106,19 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
-    imo = most_recuring[IMO_COL][0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
+    imo = most_recuring[IMO_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
 
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
-    mobile_type = most_recuring[POSITION_FIXING_DEVICE_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    mobile_type = most_recuring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
-    ship_type = most_recuring[SHIP_TYPE_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    ship_type = most_recuring[SHIP_TYPE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
-    ship_name = most_recuring[NAME_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    ship_name = most_recuring[NAME_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
-    ship_callsign = most_recuring[CALLSIGN_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    ship_callsign = most_recuring[CALLSIGN_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
     a = most_recuring[A_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
@@ -125,17 +134,17 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
 
     return pd.concat([dataframe, pd.Series(data={
-                                           'start_date_id': start_date_id, 'start_time_id': start_time_id,
-                                           'end_date_id':end_date_id, 'end_time_id':end_time_id,
-                                           'eta_date_id':eta_date_id, 'eta_time_id':eta_time_id,
-                                           'nav_status':nav_status, 'duration':duration,
-                                           'trajectory':trajectory, 'infer_stopped':infer_stopped,
-                                           'destination':destination, 'rot':rot,
-                                           'heading':heading, 'draught':draught,
-                                           'mmsi': mmsi, 'imo': imo,
-                                           'mobile_type': mobile_type, 'ship_type': ship_type,
-                                           'ship_name': ship_name, 'ship_callsign': ship_callsign,
-                                           'a': a, 'b': b, 'c': c, 'd': d
+                                           T_START_DATE_COL: start_date_id, T_START_TIME_COL: start_time_id,
+                                           T_END_DATE_COL: end_date_id, T_END_TIME_COL: end_time_id,
+                                           T_ETA_DATE_COL: eta_date_id, T_ETA_TIME_COL: eta_time_id,
+                                           T_NAVIGATIONAL_STATUS_COL: nav_status, T_DURATION_COL: duration,
+                                           T_TRAJECTORY_COL: trajectory, T_INFER_STOPPED_COL: infer_stopped,
+                                           T_DESTINATION_COL: destination, T_ROT_COL: rot,
+                                           T_HEADING_COL: heading, T_DRAUGHT_COL: draught,
+                                           T_MMSI_COL: mmsi, T_IMO_COL: imo,
+                                           T_MOBILE_TYPE_COL: mobile_type, T_SHIP_TYPE_COL: ship_type,
+                                           T_SHIP_NAME_COL: ship_name, T_SHIP_CALLSIGN_COL: ship_callsign,
+                                           T_A_COL: a, T_B_COL: b, T_C_COL: c, T_D_COL: d
                                         }).to_frame().T])
 
 def _extract_date_smart_id(datetime: datetime) -> int:
@@ -148,10 +157,10 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column:str) -> TFl
     tfloat_lst = []
     for _, row in dataframe.iterrows():
         mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT) + '+01'
-        float_val = row[float_column].astype(str)
+        float_val = str(row[float_column])
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
     
-    TFloatInstSet(*tfloat_lst)
+    return TFloatInstSet(*tfloat_lst)
 
 def _find_most_recuring(trajectory_dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
     return trajectory_dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
@@ -163,7 +172,7 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
         if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
-            return pd.concat(stopped_trajectory, trajectories)
+            return pd.concat([stopped_trajectory, trajectories])
 
     stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index), infer_stopped=True)
     return stopped_trajectory 
@@ -173,13 +182,14 @@ def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeo
     mobilitydb_dataframe[TIMESTAMP_COL] = trajectory_dataframe[TIMESTAMP_COL].apply(func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
     mobilitydb_dataframe[MBDB_TRAJECTORY_COL] = trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str) + '@' + mobilitydb_dataframe[TIMESTAMP_COL]
 
-    mobility_str = f"[{','.join(mobilitydb_dataframe['tgeompoint'])}]"
+    mobility_str = f"[{','.join(mobilitydb_dataframe[MBDB_TRAJECTORY_COL])}]"
 
     return TGeomPointSeq(mobility_str)
 
     
 def _rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
-    pandas_dataframe.drop(labels=GEO_PANDAS_GEOMETRY_COL, axis='columns', inplace=True)
+    if GEO_PANDAS_GEOMETRY_COL in pandas_dataframe.columns:
+        pandas_dataframe.drop(labels=GEO_PANDAS_GEOMETRY_COL, axis='columns', inplace=True)
     return gpd.GeoDataFrame(data=pandas_dataframe, geometry=gpd.points_from_xy(x=pandas_dataframe[LONGITUDE_COL], y=pandas_dataframe[LATITUDE_COL], crs=COORDINATE_REFERENCE_SYSTEM))
 
 
@@ -241,30 +251,30 @@ def _euclidian_dist(a_long:float, a_lat:float, b_long:float , b_lat:float) -> fl
 def _create_trajectory_db_df() -> pd.DataFrame:
     return pd.DataFrame({
         # Dimensions
-        'start_date_id': pd.Series(dtype='int64'),
-        'start_time_id': pd.Series(dtype='int64'),
-        'end_date_id': pd.Series(dtype='int64'),
-        'end_time_id': pd.Series(dtype='int64'),
-        'eta_date_id': pd.Series(dtype='int64'),
-        'eta_time_id': pd.Series(dtype='int64'),
-        'nav_status': pd.Series(dtype='object'),
+        T_START_DATE_COL: pd.Series(dtype='int64'),
+        T_START_TIME_COL: pd.Series(dtype='int64'),
+        T_END_DATE_COL: pd.Series(dtype='int64'),
+        T_END_TIME_COL: pd.Series(dtype='int64'),
+        T_ETA_DATE_COL: pd.Series(dtype='int64'),
+        T_ETA_TIME_COL: pd.Series(dtype='int64'),
+        T_NAVIGATIONAL_STATUS_COL: pd.Series(dtype='object'),
         # Measures
-        'duration': pd.Series(dtype='timedelta64[ns]'),
-        'trajectory': pd.Series(dtype='object'),
-        'infer_stopped': pd.Series(dtype='bool'),
-        'destination': pd.Series(dtype='object'),
-        'rot': pd.Series(dtype='object'),
-        'heading': pd.Series(dtype='object'),
-        'draught': pd.Series(dtype='float64'),
+        T_DURATION_COL: pd.Series(dtype='timedelta64[ns]'),
+        T_TRAJECTORY_COL: pd.Series(dtype='object'),
+        T_INFER_STOPPED_COL: pd.Series(dtype='bool'),
+        T_DESTINATION_COL: pd.Series(dtype='object'),
+        T_ROT_COL: pd.Series(dtype='object'),
+        T_HEADING_COL: pd.Series(dtype='object'),
+        T_DRAUGHT_COL: pd.Series(dtype='float64'),
         # Ship
-        'imo': pd.Series(dtype='int64'),
-        'mmsi': pd.Series(dtype='int64'),
-        'mobile_type': pd.Series(dtype='object'),
-        'ship_type': pd.Series(dtype='object'),
-        'ship_name': pd.Series(dtype='object'),
-        'ship_callsign': pd.Series(dtype='object'),
-        'a': pd.Series(dtype='float64'),
-        'b': pd.Series(dtype='float64'),
-        'c': pd.Series(dtype='float64'),
-        'd': pd.Series(dtype='float64')
+        T_IMO_COL: pd.Series(dtype='int64'),
+        T_MMSI_COL: pd.Series(dtype='int64'),
+        T_MOBILE_TYPE_COL: pd.Series(dtype='object'),
+        T_SHIP_TYPE_COL: pd.Series(dtype='object'),
+        T_SHIP_NAME_COL: pd.Series(dtype='object'),
+        T_SHIP_CALLSIGN_COL: pd.Series(dtype='object'),
+        T_A_COL: pd.Series(dtype='float64'),
+        T_B_COL: pd.Series(dtype='float64'),
+        T_C_COL: pd.Series(dtype='float64'),
+        T_D_COL: pd.Series(dtype='float64')
     })

@@ -5,23 +5,18 @@ import pandas.api.types as ptypes
 from datetime import datetime
 from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _PointCompare
 from etl.helper_functions import apply_datetime_if_not_none
-from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
+from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL
 
 CLEAN_DATA_CSV='tests/data/clean_df.csv'
-ANE_LAESOE_FERRY_DATA='tests/data/ferry.csv'
+ANE_LAESOE_FERRY_DATA='data/ferry.csv'
 
 
-def create_geopandas_dataframe() -> gpd.GeoDataFrame:
-    pandas_df = pd.read_csv(CLEAN_DATA_CSV)
+def create_geopandas_dataframe(data_file_path: str) -> gpd.GeoDataFrame:
+    pandas_df = pd.read_csv(data_file_path)
     pandas_df[TIMESTAMP_COL] = pandas_df[AIS_TIMESTAMP_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
     pandas_df[ETA_COL] = pandas_df[ETA_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
     pandas_df.drop(labels=[AIS_TIMESTAMP_COL], axis='columns', inplace=True)
     return _rebuild_to_geodataframe(pandas_dataframe=pandas_df)
-
-def test_builder():
-    gdf = create_geopandas_dataframe()
-    result_frame = build_from_geopandas(gdf)
-    print(result_frame)
 
 euclidean_testdata = [
     (0, 0, 0, 0, 0), # a_long, a_lat, b_long, b_lat, expected
@@ -40,11 +35,11 @@ def test_euclidian_dist(a_long, a_lat, b_long, b_lat, expected):
 
 def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
-    columns_dtype_int64 = ['start_date_id', 'start_time_id', 'end_date_id', 'end_time_id', 'eta_date_id', 'eta_time_id', 'imo', 'mmsi', ]
-    columns_dtype_float64 = ['draught', 'a', 'b', 'c', 'd']
-    columns_dtype_object = ['nav_status', 'trajectory', 'destination', 'rot', 'heading', 'mobile_type', 'ship_type', 'ship_name', 'ship_callsign']
-    columns_dtype_timedelta = ['duration']
-    columns_dtype_bool = ['infer_stopped']
+    columns_dtype_int64 = [T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL ]
+    columns_dtype_float64 = [T_DRAUGHT_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL]
+    columns_dtype_object = [T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL]
+    columns_dtype_timedelta = [T_DURATION_COL]
+    columns_dtype_bool = [T_INFER_STOPPED_COL]
 
     assert all([ptypes.is_int64_dtype(test_df[col]) for col in columns_dtype_int64])
     assert all([ptypes.is_float_dtype(test_df[col]) for col in columns_dtype_float64])
@@ -77,7 +72,25 @@ test_data_is_outlier = [
         (_PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), _PointCompare(pointcompare_to_pd_series(56.8079,11.7168, "07/09/2021 00:00:00", 2.5)), 100, _euclidian_dist, True), #All is well
         ]
 
-@pytest.mark.parametrize("prev_point, curr_point, speed_tresshold, distance_func, expected", test_data_is_outlier)
-def test_check_outlier(prev_point, curr_point, speed_tresshold, distance_func, expected):
-    assert _check_outlier(prev_point, curr_point, speed_tresshold, distance_func) == expected
+@pytest.mark.parametrize("prev_point, curr_point, speed_threshold, distance_func, expected", test_data_is_outlier)
+def test_check_outlier(prev_point, curr_point, speed_threshold, distance_func, expected):
+    assert _check_outlier(prev_point, curr_point, speed_threshold, distance_func) == expected
 
+def test_trajectory_construction_on_single_ferry():
+    ferry_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
+    expected_sailing_trajectories = 1 # Between ports
+    expected_stopped_trajectories = 2 # At port
+    expected_number_of_trajectories = expected_sailing_trajectories + expected_stopped_trajectories
+
+    result_dataframe = build_from_geopandas(ferry_dataframe)
+
+    assert expected_number_of_trajectories == len(result_dataframe.index)
+    stopped_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] == True]
+    assert expected_stopped_trajectories == len(stopped_result.index)
+    sailing_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] == False]
+    assert expected_sailing_trajectories == len(sailing_result.index)
+
+    expected_unique_imo = 1
+    exåected_unique_mmsi = 1
+    assert expected_unique_imo == result_dataframe[T_IMO_COL].nunique()
+    assert exåected_unique_mmsi == result_dataframe[T_MMSI_COL].nunique()
