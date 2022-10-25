@@ -1,10 +1,10 @@
 import geopandas as gpd
 import pandas as pd
-from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, Optional, List
-from etl.cleaning.clean_data import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT
 import math
 from datetime import datetime
+from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
+from typing import Callable, Optional, List
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL
 
 SPEED_THRESHOLD_KNOTS=100
 
@@ -21,10 +21,10 @@ UNKNOWN_FLOAT_VALUE = -1.0
 
 class _PointCompare:
     def __init__(self, row: gpd.GeoDataFrame) -> None:
-        self.long = row['Longitude']
-        self.lat = row['Latitude']
-        self.time = row['Timestamp']
-        self.speed_over_ground = row['SOG']
+        self.long = row[LONGITUDE_COL]
+        self.lat = row[LATITUDE_COL]
+        self.time = row[TIMESTAMP_COL]
+        self.speed_over_ground = row[SOG_COL]
         
     def get_long(self): return self.long
     def get_lat(self): return self.lat
@@ -33,7 +33,7 @@ class _PointCompare:
 
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
-    grouped_data = clean_sorted_ais.groupby(by='MMSI')
+    grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
     result_frames = []
     for mmsi, ship_data in grouped_data:
@@ -52,10 +52,10 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
         
-        if row['SOG'] < STOPPED_KNOTS_THRESHOLD:
+        if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
             if idx_cannot_handle is not None:
-                current_date = row['Timestamp']
-                if (current_date - trajectory_dataframe.iloc[idx_cannot_handle]['Timestamp']).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                current_date = row[TIMESTAMP_COL]
+                if (current_date - trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                     trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat(trajectory, trajectories)
@@ -70,16 +70,16 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     working_dataframe = trajectory_dataframe.truncate(before=from_idx, after=to_idx)
 
     trajectory = _convert_dataframe_to_trajectory(working_dataframe)
-    start_datetime = trajectory_dataframe.iloc[from_idx]['Timestamp']
-    end_datetime = trajectory_dataframe.iloc[to_idx]['Timestamp']
+    start_datetime = trajectory_dataframe.iloc[from_idx][TIMESTAMP_COL]
+    end_datetime = trajectory_dataframe.iloc[to_idx][TIMESTAMP_COL]
 
     # Groupby: eta, nav_status, draught, destination
-    column_subset = ['ETA', 'Navigational status', 'Draught', 'Destination']
+    column_subset = [ETA_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, DESTINATION_COL]
     sorted_series_by_frequency = _find_most_recuring(working_dataframe, column_subset=column_subset, drop_na = False)
-    eta = sorted_series_by_frequency['ETA'][0]
-    nav_status = sorted_series_by_frequency['Navigational status'][0]
-    draught = sorted_series_by_frequency['Draught'][0]
-    destination = sorted_series_by_frequency['Destination'][0]
+    eta = sorted_series_by_frequency[ETA_COL][0]
+    nav_status = sorted_series_by_frequency[NAVIGATIONAL_STATUS_COL][0]
+    draught = sorted_series_by_frequency[DRAUGHT_COL][0]
+    destination = sorted_series_by_frequency[DESTINATION_COL][0]
 
     # Split eta, start_datetime, and end_datetime and create their smart keys
     eta_date_id = _extract_date_smart_id(eta)
@@ -90,38 +90,38 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     end_time_id = _extract_time_smart_id(end_datetime)
 
     duration = end_datetime - start_datetime
-    rot = _tfloat_from_dataframe(working_dataframe, 'ROT')
-    heading = _tfloat_from_dataframe(working_dataframe, 'Heading')
+    rot = _tfloat_from_dataframe(working_dataframe, ROT_COL)
+    heading = _tfloat_from_dataframe(working_dataframe, HEADING_COL)
 
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['IMO'], drop_na=True)
-    imo = most_recuring['IMO'][0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
+    imo = most_recuring[IMO_COL][0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Type of position fixing device'], drop_na=True)
-    mobile_type = most_recuring['Type of position fixing device'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
+    mobile_type = most_recuring[POSITION_FIXING_DEVICE_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Ship type'], drop_na=True)
-    ship_type = most_recuring['Ship type'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
+    ship_type = most_recuring[SHIP_TYPE_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Name'], drop_na=True)
-    ship_name = most_recuring['Name'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
+    ship_name = most_recuring[NAME_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['Callsign'], drop_na=True)
-    ship_callsign = most_recuring['Callsign'][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
+    ship_callsign = most_recuring[CALLSIGN_COL][0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['A'], drop_na=True)
-    a = most_recuring['A'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
+    a = most_recuring[A_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['B'], drop_na=True)
-    b = most_recuring['B'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[B_COL], drop_na=True)
+    b = most_recuring[B_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['C'], drop_na=True)
-    c = most_recuring['C'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[C_COL], drop_na=True)
+    c = most_recuring[C_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=['D'], drop_na=True)
-    d = most_recuring['D'].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
+    d = most_recuring[D_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
 
     return pd.concat([dataframe, pd.Series(data={
@@ -147,7 +147,7 @@ def _extract_time_smart_id(datetime: datetime) -> int:
 def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column:str) -> TFloatInstSet:
     tfloat_lst = []
     for _, row in dataframe.iterrows():
-        mobilitydb_timestamp = row['Timestamp'].strftime(MOBILITYDB_TIMESTAMP_FORMAT) + '+01'
+        mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT) + '+01'
         float_val = row[float_column].astype(str)
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
     
@@ -160,7 +160,7 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
-        if row['SOG'] >= STOPPED_KNOTS_THRESHOLD:
+        if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat(stopped_trajectory, trajectories)
@@ -169,9 +169,9 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
     return stopped_trajectory 
 
 def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeomPointSeq:
-    mobilitydb_dataframe = pd.DataFrame(columns=['tgeompoint'])
-    mobilitydb_dataframe['Timestamp'] = trajectory_dataframe['Timestamp'].apply(func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
-    mobilitydb_dataframe['tgeompoint'] = trajectory_dataframe['geometry'].astype(str) + '@' + mobilitydb_dataframe['Timestamp']
+    mobilitydb_dataframe = pd.DataFrame(columns=[MBDB_TRAJECTORY_COL])
+    mobilitydb_dataframe[TIMESTAMP_COL] = trajectory_dataframe[TIMESTAMP_COL].apply(func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
+    mobilitydb_dataframe[MBDB_TRAJECTORY_COL] = trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str) + '@' + mobilitydb_dataframe[TIMESTAMP_COL]
 
     mobility_str = f"[{','.join(mobilitydb_dataframe['tgeompoint'])}]"
 
@@ -179,8 +179,8 @@ def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeo
 
     
 def _rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
-    pandas_dataframe.drop(labels='geometry', axis='columns', inplace=True)
-    return gpd.GeoDataFrame(data=pandas_dataframe, geometry=gpd.points_from_xy(x=pandas_dataframe['Longitude'], y=pandas_dataframe['Latitude'], crs=COORDINATE_REFERENCE_SYSTEM))
+    pandas_dataframe.drop(labels=GEO_PANDAS_GEOMETRY_COL, axis='columns', inplace=True)
+    return gpd.GeoDataFrame(data=pandas_dataframe, geometry=gpd.points_from_xy(x=pandas_dataframe[LONGITUDE_COL], y=pandas_dataframe[LATITUDE_COL], crs=COORDINATE_REFERENCE_SYSTEM))
 
 
 def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -224,14 +224,10 @@ def _check_outlier(cur_point: _PointCompare, prev_point: _PointCompare, speed_th
     
     computed_speed = distance/time_delta.seconds # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
-    #print(f'Distance in meters={distance}')
-    #print(f'Calculated speed={speed}')
 
     # The other group uses SOG if the absolute difference is above a threshold
     if abs((cur_point.get_sog() - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
         speed = cur_point.get_sog()
-
-    #print(f'Used speed={speed}')
 
     if speed > speed_threshold:
         return True
@@ -271,30 +267,4 @@ def _create_trajectory_db_df() -> pd.DataFrame:
         'b': pd.Series(dtype='float64'),
         'c': pd.Series(dtype='float64'),
         'd': pd.Series(dtype='float64')
-
     })
-
-# Outline
-#   Group on the MMSI to get all the data points for a single ship (Done)
-#   Construct a trajectory by looping through the data (Done)
-#   Remove outliers if to far away from prevous point (Distance Function) (Done)
-#   Detect whether a part of a trajectory is stopped or is sailing
-
-
-# Structure in Database
-#   ship_id integer NOT NULL,
-#   start_date_id integer NOT NULL,
-#   start_time_id integer NOT NULL,
-#   end_date_id integer NOT NULL,
-#   end_time_id integer NOT NULL,
-#   eta_date_id integer NOT NULL,
-#   eta_time_id integer NOT NULL,
-#   nav_status_id smallint NOT NULL,
-#   
-#   duration interval NOT NULL,
-#   trajectory tgeompoint NOT NULL,
-#   infer_stopped boolean NOT NULL,
-#   destination text NOT NULL,
-#   rot tfloat NOT NULL,
-#   heading tfloat NOT NULL,
-#   draught float NOT NULL,

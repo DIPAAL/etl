@@ -1,22 +1,21 @@
 import pytest
-from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, CVS_TIMESTAMP_FORMAT, COORDINATE_REFERENCE_SYSTEM, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _PointCompare
 import geopandas as gpd
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
+from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _PointCompare
 from etl.helper_functions import apply_datetime_if_not_none
+from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
 
 CLEAN_DATA_CSV='tests/data/clean_df.csv'
 ANE_LAESOE_FERRY_DATA='tests/data/ferry.csv'
 
 
-
-
 def create_geopandas_dataframe() -> gpd.GeoDataFrame:
     pandas_df = pd.read_csv(CLEAN_DATA_CSV)
-    pandas_df['Timestamp'] = pandas_df['# Timestamp'].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
-    pandas_df['ETA'] = pandas_df['ETA'].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
-    pandas_df.drop(labels=['# Timestamp'], axis='columns', inplace=True)
+    pandas_df[TIMESTAMP_COL] = pandas_df[AIS_TIMESTAMP_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
+    pandas_df[ETA_COL] = pandas_df[ETA_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
+    pandas_df.drop(labels=[AIS_TIMESTAMP_COL], axis='columns', inplace=True)
     return _rebuild_to_geodataframe(pandas_dataframe=pandas_df)
 
 def test_builder():
@@ -65,10 +64,10 @@ def test_PointCompare():
 def pointcompare_to_pd_series(long:float, lat:float, timestamp:str, sog:float):
 
     test_frame = pd.DataFrame(data={
-        'Longitude': pd.Series(data=long, dtype='float64'),
-        'Latitude': pd.Series(data=lat, dtype='float64'),
-        'Timestamp': pd.Series(data=datetime.strptime(timestamp, CVS_TIMESTAMP_FORMAT), dtype='object'),
-        'SOG': pd.Series(data=sog, dtype='float64')
+        LONGITUDE_COL: pd.Series(data=long, dtype='float64'),
+        LATITUDE_COL: pd.Series(data=lat, dtype='float64'),
+        TIMESTAMP_COL: pd.Series(data=datetime.strptime(timestamp, CVS_TIMESTAMP_FORMAT), dtype='object'),
+        SOG_COL: pd.Series(data=sog, dtype='float64')
     })
     return test_frame.iloc[0]
 
