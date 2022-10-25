@@ -105,31 +105,31 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
     imo = most_recuring[IMO_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
     mobile_type = most_recuring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
     ship_type = most_recuring[SHIP_TYPE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
     ship_name = most_recuring[NAME_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
     ship_callsign = most_recuring[CALLSIGN_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
     a = most_recuring[A_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[B_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[B_COL], drop_na=True)
     b = most_recuring[B_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[C_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[C_COL], drop_na=True)
     c = most_recuring[C_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(trajectory_dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
+    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
     d = most_recuring[D_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
 
 
@@ -162,8 +162,8 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column:str) -> TFl
     
     return TFloatInstSet(*tfloat_lst)
 
-def _find_most_recuring(trajectory_dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
-    return trajectory_dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
+def _find_most_recuring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
+    return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     for idx in range(from_idx, len(trajectory_dataframe.index)):
