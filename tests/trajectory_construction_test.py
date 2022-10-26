@@ -56,7 +56,7 @@ def to_minimal_outlier_detection_frame(long:float, lat:float, timestamp:str, sog
     })
     geo_test_frame = gpd.GeoDataFrame(data=test_frame, geometry=gpd.points_from_xy(x=test_frame[LONGITUDE_COL], y=test_frame[LONGITUDE_COL], crs=COORDINATE_REFERENCE_SYSTEM))
 
-    return geo_test_frame.iloc[0]
+    return geo_test_frame.iloc[[0]]
 
 test_data_is_outlier = [
         (to_minimal_outlier_detection_frame(56.8079,11.7168, '07/09/2021 00:00:00', 2.5), to_minimal_outlier_detection_frame(55.8079,10.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True), #Same timestammp

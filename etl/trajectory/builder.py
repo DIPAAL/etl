@@ -185,21 +185,21 @@ def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
     result_dataframe = pd.DataFrame(columns=dataframe.columns)
 
     for idx in range(0, len(dataframe.index)):
-        row = dataframe.iloc[idx]
+        row = dataframe.iloc[[idx]]
 
         if prev_row is None: # this is the first point
             prev_row = row
-            result_dataframe = pd.concat([result_dataframe, row.to_frame().T])
+            result_dataframe = pd.concat([result_dataframe, row])
             continue
 
 
         if not _check_outlier(cur_point=row, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS, dist_func=_euclidian_dist):
             prev_row = row
-            result_dataframe = pd.concat([result_dataframe, row.to_frame().T])
+            result_dataframe = pd.concat([result_dataframe, row])
 
     return _rebuild_to_geodataframe(result_dataframe)
 
-def _check_outlier(cur_point: gpd.GeoSeries, prev_point: gpd.GeoSeries, speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
+def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Checks whether the distance between two points, given the provided distance function and threshold, is an outlier
         cur_point: Point as the geopandas row
@@ -209,22 +209,22 @@ def _check_outlier(cur_point: gpd.GeoSeries, prev_point: gpd.GeoSeries, speed_th
 
         Returns: A bool indicating that an outlier is detected
     """
-    cur_point_converted_long_lat = cur_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)[GEO_PANDAS_GEOMETRY_COL]
-    prev_point_converted_long_lat = prev_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)[GEO_PANDAS_GEOMETRY_COL]
+    cur_point_converted_long_lat = cur_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)
+    prev_point_converted_long_lat = prev_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)
     
-    time_delta = cur_point[TIMESTAMP_COL] - prev_point[TIMESTAMP_COL]
+    time_delta = cur_point[TIMESTAMP_COL].iloc[0] - prev_point[TIMESTAMP_COL].iloc[0]
     # Previous and current point is in the same timestamp, detect it as an outlier
     if time_delta.seconds == 0:
         return True
 
-    distance = dist_func(cur_point_converted_long_lat.x, cur_point_converted_long_lat.y, prev_point_converted_long_lat.x, prev_point_converted_long_lat.y)
+    distance = dist_func(cur_point_converted_long_lat[GEO_PANDAS_GEOMETRY_COL].iloc[0].x, cur_point_converted_long_lat[GEO_PANDAS_GEOMETRY_COL].iloc[0].y, prev_point_converted_long_lat[GEO_PANDAS_GEOMETRY_COL].iloc[0].x, prev_point_converted_long_lat[GEO_PANDAS_GEOMETRY_COL].iloc[0].y)
     
     computed_speed = distance/time_delta.seconds # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
 
     # The other group uses SOG if the absolute difference is above a threshold
-    if abs((cur_point.get_sog() - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
-        speed = cur_point.get_sog()
+    if abs((cur_point[SOG_COL].iloc[0] - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
+        speed = cur_point[SOG_COL].iloc[0]
 
     if speed > speed_threshold:
         return True
