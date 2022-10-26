@@ -20,19 +20,6 @@ UNKNOWN_STRING_VALUE = 'Unknown'
 UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
 
-class _PointCompare:
-    def __init__(self, row: pd.Series) -> None:
-        self.long = row[LONGITUDE_COL]
-        self.lat = row[LATITUDE_COL]
-        self.time = row[TIMESTAMP_COL]
-        self.speed_over_ground = row[SOG_COL]
-        
-    def get_long(self): return self.long
-    def get_lat(self): return self.lat
-    def get_time(self): return self.time
-    def get_sog(self): return self.speed_over_ground
-
-
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
@@ -206,26 +193,26 @@ def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
             continue
 
 
-        if not _check_outlier(cur_point=_PointCompare(row), prev_point=_PointCompare(prev_row), speed_threshold=SPEED_THRESHOLD_KNOTS, dist_func=_euclidian_dist):
+        if not _check_outlier(cur_point=row, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS, dist_func=_euclidian_dist):
             prev_row = row
             result_dataframe = pd.concat([result_dataframe, row.to_frame().T])
 
     return _rebuild_to_geodataframe(result_dataframe)
 
-def _check_outlier(cur_point: _PointCompare, prev_point: _PointCompare, speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
+def _check_outlier(cur_point: gpd.GeoSeries, prev_point: gpd.GeoSeries, speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Checks whether the distance between two points, given the provided distance function and threshold, is an outlier
-        cur_point: Point as a _PointCompare object
-        prev_point: Point as a _PointCompare object
+        cur_point: Point as the geopandas row
+        prev_point: Point as the geopandas row
         dist_threshold: Threshold distance which determines whether distance between the points indicates an outlier
         dist_function: A distance function that takes in 4 parameters (cur_long, cur_lat, prev_long, prev_lat) and returns the distance between the points
 
         Returns: A bool indicating that an outlier is detected
     """
-    cur_point_converted_long_lat = gpd.points_from_xy(x=[cur_point.get_long()], y=[cur_point.get_lat()], crs=COORDINATE_REFERENCE_SYSTEM_METERS)
-    prev_point_converted_long_lat = gpd.points_from_xy(x=[prev_point.get_long()], y=[prev_point.get_lat()], crs=COORDINATE_REFERENCE_SYSTEM_METERS)
+    cur_point_converted_long_lat = cur_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)[GEO_PANDAS_GEOMETRY_COL]
+    prev_point_converted_long_lat = prev_point.to_crs(crs=COORDINATE_REFERENCE_SYSTEM_METERS)[GEO_PANDAS_GEOMETRY_COL]
     
-    time_delta = cur_point.get_time() - prev_point.get_time()
+    time_delta = cur_point[TIMESTAMP_COL] - prev_point[TIMESTAMP_COL]
     # Previous and current point is in the same timestamp, detect it as an outlier
     if time_delta.seconds == 0:
         return True
