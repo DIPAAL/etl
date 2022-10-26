@@ -16,6 +16,7 @@ COMPUTED_VS_SOG_KNOTS_THRESHOLD=2
 STOPPED_KNOTS_THRESHOLD=0.5
 STOPPED_TIME_SECONDS_THRESHOLD=5*60 # 5 minutes
 SPLIT_GAP_SECONDS_THRESHOLD=5*60 # 5 minutes
+POINTS_FOR_TRAJECTORY_THRESHOLD=2 # P=2
 UNKNOWN_STRING_VALUE = 'Unknown'
 UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
@@ -59,8 +60,8 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
 def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int, infer_stopped: bool) -> pd.DataFrame:
     to_idx -= 1 # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
-    # In the case that there is no points in a trajectory, return empty dataframe
-    if to_idx < from_idx:
+    # In the case that there is no points in a trajectory or number of points are less than threshold, return empty dataframe
+    if (to_idx < from_idx) or ((to_idx - from_idx + 1) <= POINTS_FOR_TRAJECTORY_THRESHOLD) :
         return dataframe
 
     working_dataframe = trajectory_dataframe.truncate(before=from_idx, after=to_idx)

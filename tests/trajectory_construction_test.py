@@ -3,7 +3,7 @@ import geopandas as gpd
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
-from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring
+from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
 from etl.helper_functions import apply_datetime_if_not_none
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL
@@ -153,3 +153,39 @@ def test_find_most_recuring_only_subset():
 
     with pytest.raises(ValueError):
         result = _find_most_recurring(dataframe=test_frame, column_subset=[], drop_na=False)
+
+
+def test_point_to_trajectory_threshold_under_returns_empty_frame():
+    from_idx = 4
+    to_idx = 6
+    assert to_idx - from_idx == POINTS_FOR_TRAJECTORY_THRESHOLD
+    expected_dataframe_size = 0
+
+    result_dataframe = _finalize_trajectory(mmsi=0, trajectory_dataframe=None, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
+
+    assert expected_dataframe_size == len(result_dataframe.index)
+
+def test_point_to_trajectory_threshold_on_threshold_returns_trajectory():
+
+    from_idx = 0
+    to_idx = 3
+    test_mmsi = 219000734
+    test_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
+    test_dataframe = test_dataframe.iloc[from_idx:to_idx]
+    expected_dataframe_size = 1
+
+    result_frame = _finalize_trajectory(mmsi=test_mmsi, trajectory_dataframe=test_dataframe, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
+
+    assert expected_dataframe_size == len(result_frame.index)
+
+def test_point_to_trajectory_threshold_above_threshold_returns_trajectory():
+    from_idx = 0
+    to_idx = 3
+    test_mmsi = 219000734
+    test_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
+    test_dataframe = test_dataframe.iloc[from_idx:to_idx]
+    expected_dataframe_size = 1
+
+    result_frame = _finalize_trajectory(mmsi=test_mmsi, trajectory_dataframe=test_dataframe, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
+
+    assert expected_dataframe_size == len(result_frame.index)
