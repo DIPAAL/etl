@@ -157,30 +157,31 @@ def test_find_most_recuring_only_subset():
 
 def test_point_to_trajectory_threshold_under_returns_empty_frame():
     from_idx = 4
-    to_idx = 6
-    assert to_idx - from_idx == POINTS_FOR_TRAJECTORY_THRESHOLD
+    to_idx = 5
+    assert to_idx - from_idx < POINTS_FOR_TRAJECTORY_THRESHOLD
+    test_mmsi = 0
     expected_dataframe_size = 0
 
-    result_dataframe = _finalize_trajectory(mmsi=0, trajectory_dataframe=None, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
+    result_dataframe = _finalize_trajectory(mmsi=test_mmsi, trajectory_dataframe=None, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
 
     assert expected_dataframe_size == len(result_dataframe.index)
 
-def test_point_to_trajectory_threshold_on_threshold_returns_trajectory():
+def test_point_to_trajectory_threshold_on_returns_empty_frame():
 
     from_idx = 0
-    to_idx = 3
+    to_idx = 2
+    assert to_idx - from_idx == POINTS_FOR_TRAJECTORY_THRESHOLD
     test_mmsi = 219000734
-    test_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
-    test_dataframe = test_dataframe.iloc[from_idx:to_idx]
-    expected_dataframe_size = 1
+    expected_dataframe_size = 0
 
-    result_frame = _finalize_trajectory(mmsi=test_mmsi, trajectory_dataframe=test_dataframe, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
+    result_frame = _finalize_trajectory(mmsi=test_mmsi, trajectory_dataframe=None, from_idx=from_idx, to_idx=to_idx, infer_stopped=False)
 
     assert expected_dataframe_size == len(result_frame.index)
 
-def test_point_to_trajectory_threshold_above_threshold_returns_trajectory():
+def test_point_to_trajectory_threshold_above_returns_trajectory():
     from_idx = 0
-    to_idx = 3
+    to_idx = 10
+    assert to_idx - from_idx > POINTS_FOR_TRAJECTORY_THRESHOLD
     test_mmsi = 219000734
     test_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
     test_dataframe = test_dataframe.iloc[from_idx:to_idx]
