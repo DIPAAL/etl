@@ -21,7 +21,7 @@ UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
 
 class _PointCompare:
-    def __init__(self, row: gpd.GeoDataFrame) -> None:
+    def __init__(self, row: pd.Series) -> None:
         self.long = row[LONGITUDE_COL]
         self.lat = row[LATITUDE_COL]
         self.time = row[TIMESTAMP_COL]
@@ -43,7 +43,7 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
     return pd.concat(result_frames)
 
-def _create_trajectory(mmsi: int, data: gpd.GeoDataFrame) -> pd.DataFrame:
+def _create_trajectory(mmsi: int, data: pd.DataFrame) -> pd.DataFrame:
     dataframe = _remove_outliers(dataframe=data)
     # Reset the index as some rows might have been classified as outliers and removed
     dataframe.reset_index(inplace=True)
@@ -84,7 +84,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
     # Groupby: eta, nav_status, draught, destination
     column_subset = [ETA_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, DESTINATION_COL]
-    sorted_series_by_frequency = _find_most_recuring(working_dataframe, column_subset=column_subset, drop_na = False)
+    sorted_series_by_frequency = _find_most_recurring(working_dataframe, column_subset=column_subset, drop_na = False)
     eta = sorted_series_by_frequency[ETA_COL][0]
     nav_status = sorted_series_by_frequency[NAVIGATIONAL_STATUS_COL][0]
     draught = sorted_series_by_frequency[DRAUGHT_COL][0]
@@ -105,32 +105,32 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
-    imo = most_recuring[IMO_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_INT_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
+    imo = most_recurring[IMO_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_INT_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
-    mobile_type = most_recuring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL], drop_na=True)
+    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
-    ship_type = most_recuring[SHIP_TYPE_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
+    ship_type = most_recurring[SHIP_TYPE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
-    ship_name = most_recuring[NAME_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
+    ship_name = most_recurring[NAME_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
-    ship_callsign = most_recuring[CALLSIGN_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_STRING_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
+    ship_callsign = most_recurring[CALLSIGN_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
-    a = most_recuring[A_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
+    a = most_recurring[A_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[B_COL], drop_na=True)
-    b = most_recuring[B_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[B_COL], drop_na=True)
+    b = most_recurring[B_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[C_COL], drop_na=True)
-    c = most_recuring[C_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[C_COL], drop_na=True)
+    c = most_recurring[C_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    most_recuring = _find_most_recuring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
-    d = most_recuring[D_COL].iloc[0] if most_recuring.size != 0 else UNKNOWN_FLOAT_VALUE
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
+    d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
 
     return pd.concat([dataframe, pd.Series(data={
@@ -162,7 +162,7 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column:str) -> TFl
     
     return TFloatInstSet(*tfloat_lst)
 
-def _find_most_recuring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
+def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
@@ -193,7 +193,7 @@ def _rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame
     return gpd.GeoDataFrame(data=pandas_dataframe, geometry=gpd.points_from_xy(x=pandas_dataframe[LONGITUDE_COL], y=pandas_dataframe[LATITUDE_COL], crs=COORDINATE_REFERENCE_SYSTEM))
 
 
-def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
     prev_row: Optional[pd.Series] = None
     result_dataframe = pd.DataFrame(columns=dataframe.columns)
 
@@ -205,7 +205,7 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             result_dataframe = pd.concat([result_dataframe, row.to_frame().T])
             continue
 
-        
+
         if not _check_outlier(cur_point=_PointCompare(row), prev_point=_PointCompare(prev_row), speed_threshold=SPEED_THRESHOLD_KNOTS, dist_func=_euclidian_dist):
             prev_row = row
             result_dataframe = pd.concat([result_dataframe, row.to_frame().T])

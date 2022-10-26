@@ -3,7 +3,7 @@ import geopandas as gpd
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
-from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _PointCompare, _extract_date_smart_id, _extract_time_smart_id, _find_most_recuring
+from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _PointCompare, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring
 from etl.helper_functions import apply_datetime_if_not_none
 from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL
@@ -140,10 +140,10 @@ def test_find_most_recuring_drops_na():
         COL_2: pd.Series(data=[True, False, pd.NA, False, True])
     })
 
-    result = _find_most_recuring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=True)
+    result = _find_most_recurring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=True)
     assert len(result.index) == expected_with_dropping_entries
 
-    result = _find_most_recuring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=False)
+    result = _find_most_recurring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=False)
     assert len(result.index) == expected_without_dropping_entries
 
 def test_find_most_recuring_only_subset():
@@ -155,13 +155,13 @@ def test_find_most_recuring_only_subset():
         COL_2: pd.Series(data=[True, False, True, False, True])
     })
 
-    result = _find_most_recuring(dataframe=test_frame, column_subset=[COL_2], drop_na=False)
+    result = _find_most_recurring(dataframe=test_frame, column_subset=[COL_2], drop_na=False)
     assert COL_1 not in result.columns
     assert COL_2 in result.columns
 
-    result = _find_most_recuring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=False)
+    result = _find_most_recurring(dataframe=test_frame, column_subset=[COL_1, COL_2], drop_na=False)
     assert COL_1 in result.columns
     assert COL_2 in result.columns
 
     with pytest.raises(ValueError):
-        result = _find_most_recuring(dataframe=test_frame, column_subset=[], drop_na=False)
+        result = _find_most_recurring(dataframe=test_frame, column_subset=[], drop_na=False)
