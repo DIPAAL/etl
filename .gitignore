@@ -12,6 +12,7 @@ __pycache__/
 # Folder for gitlab-ci-local (run pipeline locally)
 .gitlab-ci-local
 
-# Testing and coverage
+# Code coverage reports
+p_coverage.xml
+p_result.xml
 .coverage
-coverage.xml

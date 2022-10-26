@@ -74,5 +74,5 @@ pytest:
       coverage_report:
         coverage_format: cobertura
         path: p_coverage.xml
-      junit: p_result.xml 
+      junit: p_result.xml
     expire_in: "1 week"
