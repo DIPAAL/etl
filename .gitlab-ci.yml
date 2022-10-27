@@ -85,8 +85,6 @@ flake8:
     - docker:dind
   script:
     - echo ${FULL_TAG}
-    - echo $(docker run --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate) >> codeclimate.json
-    - docker cp test_runner-${CI_PIPELINE_ID}:/python/codeclimate.json ./
-    - docker rm test_runner-${CI_PIPELINE_ID}
+    - echo $(docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate) >> codeclimate.json
   artifacts:
       paths: [codeclimate.json]
