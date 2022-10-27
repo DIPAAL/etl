@@ -76,3 +76,12 @@ pytest:
         path: p_coverage.xml
       junit: p_result.xml
     expire_in: "1 week"
+
+flake8:
+  stage: test
+  image: docker:latest
+  needs: [build-push]
+  services:
+    - docker:dind
+  script:
+    - docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8
