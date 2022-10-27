@@ -3,6 +3,9 @@ stages:
   - test
   - deploy
 
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
 variables:
   CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH
   DOCKER_BUILD_ENVFILE: .tmp/${CI_JOB_NAME}-build.env
@@ -84,8 +87,14 @@ flake8:
   services:
     - docker:dind
   script:
-    - echo ${FULL_TAG}
     - echo $(docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate) >> codeclimate.json
   artifacts:
     reports:
       codequality: codeclimate.json
+
+cs-fix:
+  script:
+    - python -m autopep8 --in-place --aggressive --recursive .
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+  
