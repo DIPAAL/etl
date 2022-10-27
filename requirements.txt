@@ -16,4 +16,4 @@ clint==0.5.1
 wget==3.2
 patool==1.12
 flake8==5.0.4
-flake8-codeclimate
+autopep8==1.7.0

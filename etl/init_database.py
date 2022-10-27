@@ -13,12 +13,16 @@ def setup_citus_instance(host, config):
     conn.set_session(autocommit=True)
     run_sql_file_with_timings('etl/init/citus_ready.sql', config, conn)
 
+
 def setup_citus_instances(config):
     hosts = config['Database']['worker_connection_hosts'].split(',')
     hosts.append(config['Database']['host'])
     for host in hosts:
-        wrap_with_timings(f"Setup worker {host}", lambda: setup_citus_instance(host, config))
-
+        wrap_with_timings(
+            f"Setup worker {host}",
+            lambda: setup_citus_instance(
+                host,
+                config))
 
 
 def setup_master(config):
@@ -35,11 +39,13 @@ def create_fact_partitions(config):
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     # create monthly partitions for fact table for each dim_date
-    cur.execute("SELECT DISTINCT year, month_of_year FROM dim_date ORDER BY year, month_of_year;")
+    cur.execute(
+        "SELECT DISTINCT year, month_of_year FROM dim_date ORDER BY year, month_of_year;")
     for date in cur.fetchall():
         year, month = date
         smart_key = int(f"{year}{month}00")
-        # add 99 to the smart key, as the last two digits are reserved for the day
+        # add 99 to the smart key, as the last two digits are reserved for the
+        # day
         cur.execute(f"""
             CREATE TABLE fact_trajectory_{year}_{month}
             PARTITION OF fact_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
@@ -55,4 +61,6 @@ def init_database(config):
     setup_citus_instances(config)
     setup_master(config)
     run_sql_folder_with_timings('etl/init/sql', config)
-    wrap_with_timings("Creating fact partitions", lambda: create_fact_partitions(config))
+    wrap_with_timings(
+        "Creating fact partitions",
+        lambda: create_fact_partitions(config))

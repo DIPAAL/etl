@@ -27,10 +27,22 @@ def main(argv):
     config = get_config()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--init", help="Initialize database", action="store_true")
-    parser.add_argument("--load", help="Perform loading of the dates", action="store_true")
-    parser.add_argument("--clean", help="Clean the given AIS data file", action="store_true")
-    parser.add_argument("--date", help="The date to load, in the format YYYY-MM-DD, for example 2022-12-31", type=str)
+    parser.add_argument(
+        "--init",
+        help="Initialize database",
+        action="store_true")
+    parser.add_argument(
+        "--load",
+        help="Perform loading of the dates",
+        action="store_true")
+    parser.add_argument(
+        "--clean",
+        help="Clean the given AIS data file",
+        action="store_true")
+    parser.add_argument(
+        "--date",
+        help="The date to load, in the format YYYY-MM-DD, for example 2022-12-31",
+        type=str)
 
     args = parser.parse_args()
 
@@ -40,8 +52,16 @@ def main(argv):
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
-        file_path = wrap_with_timings("Ensuring file for current date exists", ensure_file_for_date(date, config))
-        wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
+        file_path = wrap_with_timings(
+            "Ensuring file for current date exists",
+            ensure_file_for_date(
+                date,
+                config))
+        wrap_with_timings(
+            "Data Cleaning",
+            lambda: clean_data(
+                config,
+                file_path))
 
 
 if __name__ == '__main__':

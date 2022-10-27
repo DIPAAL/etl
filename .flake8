@@ -1,0 +1,3 @@
+[flake8]
+exclude = .gitlab-ci-local,.git,__pycache__,venv,.venv
+max-complexity=5

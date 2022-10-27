@@ -1,6 +1,6 @@
 # Common constants
 COORDINATE_REFERENCE_SYSTEM = 'epsg:4326'
-CVS_TIMESTAMP_FORMAT='%d/%m/%Y %H:%M:%S' #07/09/2021 00:00:00
+CVS_TIMESTAMP_FORMAT = '%d/%m/%Y %H:%M:%S'  # 07/09/2021 00:00:00
 
 # AIS data column names
 AIS_TIMESTAMP_COL = '# Timestamp'
