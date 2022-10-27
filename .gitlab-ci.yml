@@ -87,4 +87,5 @@ flake8:
     - echo ${FULL_TAG}
     - echo $(docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate) >> codeclimate.json
   artifacts:
-      paths: [codeclimate.json]
+    reports:
+      codequality: codeclimate.json
