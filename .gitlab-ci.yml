@@ -87,10 +87,7 @@ flake8:
   services:
     - docker:dind
   script:
-    - echo $(docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate) >> codeclimate.json
-  artifacts:
-    reports:
-      codequality: codeclimate.json
+    - docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8
 
 cs-fix:
   script:
