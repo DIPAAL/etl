@@ -76,3 +76,17 @@ pytest:
         path: p_coverage.xml
       junit: p_result.xml
     expire_in: "1 week"
+
+flake8:
+  stage: test
+  image: docker:latest
+  needs: [build-push]
+  services:
+    - docker:dind
+  script:
+    - echo ${FULL_TAG}
+    - docker run --name test_runner-${CI_PIPELINE_ID} ${FULL_TAG} flake8 --format=codeclimate >> codeclimate.json
+    - docker cp test_runner-${CI_PIPELINE_ID}:/python/codeclimate.json ./
+    - docker rm test_runner-${CI_PIPELINE_ID}
+  artifacts:
+      paths: [codeclimate.json]
