@@ -39,3 +39,10 @@ def get_queries_in_file(file_path: str) -> List[str]:
         queries = [query.strip() for query in queries if query.strip() != '']
 
         return queries
+
+def apply_datetime_if_not_none(str_in, timestamp_format):
+    try:
+        d = datetime.strptime(str_in, timestamp_format)
+    except Exception:
+        d = None
+    return d

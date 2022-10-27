@@ -2,6 +2,7 @@ config-local.properties
 # .idea but not runConfigurations
 .idea/*
 !/.idea/runConfigurations
+# Virtual python environment
 .venv
 # any __pycache__ and .pyc files
 __pycache__/
@@ -12,6 +13,7 @@ __pycache__/
 .gitlab-ci-local
 
 # Code coverage reports
-p_coverage.xml
-p_result.xml
-.coverage
+**/p_coverage.xml
+**/p_result.xml
+**/.coverage
+**/coverage.xml
