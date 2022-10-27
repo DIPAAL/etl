@@ -15,7 +15,6 @@ def wrap_with_timings(name: str, func):
 
 
 def get_connection(config, database=None, host=None, user=None, password=None):
-
     host, port = host.split(
         ':') if host is not None else config['Database']['host'].split(':')
     database = database if database is not None else config['Database']['database']

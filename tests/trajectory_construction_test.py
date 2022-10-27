@@ -3,10 +3,16 @@ import geopandas as gpd
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
-from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
+from etl.trajectory.builder import build_from_geopandas, _rebuild_to_geodataframe, _euclidian_dist, \
+    _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
 from etl.helper_functions import apply_datetime_if_not_none
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
-from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
+    TIMESTAMP_COL, AIS_TIMESTAMP_COL, ETA_COL
+from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
+    T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
+    T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, \
+    T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL
 
 CLEAN_DATA_CSV = 'tests/data/clean_df.csv'
 ANE_LAESOE_FERRY_DATA = 'tests/data/ferry.csv'
@@ -66,15 +72,15 @@ def test_create_trajectory_db_df():
     columns_dtype_bool = [T_INFER_STOPPED_COL]
 
     assert all([ptypes.is_int64_dtype(test_df[col])
-               for col in columns_dtype_int64])
+                for col in columns_dtype_int64])
     assert all([ptypes.is_float_dtype(test_df[col])
-               for col in columns_dtype_float64])
+                for col in columns_dtype_float64])
     assert all([ptypes.is_object_dtype(test_df[col])
-               for col in columns_dtype_object])
+                for col in columns_dtype_object])
     assert all([ptypes.is_timedelta64_dtype(test_df[col])
-               for col in columns_dtype_timedelta])
+                for col in columns_dtype_timedelta])
     assert all([ptypes.is_bool_dtype(test_df[col])
-               for col in columns_dtype_bool])
+                for col in columns_dtype_bool])
 
 
 def to_minimal_outlier_detection_frame(
@@ -193,15 +199,14 @@ def test_trajectory_construction_on_single_ferry():
     ferry_dataframe = create_geopandas_dataframe(ANE_LAESOE_FERRY_DATA)
     expected_sailing_trajectories = 1  # Between ports
     expected_stopped_trajectories = 2  # At port
-    expected_number_of_trajectories = expected_sailing_trajectories + \
-        expected_stopped_trajectories
+    expected_number_of_trajectories = expected_sailing_trajectories + expected_stopped_trajectories
 
     result_dataframe = build_from_geopandas(ferry_dataframe)
 
     assert expected_number_of_trajectories == len(result_dataframe.index)
-    stopped_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] == True]
+    stopped_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] is True]
     assert expected_stopped_trajectories == len(stopped_result.index)
-    sailing_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] == False]
+    sailing_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] is False]
     assert expected_sailing_trajectories == len(sailing_result.index)
 
     expected_unique_imo = 1
@@ -278,7 +283,6 @@ def test_point_to_trajectory_threshold_under_returns_empty_frame():
 
 
 def test_point_to_trajectory_threshold_on_returns_empty_frame():
-
     from_idx = 0
     to_idx = 2
     assert to_idx - from_idx == POINTS_FOR_TRAJECTORY_THRESHOLD

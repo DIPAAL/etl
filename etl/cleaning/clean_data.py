@@ -5,7 +5,8 @@ import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
 from sqlalchemy import create_engine
 from etl.helper_functions import apply_datetime_if_not_none
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, AIS_TIMESTAMP_COL, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, AIS_TIMESTAMP_COL, TIMESTAMP_COL, ETA_COL, \
+    LONGITUDE_COL, LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'

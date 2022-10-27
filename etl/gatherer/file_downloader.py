@@ -64,13 +64,9 @@ def date_from_filename(file_name):
     :param file_name:
     :return:
     """
-    file_name = file_name.replace(
-        'aisdk-',
-        '').replace(
-        '.zip',
-        '').replace(
-            '.rar',
-        '')
+    file_name = file_name.replace('aisdk-', '') \
+        .replace('.zip', '') \
+        .replace('.rar', '')
     file_name = file_name.split('-')
 
     year = int(file_name[0])

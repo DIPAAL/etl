@@ -4,8 +4,14 @@ import math
 from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
 from typing import Callable, Optional, List
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL
-from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, T_START_TIME_COL, T_START_DATE_COL, T_END_TIME_COL, T_END_DATE_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
+    ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
+    POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, MBDB_TRAJECTORY_COL, \
+    GEO_PANDAS_GEOMETRY_COL
+from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
+    T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
+    T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
+    T_START_TIME_COL, T_START_DATE_COL, T_END_TIME_COL, T_END_DATE_COL
 
 SPEED_THRESHOLD_KNOTS = 100
 
@@ -52,7 +58,7 @@ def _construct_moving_trajectory(
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
                 if (current_date - trajectory_dataframe.iloc[idx_cannot_handle]
-                        [TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                [TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                     trajectory = _finalize_trajectory(
                         mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
                     trajectories = _construct_stopped_trajectory(
@@ -123,7 +129,8 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame,
         dataframe=trajectory_dataframe,
         column_subset=[POSITION_FIXING_DEVICE_COL],
         drop_na=True)
-    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
+    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[
+        0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recurring = _find_most_recurring(
         dataframe=trajectory_dataframe,
@@ -168,18 +175,18 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame,
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
     return pd.concat([dataframe, pd.Series(data={
-                                           T_START_DATE_COL: start_date_id, T_START_TIME_COL: start_time_id,
-                                           T_END_DATE_COL: end_date_id, T_END_TIME_COL: end_time_id,
-                                           T_ETA_DATE_COL: eta_date_id, T_ETA_TIME_COL: eta_time_id,
-                                           T_NAVIGATIONAL_STATUS_COL: nav_status, T_DURATION_COL: duration,
-                                           T_TRAJECTORY_COL: trajectory, T_INFER_STOPPED_COL: infer_stopped,
-                                           T_DESTINATION_COL: destination, T_ROT_COL: rot,
-                                           T_HEADING_COL: heading, T_DRAUGHT_COL: draught,
-                                           T_MMSI_COL: mmsi, T_IMO_COL: imo,
-                                           T_MOBILE_TYPE_COL: mobile_type, T_SHIP_TYPE_COL: ship_type,
-                                           T_SHIP_NAME_COL: ship_name, T_SHIP_CALLSIGN_COL: ship_callsign,
-                                           T_A_COL: a, T_B_COL: b, T_C_COL: c, T_D_COL: d
-                                           }).to_frame().T])
+        T_START_DATE_COL: start_date_id, T_START_TIME_COL: start_time_id,
+        T_END_DATE_COL: end_date_id, T_END_TIME_COL: end_time_id,
+        T_ETA_DATE_COL: eta_date_id, T_ETA_TIME_COL: eta_time_id,
+        T_NAVIGATIONAL_STATUS_COL: nav_status, T_DURATION_COL: duration,
+        T_TRAJECTORY_COL: trajectory, T_INFER_STOPPED_COL: infer_stopped,
+        T_DESTINATION_COL: destination, T_ROT_COL: rot,
+        T_HEADING_COL: heading, T_DRAUGHT_COL: draught,
+        T_MMSI_COL: mmsi, T_IMO_COL: imo,
+        T_MOBILE_TYPE_COL: mobile_type, T_SHIP_TYPE_COL: ship_type,
+        T_SHIP_NAME_COL: ship_name, T_SHIP_CALLSIGN_COL: ship_callsign,
+        T_A_COL: a, T_B_COL: b, T_C_COL: c, T_D_COL: d
+    }).to_frame().T])
 
 
 def _extract_date_smart_id(datetime: datetime) -> int:
@@ -188,7 +195,7 @@ def _extract_date_smart_id(datetime: datetime) -> int:
 
 def _extract_time_smart_id(datetime: datetime) -> int:
     return (datetime.hour * 10000) + \
-        (datetime.minute * 100) + (datetime.second)
+           (datetime.minute * 100) + (datetime.second)
 
 
 def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame,
@@ -287,7 +294,7 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame,
     """
 
     time_delta = cur_point[TIMESTAMP_COL].iloc[0] - \
-        prev_point[TIMESTAMP_COL].iloc[0]
+                 prev_point[TIMESTAMP_COL].iloc[0]
     # Previous and current point is in the same timestamp, detect it as an
     # outlier
     if time_delta.seconds == 0:
