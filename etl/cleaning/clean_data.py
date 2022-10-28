@@ -63,11 +63,22 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     temp_waters = gpd.read_postgis(sql=query, con=conn)
     return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
 
+
 def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
-    dirty_frame = dd.read_csv(csv_path, dtype={CALLSIGN_COL: 'object', CARGO_TYPE_COL: 'object', DESTINATION_COL: 'object', ETA_COL: 'object', NAME_COL: 'object'})
+    dirty_frame = dd.read_csv(
+        csv_path,
+        dtype={
+            CALLSIGN_COL: 'object',
+            CARGO_TYPE_COL: 'object',
+            DESTINATION_COL: 'object',
+            ETA_COL: 'object',
+            NAME_COL: 'object'
+        }
+    )
     dirty_frame[TIMESTAMP_COL] = dd.to_datetime(dirty_frame[TIMESTAMP_COL], format=CVS_TIMESTAMP_FORMAT)
     dirty_frame[ETA_COL] = dd.to_datetime(dirty_frame[ETA_COL], format=CVS_TIMESTAMP_FORMAT)
     return dirty_frame
+
 
 def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
@@ -84,7 +95,15 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
 
     print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
 
-    return wrap_with_timings('Creating geodataframe', lambda: d_gpd.from_dask_dataframe(dirty_dataframe, geometry=d_gpd.points_from_xy(df=dirty_dataframe, x=LONGITUDE_COL, y=LATITUDE_COL, crs=COORDINATE_REFERENCE_SYSTEM))).set_crs(COORDINATE_REFERENCE_SYSTEM)
+    return wrap_with_timings(
+        'Creating geodataframe',
+        lambda: d_gpd.from_dask_dataframe(
+            dirty_dataframe,
+            geometry=d_gpd.points_from_xy(
+                df=dirty_dataframe, x=LONGITUDE_COL, y=LATITUDE_COL, crs=COORDINATE_REFERENCE_SYSTEM
+            )
+        ).set_crs(COORDINATE_REFERENCE_SYSTEM)
+    )
 
 
 def _create_pandas_postgresql_connection(config):
