@@ -128,9 +128,10 @@ def test_trajectory_construction_on_single_ferry():
     result_dataframe = build_from_geopandas(ferry_dataframe)
 
     assert expected_number_of_trajectories == len(result_dataframe.index)
-    stopped_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] is True]
+    # Get rows where infer stopped is true
+    stopped_result = result_dataframe[result_dataframe[T_INFER_STOPPED_COL]]
     assert expected_stopped_trajectories == len(stopped_result.index)
-    sailing_result = result_dataframe.loc[result_dataframe[T_INFER_STOPPED_COL] is False]
+    sailing_result = result_dataframe[~result_dataframe[T_INFER_STOPPED_COL]]
     assert expected_sailing_trajectories == len(sailing_result.index)
 
     expected_unique_imo = 1

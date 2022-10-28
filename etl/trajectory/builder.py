@@ -210,7 +210,7 @@ def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeo
     mobilitydb_dataframe[TIMESTAMP_COL] = trajectory_dataframe[TIMESTAMP_COL].apply(
         func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
     mobilitydb_dataframe[MBDB_TRAJECTORY_COL] = \
-        f"{trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str)}@{mobilitydb_dataframe[TIMESTAMP_COL]}"
+        trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str) + '@' + mobilitydb_dataframe[TIMESTAMP_COL]
 
     mobility_str = f"[{','.join(mobilitydb_dataframe[MBDB_TRAJECTORY_COL])}]"
 
