@@ -75,7 +75,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
                          infer_stopped: bool) -> pd.DataFrame:
     to_idx -= 1  # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
-    # In there is no points in a trajectory or number of points are less than threshold, return empty dataframe
+    # If there is no point in a trajectory which contain less points than in threshold, return empty dataframe
     if (to_idx < from_idx) or ((to_idx - from_idx + 1) <= POINTS_FOR_TRAJECTORY_THRESHOLD):
         return dataframe
 
