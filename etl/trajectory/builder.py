@@ -55,10 +55,8 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
-                if (current_date - trajectory_dataframe.iloc[idx_cannot_handle][
-                    TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
-                    trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle,
-                                                      infer_stopped=False)
+                if (current_date - trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                    trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat([trajectory, trajectories])
             else:
@@ -176,7 +174,7 @@ def _extract_time_smart_id(datetime: datetime) -> int:
 def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TFloatInstSet:
     tfloat_lst = []
     for _, row in dataframe.iterrows():
-        mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT) + '+01'
+        mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
         float_val = str(row[float_column])
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
 

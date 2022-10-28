@@ -67,7 +67,7 @@ def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
     dirty_frame[ETA_COL] = dd.to_datetime(dirty_frame[ETA_COL], format=CVS_TIMESTAMP_FORMAT)
     return dirty_frame
 
-def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> d_gpd.GeoDataFrame:
+def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
     dirty_dataframe = wrap_with_timings("Initial data filter", lambda: dirty_dataframe.query(expr=(
                                 '(Draught < 28.5 | Draught.isna()) & '
