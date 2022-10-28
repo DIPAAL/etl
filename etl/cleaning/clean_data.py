@@ -30,7 +30,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     #   - Remove where length >= 488
     #   - Remove where 99999999 =< MMSI >= 990000000
     #   - Remove where 112000000 < MMSI > 111000000
-    #   - Remove where not with geometry of Danish_waters
+    #   - Remove where not within geometry of Danish_waters
 
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
     # Then uses that to filter on latitude and longitude
