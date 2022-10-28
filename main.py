@@ -5,10 +5,13 @@ import configparser
 import os
 from datetime import datetime
 
+import pandas as pd
+
 from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
+from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.trajectory.builder import build_from_geopandas
 
 
@@ -40,12 +43,21 @@ def main(argv):
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
+
         file_path = wrap_with_timings(
             "Ensuring file for current date exists",
             lambda: ensure_file_for_date(date, config)
         )
-        clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
-        wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
+        pickle_path = file_path.replace('.csv', '.pkl')
+
+        if os.path.isfile(pickle_path):
+            print("Cached pickled data found..")
+            trajectories = pd.read_pickle(pickle_path)
+        else:
+            clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
+            trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
+
+        TrajectoryInserter().insert_trajectory_dataframe(trajectories, config)
 
 
 if __name__ == '__main__':

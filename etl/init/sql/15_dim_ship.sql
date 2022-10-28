@@ -2,12 +2,13 @@ CREATE TABLE dim_ship (
     ship_id serial PRIMARY KEY,
     imo int NOT NULL,
     mmsi int NOT NULL,
-    ship_name text,
-    ship_callsign text,
+    name text,
+    callsign text,
     a float,
     b float,
     c float,
-    d float
+    d float,
+    UNIQUE (imo, mmsi, name, callsign, a, b, c, d)
 );
 
 -- Create index on mmsi
