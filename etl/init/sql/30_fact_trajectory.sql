@@ -12,6 +12,7 @@ CREATE TABLE fact_trajectory (
     PRIMARY KEY (ship_id, ship_junk_id, start_date_id, start_time_id, end_date_id, end_time_id, eta_date_id, eta_time_id, nav_status_id, trajectory_id),
 
     duration interval NOT NULL,
+    length int NOT NULL,
     infer_stopped boolean NOT NULL,
 
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
