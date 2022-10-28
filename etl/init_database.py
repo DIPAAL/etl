@@ -46,8 +46,8 @@ def create_fact_partitions(config):
         """)
 
         cur.execute(f"""
-            CREATE TABLE fact_grid_{year}_{month}
-            PARTITION OF fact_grid FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+            CREATE TABLE fact_cell_{year}_{month}
+            PARTITION OF fact_cell FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
 
 
