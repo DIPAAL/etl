@@ -3,14 +3,16 @@ SELECT create_reference_table('dim_date');
 SELECT create_reference_table('dim_time');
 SELECT create_reference_table('dim_direction');
 SELECT create_reference_table('dim_nav_status');
-SELECT create_reference_table('dim_grid_50m');
+SELECT create_reference_table('dim_cell_50m');
+SELECT create_reference_table('dim_ship_junk');
+SELECT create_reference_table('dim_ship');
 
 -- And other references
 SELECT create_reference_table('danish_waters');
 
 -- Distribute the fact tables and ship dimension
-SELECT create_distributed_table('dim_ship', 'ship_id');
-SELECT create_distributed_table('fact_trajectory', 'ship_id', colocate_with=>'dim_ship');
-SELECT create_distributed_table('fact_grid', 'ship_id', colocate_with=>'dim_ship');
+SELECT create_distributed_table('dim_trajectory', 'trajectory_id');
+SELECT create_distributed_table('fact_trajectory', 'trajectory_id', colocate_with=>'dim_trajectory');
+SELECT create_distributed_table('fact_cell', 'trajectory_id', colocate_with=>'dim_trajectory');
 
 
