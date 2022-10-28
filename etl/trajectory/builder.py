@@ -6,8 +6,8 @@ from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
 from typing import Callable, Optional, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
-    POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, MBDB_TRAJECTORY_COL, \
-    GEO_PANDAS_GEOMETRY_COL
+    POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -55,8 +55,11 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
-                if (current_date - trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
-                    trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False)
+                prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+                if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                    trajectory = _finalize_trajectory(
+                        mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
+                    )
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat([trajectory, trajectories])
             else:
@@ -72,7 +75,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
                          infer_stopped: bool) -> pd.DataFrame:
     to_idx -= 1  # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
-    # In the case that there is no points in a trajectory or number of points are less than threshold, return empty dataframe
+    # If there is no point in a trajectory which contain less points than in threshold, return empty dataframe
     if (to_idx < from_idx) or ((to_idx - from_idx + 1) <= POINTS_FOR_TRAJECTORY_THRESHOLD):
         return dataframe
 
@@ -105,12 +108,14 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
-    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
+    most_recurring = \
+        _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
     imo = most_recurring[IMO_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_INT_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL],
                                           drop_na=True)
-    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
+    mobile_type = \
+        most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
     ship_type = most_recurring[SHIP_TYPE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
@@ -118,7 +123,8 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[NAME_COL], drop_na=True)
     ship_name = most_recurring[NAME_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
-    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
+    most_recurring = \
+        _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
     ship_callsign = most_recurring[CALLSIGN_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
@@ -203,8 +209,8 @@ def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeo
     mobilitydb_dataframe = pd.DataFrame(columns=[MBDB_TRAJECTORY_COL])
     mobilitydb_dataframe[TIMESTAMP_COL] = trajectory_dataframe[TIMESTAMP_COL].apply(
         func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
-    mobilitydb_dataframe[MBDB_TRAJECTORY_COL] = trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str) + '@' + \
-                                                mobilitydb_dataframe[TIMESTAMP_COL]
+    mobilitydb_dataframe[MBDB_TRAJECTORY_COL] = \
+        trajectory_dataframe[GEO_PANDAS_GEOMETRY_COL].astype(str) + '@' + mobilitydb_dataframe[TIMESTAMP_COL]
 
     mobility_str = f"[{','.join(mobilitydb_dataframe[MBDB_TRAJECTORY_COL])}]"
 
@@ -232,10 +238,6 @@ def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
             result_dataframe = pd.concat([result_dataframe, row])
             continue
 
-        if prev_row['Navigational status'].iloc[0] != row['Navigational status'].iloc[0]:
-            print(
-                f"Found a change in navigational status from {prev_row['Navigational status'].iloc[0]} to {row['Navigational status'].iloc[0]}")
-
         if not _check_outlier(cur_point=row, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS,
                               dist_func=_euclidian_dist):
             prev_row = row
@@ -251,7 +253,7 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
         cur_point: Point as the geopandas row
         prev_point: Point as the geopandas row
         dist_threshold: Threshold distance which determines whether distance between the points indicates an outlier
-        dist_function: A distance function that takes in 4 parameters (cur_long, cur_lat, prev_long, prev_lat) and returns the distance between the points
+        dist_function: A distance function that takes in 4 parameters (cur_long, cur_lat, prev_long, prev_lat)
 
         Returns: A bool indicating that an outlier is detected
     """
