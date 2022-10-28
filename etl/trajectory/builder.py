@@ -112,8 +112,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL],
                                           drop_na=True)
-    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[
-        0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
+    mobile_type = most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
     ship_type = most_recurring[SHIP_TYPE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
