@@ -1,10 +1,13 @@
 from etl.helper_functions import wrap_with_timings
 
+
 def not_included():
     return True
 
+
 def test_example_pass():
     assert not_included()
+
 
 def test_wraps_function():
     operand1 = 2

@@ -4,7 +4,8 @@ import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
 from sqlalchemy import create_engine
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL,\
+    LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
@@ -14,8 +15,10 @@ NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     if ais_file_path.endswith(CSV_EXTENSION):
         return _clean_csv_data(config, ais_file_path)
-    
-    raise NotImplementedError(f'Extension of file provided {ais_file_path}, is not supported in this version of the project.')
+
+    raise NotImplementedError(
+        f'Extension of file provided {ais_file_path}, is not supported in this version of the project.'
+    )
 
 
 def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
@@ -27,8 +30,8 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     #   - Remove where length >= 488
     #   - Remove where 99999999 =< MMSI >= 990000000
     #   - Remove where 112000000 < MMSI > 111000000
-    #   - Remove where not with geometri of Danish_waters
-    
+    #   - Remove where not with geometry of Danish_waters
+
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
     # Then uses that to filter on latitude and longitude
     danish_waters_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_danish_waters_boundary(config))
@@ -45,13 +48,12 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
         lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe)
     )
 
-    # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters 
+    # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters
     lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute())
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf
-
 
 
 def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
@@ -61,11 +63,21 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     temp_waters = gpd.read_postgis(sql=query, con=conn)
     return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
 
+
 def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
-    dirty_frame = dd.read_csv(csv_path, dtype={CALLSIGN_COL: 'object', CARGO_TYPE_COL: 'object', DESTINATION_COL: 'object', ETA_COL: 'object', NAME_COL: 'object'})
+    dirty_frame = dd.read_csv(
+        csv_path,
+        dtype={
+            CALLSIGN_COL: 'object',
+            CARGO_TYPE_COL: 'object',
+            DESTINATION_COL: 'object',
+            ETA_COL: 'object',
+            NAME_COL: 'object'
+        })
     dirty_frame[TIMESTAMP_COL] = dd.to_datetime(dirty_frame[TIMESTAMP_COL], format=CVS_TIMESTAMP_FORMAT)
     dirty_frame[ETA_COL] = dd.to_datetime(dirty_frame[ETA_COL], format=CVS_TIMESTAMP_FORMAT)
     return dirty_frame
+
 
 def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
@@ -82,7 +94,16 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
 
     print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
 
-    return wrap_with_timings('Creating geodataframe', lambda: d_gpd.from_dask_dataframe(dirty_dataframe, geometry=d_gpd.points_from_xy(df=dirty_dataframe, x=LONGITUDE_COL, y=LATITUDE_COL, crs=COORDINATE_REFERENCE_SYSTEM))).set_crs(COORDINATE_REFERENCE_SYSTEM)
+    return wrap_with_timings(
+        'Creating geodataframe',
+        lambda:
+            d_gpd.from_dask_dataframe(
+                dirty_dataframe,
+                geometry=d_gpd.points_from_xy(
+                    df=dirty_dataframe, x=LONGITUDE_COL, y=LATITUDE_COL, crs=COORDINATE_REFERENCE_SYSTEM
+                )
+            ).set_crs(COORDINATE_REFERENCE_SYSTEM)
+    )
 
 
 def _create_pandas_postgresql_connection(config):
@@ -90,5 +111,8 @@ def _create_pandas_postgresql_connection(config):
     Creates a connection to the database using SQLalchemy as it is the only connection type supported by pandas
     """
     host, port = config['Database']['host'].split(':')
-    connection_url = f"postgresql://{config['Database']['user']}:{config['Database']['password']}@{host}:{port}/{config['Database']['database']}"
+    user = config['Database']['user']
+    password = config['Database']['password']
+    database = config['Database']['database']
+    connection_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
     return create_engine(connection_url)

@@ -8,10 +8,12 @@ import requests
 from bs4 import BeautifulSoup
 from etl.helper_functions import wrap_with_timings
 
+
 @dataclass
 class AisFile:
     name: str
     url: str
+
 
 def ensure_file_for_date(date: datetime, config) -> str:
     """
@@ -32,11 +34,12 @@ def ensure_file_for_date(date: datetime, config) -> str:
     # The file does not exist, check what files are available from DMA.
     file_names = get_file_names(config['DataSource']['ais_url'])
 
-    # Check if our current date is in the list of available files, if not, check if the month is in the list of available files.
-    if not date in file_names:
+    # Check if our current date is in the list of available files.
+    # If not, check if the month is in the list of available files.
+    if date not in file_names:
         print(f"File not found for date: {date}. Trying first day of month.")
         date = datetime(year=date.year, month=date.month, day=1)
-        if not date in file_names:
+        if date not in file_names:
             raise Exception(f"File for {date} not found as existing on Danish Maritime Authority website.")
 
     # The file exists, download it.
@@ -50,6 +53,7 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
     return path
 
+
 def date_from_filename(file_name):
     """
         Eg "aisdk-2007-04.zip" -> datetime(2007, 4, 1), "aisdk-2007-04-03.zip" -> datetime(2007, 4, 3)
@@ -61,7 +65,9 @@ def date_from_filename(file_name):
 
     year = int(file_name[0])
     month = int(file_name[1])
-    day = int(file_name[2]) if len(file_name) == 3 else 1 # If the file name does not contain a day, assume the first day of the month.
+
+    # If the file name does not contain a day, assume the first day of the month.
+    day = int(file_name[2]) if len(file_name) == 3 else 1
 
     return datetime(year=year, month=month, day=day)
 
@@ -86,6 +92,7 @@ def get_file_names(ais_url: str) -> dict:
         ais_files[date_from_filename(name)] = ais_file
     return ais_files
 
+
 def extract(file, config):
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if path.endswith('.zip'):
@@ -94,10 +101,11 @@ def extract(file, config):
     elif path.endswith('.rar'):
         patoolib.extract_archive(path, config['DataSource']['ais_path'])
 
+
 def ensure_file(file: AisFile, config):
     # Download the file if it does not exist.
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if not os.path.isfile(path):
-        wrap_with_timings(f"Downloading file: {file.name}" , lambda: wget.download(file.url, out=path))
+        wrap_with_timings(f"Downloading file: {file.name}", lambda: wget.download(file.url, out=path))
     else:
         print(f"File already exists: {path}")

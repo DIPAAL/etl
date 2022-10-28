@@ -12,7 +12,7 @@ def get_sql_files(folder):
     return files
 
 
-def run_sql_file_with_timings(sql_file, config, conn = None):
+def run_sql_file_with_timings(sql_file, config, conn=None):
     conn.set_session(autocommit=True)
     conn = get_connection(config) if conn is None else conn
 
@@ -26,7 +26,7 @@ def run_sql_file_with_timings(sql_file, config, conn = None):
         wrap_with_timings(f"Executing query: {query_short}", lambda: conn.cursor().execute(query))
 
 
-def run_sql_folder_with_timings(folder: str, config, conn = None) -> None:
+def run_sql_folder_with_timings(folder: str, config, conn=None) -> None:
     conn = get_connection(config) if conn is None else conn
 
     for sql_file in get_sql_files(folder):
