@@ -10,6 +10,7 @@ from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
 from etl.load_data import load_data
 from etl.cleaning.clean_data import clean_data
+from etl.trajectory.builder import build_from_geopandas
 
 
 def get_config():
@@ -40,8 +41,9 @@ def main(argv):
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
-        file_path = wrap_with_timings("Ensuring file for current date exists", ensure_file_for_date(date, config))
-        wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
+        file_path = wrap_with_timings("Ensuring file for current date exists", lambda: ensure_file_for_date(date, config))
+        clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
+        trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
 
 
 if __name__ == '__main__':

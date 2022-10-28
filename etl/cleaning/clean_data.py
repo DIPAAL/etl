@@ -4,8 +4,7 @@ import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
 from sqlalchemy import create_engine
-from etl.helper_functions import apply_datetime_if_not_none
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, AIS_TIMESTAMP_COL, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
@@ -37,7 +36,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     # Read from georeferenced AIS dataframe from csv file
     dirty_geo_dataframe = wrap_with_timings(
         'Create Geodataframe from CSV',
-        lambda: _create_dirty_df_from_ais_cvs(csv_path=ais_file_path_csv, crs=COORDINATE_REFERENCE_SYSTEM)
+        lambda: create_dirty_df_from_ais_cvs(csv_path=ais_file_path_csv)
     )
 
     # Initial cleaning of AIS dataframe
@@ -51,7 +50,6 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute())
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
-    clean_gdf.to_file('./tests/data/ferry_clean.csv')
     return clean_gdf
 
 
@@ -63,26 +61,29 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     temp_waters = gpd.read_postgis(sql=query, con=conn)
     return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
 
-def _create_dirty_df_from_ais_cvs(csv_path: str, crs: str) -> d_gpd.GeoDataFrame:
+def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
     dirty_frame = dd.read_csv(csv_path, dtype={CALLSIGN_COL: 'object', CARGO_TYPE_COL: 'object', DESTINATION_COL: 'object', ETA_COL: 'object', NAME_COL: 'object'})
-    dirty_frame[TIMESTAMP_COL] = dirty_frame[AIS_TIMESTAMP_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
-    dirty_frame[ETA_COL] = dirty_frame[ETA_COL].apply(func=lambda t: apply_datetime_if_not_none(t, CVS_TIMESTAMP_FORMAT))
+    dirty_frame[TIMESTAMP_COL] = dd.to_datetime(dirty_frame[TIMESTAMP_COL], format=CVS_TIMESTAMP_FORMAT)
+    dirty_frame[ETA_COL] = dd.to_datetime(dirty_frame[ETA_COL], format=CVS_TIMESTAMP_FORMAT)
+    return dirty_frame
 
-    return d_gpd.from_dask_dataframe(df=dirty_frame, geometry=d_gpd.points_from_xy(df=dirty_frame, x=LONGITUDE_COL, y=LATITUDE_COL, crs=crs))
-
-def _ais_df_initial_cleaning(dirty_dataframe: d_gpd.GeoDataFrame) -> d_gpd.GeoDataFrame:
-    print('Number of rows in dataframe before initial clean: ' + str(len(dirty_dataframe.index)))
-    dirty_dataframe = dirty_dataframe.query(expr=(
+def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
+    print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
+    dirty_dataframe = wrap_with_timings("Initial data filter", lambda: dirty_dataframe.query(expr=(
                                 '(Draught < 28.5 | Draught.isna()) & '
                                 '(Width < 75) & '
                                 '(Length < 488) & '
                                 '(MMSI < 990000000) & '
                                 '(MMSI > 99999999) & '
                                 '(MMSI <= 111000000 | MMSI >= 112000000)'
-                                )).compute()
-    dirty_dataframe = d_gpd.from_geopandas(data=dirty_dataframe, npartitions=NUM_PARTITIONS)
-    print('Number of rows in dataframe after initial clean: ' + str(len(dirty_dataframe.index)))
-    return dirty_dataframe
+                                )).sort_values(by=TIMESTAMP_COL))
+
+    dirty_dataframe = wrap_with_timings("Rebuilding index", lambda: dirty_dataframe.reset_index(drop=True))
+
+    print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
+
+    return wrap_with_timings('Creating geodataframe', lambda: d_gpd.from_dask_dataframe(dirty_dataframe, geometry=d_gpd.points_from_xy(df=dirty_dataframe, x=LONGITUDE_COL, y=LATITUDE_COL, crs=COORDINATE_REFERENCE_SYSTEM))).set_crs(COORDINATE_REFERENCE_SYSTEM)
+
 
 def _create_pandas_postgresql_connection(config):
     """
