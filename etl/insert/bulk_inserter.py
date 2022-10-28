@@ -5,9 +5,9 @@ class BulkInserter:
     def __init__(self, bulk_size=1000):
         self.bulk_size = bulk_size
 
-    def _bulk_insert(self, ships, conn, query, fetch=True) -> pd.Series:
-        num_batches = len(ships) // self.bulk_size + 1
-        batches = [ships[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
+    def _bulk_insert(self, entries, conn, query, fetch=True) -> pd.Series:
+        num_batches = len(entries) // self.bulk_size + 1
+        batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
         sub_id_series = [self.__insert(batch, conn, query, fetch=fetch) for batch in batches]
 
         if not fetch:

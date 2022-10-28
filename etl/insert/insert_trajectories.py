@@ -11,13 +11,13 @@ from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInsert
 
 class TrajectoryInserter (BulkInserter):
 
-    def insert_trajectory_dataframe(self, df, config):
+    def persist(self, df, config):
         conn = get_connection(config)
 
-        df = ShipDimensionInserter().ensure(df, conn)
-        df = ShipJunkDimensionInserter().ensure(df, conn)
-        df = NavigationalStatusDimensionInserter().ensure(df, conn)
-        df = TrajectoryDimensionInserter().ensure(df, conn)
+        df = ShipDimensionInserter(self.bulk_size).ensure(df, conn)
+        df = ShipJunkDimensionInserter(self.bulk_size).ensure(df, conn)
+        df = NavigationalStatusDimensionInserter(self.bulk_size).ensure(df, conn)
+        df = TrajectoryDimensionInserter(self.bulk_size).ensure(df, conn)
 
         self._insert_trajectories(df, conn)
 
