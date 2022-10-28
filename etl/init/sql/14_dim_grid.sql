@@ -15,7 +15,7 @@ SELECT
     j AS col,
     geom
 FROM
-    ST_SquareGrid(50, ST_SetSRID(ST_MakeBox2D(ST_Point(3602375, 3055475), ST_Point(4392275, 3471675)), 3034)) AS geom;
+    ST_SquareGrid(5000, ST_SetSRID(ST_MakeBox2D(ST_Point(3602375, 3055475), ST_Point(4392275, 3471675)), 3034)) AS geom;
 
 -- Create spatial index
 CREATE INDEX dim_grid_50m_geom_idx ON dim_grid_50m USING gist (geom);
