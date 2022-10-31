@@ -15,9 +15,9 @@ class ShipDimensionInserter (BulkInserter):
         ships = df[unique_columns].drop_duplicates()
 
         query = """
-            INSERT INTO dim_ship (imo, mmsi, name, callsign, a, b, c, d)
+            INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d)
             VALUES {}
-            ON CONFLICT (imo, mmsi, name, callsign, a, b, c, d) DO UPDATE SET name = EXCLUDED.name
+            ON CONFLICT (mmsi, imo, name, callsign, a, b, c, d) DO UPDATE SET name = EXCLUDED.name
             RETURNING ship_id
         """
 
