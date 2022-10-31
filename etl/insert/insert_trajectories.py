@@ -12,6 +12,9 @@ from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInsert
 class TrajectoryInserter (BulkInserter):
 
     def persist(self, df, config):
+        # rebuild index to be able to loop over it.
+        df = df.reset_index()
+
         conn = get_connection(config)
 
         df = ShipDimensionInserter(self.bulk_size).ensure(df, conn)

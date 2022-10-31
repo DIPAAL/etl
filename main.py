@@ -56,8 +56,9 @@ def main(argv):
         else:
             clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
             trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
+            trajectories.to_pickle(pickle_path)
 
-        TrajectoryInserter().persist(trajectories, config)
+        wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config))
 
 
 if __name__ == '__main__':
