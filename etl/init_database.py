@@ -36,6 +36,11 @@ def create_fact_partitions(config):
     cur.execute("SELECT DISTINCT year, month_of_year FROM dim_date ORDER BY year, month_of_year;")
     for date in cur.fetchall():
         year, month = date
+        # 0 pad month to 2 digits
+        month = str(month).zfill(2)
+
+        if year is None or month is None:
+            continue
         smart_key = int(f"{year}{month}00")
         # add 99 to the smart key, as the last two digits are reserved for the day
         cur.execute(f"""

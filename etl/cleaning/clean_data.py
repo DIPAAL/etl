@@ -77,7 +77,7 @@ def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
             COG_COL: 'float64',
             DRAUGHT_COL: 'float64',
             HEADING_COL: 'float64',
-            IMO_COL: 'object', # TODO
+            IMO_COL: 'object',
             SHIP_TYPE_COL: 'object',
             NAME_COL: 'object',
             LATITUDE_COL: 'float64',

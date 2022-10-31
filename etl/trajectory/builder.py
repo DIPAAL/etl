@@ -269,7 +269,7 @@ def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
         dataframe.at[row.index[0], 'is_outlier'] = True
 
     # remove outliers
-    dataframe = dataframe[dataframe['is_outlier'] == False]
+    dataframe = dataframe[dataframe['is_outlier'] is False]
     dataframe.drop(labels='is_outlier', axis='columns', inplace=True)
 
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
