@@ -4,7 +4,7 @@ import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
 
-from etl.cleaning.clean_data import create_dirty_df_from_ais_cvs
+from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
@@ -120,7 +120,7 @@ def test_time_smart_key_extraction(time, expected_smart_key):
 
 
 def test_trajectory_construction_on_single_ferry():
-    ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_cvs(ANE_LAESOE_FERRY_DATA).compute())
+    ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
     expected_sailing_trajectories = 1  # Between ports
     expected_stopped_trajectories = 2  # At port
     expected_number_of_trajectories = expected_sailing_trajectories + expected_stopped_trajectories
@@ -208,7 +208,7 @@ def test_point_to_trajectory_threshold_above_returns_trajectory():
     to_idx = 10
     assert to_idx - from_idx > POINTS_FOR_TRAJECTORY_THRESHOLD
     test_mmsi = 219000734
-    test_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_cvs(ANE_LAESOE_FERRY_DATA).compute())
+    test_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
     test_dataframe = test_dataframe.iloc[from_idx:to_idx]
     expected_dataframe_size = 1
 
