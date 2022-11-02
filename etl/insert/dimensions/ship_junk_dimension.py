@@ -22,7 +22,6 @@ class ShipJunkDimensionInserter (BulkInserter):
             RETURNING ship_junk_id
         """
 
-        res = self._bulk_insert(ship_junks, conn, query)
-        ship_junks[T_SHIP_JUNK_ID_COL] = res
+        ship_junks[T_SHIP_JUNK_ID_COL] = self._bulk_insert(ship_junks, conn, query)
 
         return df.merge(ship_junks, on=unique_columns, how='left')

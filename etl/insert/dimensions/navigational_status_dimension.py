@@ -10,7 +10,7 @@ class NavigationalStatusDimensionInserter (BulkInserter):
             T_NAVIGATIONAL_STATUS_COL
         ]
 
-        ship_junks = df[unique_columns].drop_duplicates()
+        nav_statuses = df[unique_columns].drop_duplicates()
 
         query = """
             INSERT INTO dim_nav_status (nav_status)
@@ -20,6 +20,6 @@ class NavigationalStatusDimensionInserter (BulkInserter):
             RETURNING nav_status_id
         """
 
-        ship_junks[T_SHIP_NAVIGATIONAL_STATUS_ID_COL] = self._bulk_insert(ship_junks, conn, query)
+        nav_statuses[T_SHIP_NAVIGATIONAL_STATUS_ID_COL] = self._bulk_insert(nav_statuses, conn, query)
 
-        return df.merge(ship_junks, on=unique_columns, how='left')
+        return df.merge(nav_statuses, on=unique_columns, how='left')
