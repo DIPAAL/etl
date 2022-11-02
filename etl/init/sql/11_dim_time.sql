@@ -1,11 +1,15 @@
 CREATE TABLE
     dim_time (
-        time_id serial PRIMARY KEY,
-        time time NOT NULL,
-        hour_of_day int NOT NULL,
-        minute_of_hour int NOT NULL,
-        second_of_minute int NOT NULL
+        time_id integer PRIMARY KEY,
+        time time,
+        hour_of_day int,
+        minute_of_hour int,
+        second_of_minute int
     );
+
+-- Insert unknown time
+INSERT INTO dim_time (time_id)
+VALUES (-1);
 
 -- Insert all seconds of a day
 INSERT INTO dim_time (time_id, time, hour_of_day, minute_of_hour, second_of_minute)

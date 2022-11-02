@@ -4,8 +4,9 @@ import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
 from sqlalchemy import create_engine
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL,\
-    LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL
+from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
+    LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL, A_COL, B_COL, C_COL, D_COL, WIDTH_COL, \
+    SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
@@ -45,7 +46,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     # Initial cleaning of AIS dataframe
     initial_cleaned_dataframe = wrap_with_timings(
         'Initial clean',
-        lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe)
+        lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe).compute()
     )
 
     # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters
@@ -72,9 +73,29 @@ def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
             CARGO_TYPE_COL: 'object',
             DESTINATION_COL: 'object',
             ETA_COL: 'object',
-            NAME_COL: 'object'
+            NAME_COL: 'object',
+            COG_COL: 'float64',
+            DRAUGHT_COL: 'float64',
+            HEADING_COL: 'float64',
+            IMO_COL: 'object',
+            SHIP_TYPE_COL: 'object',
+            NAME_COL: 'object',
+            LATITUDE_COL: 'float64',
+            LONGITUDE_COL: 'float64',
+            LENGTH_COL: 'float64',
+            MMSI_COL: 'int64',
+            ROT_COL: 'float64',
+            SOG_COL: 'float64',
+            WIDTH_COL: 'float64',
+            A_COL: 'float64',
+            B_COL: 'float64',
+            C_COL: 'float64',
+            D_COL: 'float64',
         }
     )
+    # Replace "Unknown" with nan and change type to int for imo
+    dirty_frame[IMO_COL] = dd.to_numeric(dirty_frame[IMO_COL], errors='coerce')
+
     dirty_frame[TIMESTAMP_COL] = dd.to_datetime(dirty_frame[TIMESTAMP_COL], format=CVS_TIMESTAMP_FORMAT)
     dirty_frame[ETA_COL] = dd.to_datetime(dirty_frame[ETA_COL], format=CVS_TIMESTAMP_FORMAT)
     return dirty_frame
@@ -89,10 +110,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
                                 '(MMSI < 990000000) & '
                                 '(MMSI > 99999999) & '
                                 '(MMSI <= 111000000 | MMSI >= 112000000)'
-                                )).sort_values(by=TIMESTAMP_COL))
-
-    dirty_dataframe = wrap_with_timings("Rebuilding index", lambda: dirty_dataframe.reset_index(drop=True))
-
+                                )))
     print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
 
     return wrap_with_timings(

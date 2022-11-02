@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor
 import geopandas as gpd
 import pandas as pd
 import math
@@ -7,11 +8,12 @@ from typing import Callable, Optional, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
-    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
     T_START_TIME_COL, T_START_DATE_COL, T_END_TIME_COL, T_END_DATE_COL
+from tqdm import tqdm
 
 SPEED_THRESHOLD_KNOTS = 100
 
@@ -31,15 +33,27 @@ UNKNOWN_FLOAT_VALUE = -1.0
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
-    result_frames = []
-    for mmsi, ship_data in grouped_data:
-        ship_data.reset_index(inplace=True)
-        result_frames.append(_create_trajectory(mmsi=mmsi, data=ship_data))
+    # https://gist.github.com/alexeygrigorev/79c97c1e9dd854562df9bbeea76fc5de
+    with ProcessPoolExecutor() as pool:
+        with tqdm(total=len(grouped_data)) as progress:
+            futures = []
 
-    return pd.concat(result_frames)
+            for group in grouped_data:
+                future = pool.submit(_create_trajectory, group)
+                future.add_done_callback(lambda p: progress.update())
+                futures.append(future)
+
+            results = []
+            for future in futures:
+                result = future.result()
+                results.append(result)
+
+    return pd.concat(results)
 
 
-def _create_trajectory(mmsi: int, data: pd.DataFrame) -> pd.DataFrame:
+def _create_trajectory(grouped_data) -> pd.DataFrame:
+    mmsi, data = grouped_data
+
     dataframe = _remove_outliers(dataframe=data)
     # Reset the index as some rows might have been classified as outliers and removed
     dataframe.reset_index(inplace=True)
@@ -127,6 +141,11 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[CALLSIGN_COL], drop_na=True)
     ship_callsign = most_recurring[CALLSIGN_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
+    most_recurring = _find_most_recurring(
+        dataframe=trajectory_dataframe, column_subset=[LOCATION_SYSTEM_TYPE_COL], drop_na=True)
+    location_system_type = most_recurring[LOCATION_SYSTEM_TYPE_COL].iloc[0] \
+        if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
+
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[A_COL], drop_na=True)
     a = most_recurring[A_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
@@ -162,6 +181,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_SHIP_TYPE_COL: ship_type,
         T_SHIP_NAME_COL: ship_name,
         T_SHIP_CALLSIGN_COL: ship_callsign,
+        T_LOCATION_SYSTEM_TYPE_COL: location_system_type,
         T_A_COL: a,
         T_B_COL: b,
         T_C_COL: c,
@@ -170,11 +190,15 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
 
 def _extract_date_smart_id(datetime: datetime) -> int:
-    return (datetime.year * 10000) + (datetime.month * 100) + (datetime.day)
+    if pd.isna(datetime):
+        return UNKNOWN_INT_VALUE
+    return (datetime.year * 10000) + (datetime.month * 100) + datetime.day
 
 
 def _extract_time_smart_id(datetime: datetime) -> int:
-    return (datetime.hour * 10000) + (datetime.minute * 100) + (datetime.second)
+    if pd.isna(datetime):
+        return UNKNOWN_INT_VALUE
+    return (datetime.hour * 10000) + (datetime.minute * 100) + datetime.second
 
 
 def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TFloatInstSet:
@@ -227,23 +251,28 @@ def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
 
 def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
     prev_row: Optional[pd.Series] = None
-    result_dataframe = pd.DataFrame(columns=dataframe.columns)
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
+    dataframe['is_outlier'] = False
 
     for idx in range(0, len(dataframe.index)):
         row = dataframe.iloc[[idx]]
 
         if prev_row is None:  # this is the first point
             prev_row = row
-            result_dataframe = pd.concat([result_dataframe, row])
             continue
 
         if not _check_outlier(cur_point=row, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS,
                               dist_func=_euclidian_dist):
             prev_row = row
-            result_dataframe = pd.concat([result_dataframe, row])
+            continue
+        # set as outlier in df
+        dataframe.at[row.index[0], 'is_outlier'] = True
 
-    return rebuild_to_geodataframe(result_dataframe).to_crs(COORDINATE_REFERENCE_SYSTEM)
+    # remove outliers
+    dataframe = dataframe[dataframe['is_outlier'] == False]  # noqa: E712
+    dataframe.drop(labels='is_outlier', axis='columns', inplace=True)
+
+    return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
 
 def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, speed_threshold: float,
@@ -311,6 +340,10 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_SHIP_NAME_COL: pd.Series(dtype='object', data=dict[T_SHIP_NAME_COL] if T_SHIP_NAME_COL in dict else []),
         T_SHIP_CALLSIGN_COL: pd.Series(dtype='object',
                                        data=dict[T_SHIP_CALLSIGN_COL] if T_SHIP_CALLSIGN_COL in dict else []),
+        T_LOCATION_SYSTEM_TYPE_COL: pd.Series(
+            dtype='object', data=dict[T_LOCATION_SYSTEM_TYPE_COL] \
+            if T_LOCATION_SYSTEM_TYPE_COL in dict else []
+        ),
         T_A_COL: pd.Series(dtype='float64', data=dict[T_A_COL] if T_A_COL in dict else []),
         T_B_COL: pd.Series(dtype='float64', data=dict[T_B_COL] if T_B_COL in dict else []),
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
