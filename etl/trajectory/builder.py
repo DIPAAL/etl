@@ -31,9 +31,16 @@ UNKNOWN_FLOAT_VALUE = -1.0
 
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
+    """
+    Build and return trajectories based on the provided AIS data.
+
+    Keyword arguments:
+        clean_sorted_ais: A GeoDataFrame of cleaned and ascending timestamp sorted AIS data.
+    """
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
     # https://gist.github.com/alexeygrigorev/79c97c1e9dd854562df9bbeea76fc5de
+    # Build trajectories in parallel
     with ProcessPoolExecutor() as pool:
         with tqdm(total=len(grouped_data)) as progress:
             futures = []
@@ -52,6 +59,13 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
 
 def _create_trajectory(grouped_data) -> pd.DataFrame:
+    """
+    Create and return trajectories for a single ship identified by MMSI.
+    During creation AIS outlier points are detected and removed.
+
+    Keyword arguments:
+        grouped_data: a DataFrameGroupBy on MMSI of AIS point data
+    """
     mmsi, data = grouped_data
 
     dataframe = _remove_outliers(dataframe=data)
@@ -62,14 +76,25 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
 
 
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+    """
+    Construct and returns trajectories from the AIS data.
+
+    Keyword arguments:
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from
+    """
     idx_cannot_handle = None
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
+        # Has the ship possibly stopped?
         if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
+            # Have we already detected a possible stop?
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
                 prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+                # How long has the ship been stopped for?
                 if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                     trajectory = _finalize_trajectory(
                         mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
@@ -77,8 +102,10 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat([trajectory, trajectories])
             else:
+                # We have a possible stop
                 idx_cannot_handle = idx
         else:
+            # Reset any possible stop because we are currently moving
             idx_cannot_handle = None
 
     return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
