@@ -22,7 +22,7 @@ def ensure_file_for_date(date: datetime, config) -> str:
     """
     Ensures that the file for the given date exists and return the file path.
     If it does not exist, try every trick in the book to gather it. If it still does not exist, raise an exception.
-    
+
     Keyword arguments:
         date: the date to ensure the file for
         config: the application configuration
@@ -69,7 +69,7 @@ def date_from_filename(file_name):
     --------
     >>> date_from_filename("aisdk-2007-04.zip")
     datetime(2007, 4, 1)
-    
+
     >>> date_from_filename("aisdk-2007-04-03.zip")
     datetime(2007, 4, 3)
     """
