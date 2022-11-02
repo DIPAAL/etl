@@ -11,7 +11,7 @@ def wrap_with_timings(name: str, func):
     Keyword arguments:
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to execute
-    
+
     Examples
     --------
     >>> wrap_with_timings('my awesome addition', lambda: 2+3)

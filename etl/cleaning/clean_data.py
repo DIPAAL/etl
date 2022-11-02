@@ -101,7 +101,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
 
     Keyword arguments:
         dirty_dataframe: a Dask Dataframe containing raw AIS data
-    
+
     Cleaning rules
     --------------
     >>> Remove where draught >= 28.5 (keep nulls/none)
