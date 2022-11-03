@@ -11,7 +11,7 @@ class BulkInserter:
     bulk_size: number of rows to insert in a single transaction
 
     """
-    def __init__(self, bulk_size: int=1000):
+    def __init__(self, bulk_size: int = 1000):
         """
         Constructs an instance of the BulkInserter class.
 
@@ -19,7 +19,7 @@ class BulkInserter:
         """
         self.bulk_size = bulk_size
 
-    def _bulk_insert(self, entries: pd.DataFrame, conn, query: str, fetch: bool=True) -> pd.Series:
+    def _bulk_insert(self, entries: pd.DataFrame, conn, query: str, fetch: bool = True) -> pd.Series:
         """
         Split entries into bulks and insert into database.
 
