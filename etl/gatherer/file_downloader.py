@@ -106,7 +106,9 @@ def extract(file, config):
 def download_file(url, path):
     response = requests.get(url, stream=True)
 
-    with open(path, "wb") as handle:
+
+
+    with open(path, "xwb") as handle:
         for data in tqdm(response.iter_content()):
             handle.write(data)
 
