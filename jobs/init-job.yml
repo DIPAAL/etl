@@ -11,6 +11,9 @@ spec:
       containers:
       - name: init-etl-${JOB_ID}
         image: ${IMAGE_NAME}
+        volumeMounts:
+          - name: ais-raw
+            mountPath: /data
         command: ["python", "-u", "main.py", "--init"]
         resources:
           limits:

@@ -16,6 +16,10 @@ spec:
           limits:
             memory: "50G"
       restartPolicy: Never
+      volumes:
+        - name: ais-raw
+          persistentVolumeClaim:
+            claimName: ais-raw
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
