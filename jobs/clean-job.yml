@@ -11,6 +11,9 @@ spec:
       containers:
       - name: clean-etl-${JOB_ID}
         image: ${IMAGE_NAME}
+        volumeMounts:
+          - name: ais-raw
+            mountPath: /data
         command: ["python", "-u", "main.py", "--clean", "--from_date", "2022-01-01", "--to_date", "2022-01-31"]
         resources:
           limits:

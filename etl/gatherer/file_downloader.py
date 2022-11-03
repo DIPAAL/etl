@@ -6,8 +6,6 @@ import zipfile
 import patoolib
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-
 from etl.helper_functions import wrap_with_timings
 
 
@@ -103,19 +101,11 @@ def extract(file, config):
     elif path.endswith('.rar'):
         patoolib.extract_archive(path, config['DataSource']['ais_path'])
 
-def download_file(url, path):
-    response = requests.get(url, stream=True)
-
-
-
-    with open(path, "xwb") as handle:
-        for data in tqdm(response.iter_content()):
-            handle.write(data)
 
 def ensure_file(file: AisFile, config):
     # Download the file if it does not exist.
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if not os.path.isfile(path):
-        wrap_with_timings(f"Downloading file: {file.name}", lambda: download_file(file.url, path))
+        wrap_with_timings(f"Downloading file: {file.name}", lambda: wget.download(file.url, out=path))
     else:
         print(f"File already exists: {path}")
