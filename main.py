@@ -47,18 +47,22 @@ def main(argv):
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
-        # ensure date_from and date_to is set
-        if not date_from or not date_to:
-            raise ValueError("Please provide both from_date and to_date when cleaning data")
+        clean_range(date_from, date_to, config)
 
-        # ensure date_from is before date_to
-        if date_from > date_to:
-            raise ValueError("from_date must be before to_date")
 
-        # loop through all dates and clean them
-        while date_from <= date_to:
-            wrap_with_timings(f"Cleaning data for {date_from}", lambda: clean_date(date_from, config))
-            date_from += timedelta(days=1)
+def clean_range(date_from: datetime, date_to: datetime, config):
+    # ensure date_from and date_to is set
+    if not date_from or not date_to:
+        raise ValueError("Please provide both from_date and to_date when cleaning data")
+
+    # ensure date_from is before date_to
+    if date_from > date_to:
+        raise ValueError("from_date must be before to_date")
+
+    # loop through all dates and clean them
+    while date_from <= date_to:
+        wrap_with_timings(f"Cleaning data for {date_from}", lambda: clean_date(date_from, config))
+        date_from += timedelta(days=1)
 
 
 def clean_date(date: datetime, config):
