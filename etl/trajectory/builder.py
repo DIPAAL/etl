@@ -324,7 +324,7 @@ def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
     Rebuild a geodataframe from a pandas dataframe.
 
     Keyword arguements:
-        pandas_dataframe: pandas dataframe with an existing 'geomtry' column 
+        pandas_dataframe: pandas dataframe with an existing 'geomtry' column
     """
     if GEO_PANDAS_GEOMETRY_COL in pandas_dataframe.columns:
         pandas_dataframe.drop(labels=GEO_PANDAS_GEOMETRY_COL, axis='columns', inplace=True)
@@ -374,7 +374,7 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
         cur_point: the current AIS point that is checked
         prev_point: the last non-outlier AIS point checked
         speed_threshold: max speed that determine whether an AIS point is an outlier
-        dist_function: distance function used to calculate the distance between cur_point and prev_point, must take 4 arguments (p1.longitude, p1. latitude, p2.longitude, p2.latitude)
+        dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
 
     time_delta = cur_point[TIMESTAMP_COL].iloc[0] - prev_point[TIMESTAMP_COL].iloc[0]
