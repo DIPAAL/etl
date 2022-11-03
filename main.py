@@ -40,8 +40,8 @@ def main(argv):
 
     args = parser.parse_args()
 
-    date_from = datetime.strptime(args.date, '%Y-%m-%d') if args.from_date else None
-    date_to = datetime.strptime(args.date, '%Y-%m-%d') if args.to_date else None
+    date_from = datetime.strptime(args.from_date, '%Y-%m-%d') if args.from_date else None
+    date_to = datetime.strptime(args.to_date, '%Y-%m-%d') if args.to_date else None
 
     if args.init:
         wrap_with_timings("Database init", lambda: init_database(config))
