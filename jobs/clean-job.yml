@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clean-etl-${JOB_ID}
+spec:
+  ttlSecondsAfterFinished: 253800
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: clean-etl-${JOB_ID}
+        image: ${IMAGE_NAME}
+        command: ["python", "-u", "main.py", "--clean", "--from_date", "2022-01-01", "--to_date", "2022-01-31"]
+        resources:
+          limits:
+            memory: "50G"
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ais-etl-worker
+  backoffLimit: 0
