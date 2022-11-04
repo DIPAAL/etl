@@ -14,7 +14,7 @@ spec:
         volumeMounts:
           - name: ais-raw
             mountPath: /data
-        command: ["python", "-u", "main.py", "--clean", "--from_date", "2022-01-01", "--to_date", "2022-01-31"]
+        command: ["python", "-u", "main.py", "--clean", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
         resources:
           limits:
             memory: "50G"
@@ -31,5 +31,5 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - ais-etl-worker
+                - ${NODE_NAME}
   backoffLimit: 0
