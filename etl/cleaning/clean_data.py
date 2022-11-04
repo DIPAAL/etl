@@ -16,6 +16,8 @@ NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     """
     Reads AIS data from a file and returns the cleaned data.
+    Raises exception if file extension is not supported.
+    Currently supported extensions are: .csv
 
     Keyword arguments:
         config: the application configuration
@@ -73,9 +75,9 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
 
 
-def create_dirty_df_from_ais_csv(csv_path: str) -> d_gpd.GeoDataFrame:
+def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
     """
-    Returns the raw data within the csv file
+    Returns a dask dataframe containing the raw data within the csv file.
 
     Keyword arguments:
         csv_path: absolute or relative file path to a csv file containing AIS data
@@ -97,7 +99,7 @@ def create_dirty_df_from_ais_csv(csv_path: str) -> d_gpd.GeoDataFrame:
 
 def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     """
-    Removes raw AIS data that does not conform to pre-defined non-spatial cleaning rules.
+    Remove raw AIS data that does not conform to pre-defined non-spatial cleaning rules and return the rest.
 
     Keyword arguments:
         dirty_dataframe: a Dask Dataframe containing raw AIS data

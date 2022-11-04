@@ -6,7 +6,7 @@ import psycopg2
 
 def wrap_with_timings(name: str, func):
     """
-    Executes a function and prints the time it took to execute.
+    Executes a given function and prints the time it took the function to execute.
 
     Keyword arguments:
         name: identifier for the function execution, used to identify it in the output
@@ -36,8 +36,8 @@ def get_connection(config, database=None, host=None, user=None, password=None):
         config: the application configuration
         database: the name of the database (default None)
         host: host and port of the database concatenated using ':' (default None)
-        user: username for the database user to use
-        password: password for the database user
+        user: username for the database user to use (default None)
+        password: password for the database user (defualt None)
     """
     host, port = host.split(':') if host is not None else config['Database']['host'].split(':')
     database = database if database is not None else config['Database']['database']
