@@ -15,9 +15,6 @@ spec:
           - name: ais-raw
             mountPath: /data
         command: ["python", "-u", "main.py", "--clean", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
-        resources:
-          limits:
-            memory: "50G"
       restartPolicy: Never
       volumes:
         - name: ais-raw
