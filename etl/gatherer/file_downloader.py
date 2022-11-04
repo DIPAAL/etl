@@ -60,7 +60,7 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
 def date_from_filename(file_name):
     """
-    Extract and return date information from filename.
+    Extracts and return date information from a given filename.
 
     Keyword arguments:
         file_name: the name of the file used to extract date information
