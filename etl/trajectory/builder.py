@@ -398,7 +398,7 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
 
 def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) -> float:
     """
-    Calculate the euclidean distance from 2 points.
+    Calculate the euclidean distance between 2 points.
 
     Keyword arguments:
         a_long: longitude value for point a
