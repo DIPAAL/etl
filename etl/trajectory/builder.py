@@ -32,7 +32,7 @@ UNKNOWN_FLOAT_VALUE = -1.0
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     """
-    Build and return trajectories based on the provided AIS data.
+    Build and return a pandas dataframe containing built trajectories based on the provided AIS data.
 
     Keyword arguments:
         clean_sorted_ais: A GeoDataFrame of cleaned and ascending timestamp sorted AIS data.
@@ -60,7 +60,7 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
 def _create_trajectory(grouped_data) -> pd.DataFrame:
     """
-    Create and return trajectories for a single ship identified by MMSI.
+    Create and return trajectories for a single ship identified by MMSI as a pandas dataframe.
     During creation AIS outlier points are detected and removed.
 
     Keyword arguments:
@@ -77,7 +77,7 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
 
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
-    Construct and returns trajectories from the AIS data.
+    Construct and returns trajectories from the AIS data as a pandas dataframe.
 
     Keyword arguments:
         mmsi: the maritime mobile mervice identity used to identify a ship
@@ -115,7 +115,7 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
 def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int,
                          infer_stopped: bool) -> pd.DataFrame:
     """
-    Construct a trajectory from a given set of AIS points.
+    Construct a trajectory as a pandas dataframe from a given set of AIS points.
 
     Keyword arguements:
         mmsi: the maritime mobile mervice identity used to identify a ship
@@ -228,7 +228,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
 def _extract_date_smart_id(datetime: datetime) -> int:
     """
-    Extracts the date smart-key from a given datetime.
+    Extracts the date integer smart-key from a given datetime.
 
     Keyword arguments:
         datetime: object representation of a datetime to extract date smart-key from
@@ -240,7 +240,7 @@ def _extract_date_smart_id(datetime: datetime) -> int:
 
 def _extract_time_smart_id(datetime: datetime) -> int:
     """
-    Extracts the time smart-key from a given datetime.
+    Extracts the time integer smart-key from a given datetime.
 
     Keyword arguments:
         datetime: object representation of a datetime to extract time smart-key from
@@ -269,7 +269,7 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TF
 
 def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
     """
-    Create a pandas series containing the values in descending order of occurrence.
+    Create and return a pandas series containing the values in descending order of occurrence.
 
     Keyword arguments:
         dataframe: dataframe containing the data to search through
@@ -281,7 +281,7 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
-    Construct and returns trajectories from the AIS data.
+    Construct and returns trajectories as a pandas dataframe from the AIS data.
 
     Keyword arguments:
         mmsi: the maritime mobile mervice identity used to identify a ship
@@ -333,9 +333,9 @@ def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
                                                                                crs=COORDINATE_REFERENCE_SYSTEM))
 
 
-def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
+def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
-    Detect and remove outliers.
+    Detect and remove outliers from geopandas geodataframe.
 
     Keyword arguements:
         dataframe: dataframe containing sorted AIS data points
