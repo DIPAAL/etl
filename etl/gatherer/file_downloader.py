@@ -12,7 +12,12 @@ from etl.helper_functions import wrap_with_timings
 @dataclass
 class AisFile:
     """
-    A class representing an AIS file, by its name and the url used to download the file.
+    Class representing an AIS file.
+
+    Attributes
+    ----------
+    name: name of the file
+    url: link to download file
     """
     name: str
     url: str
@@ -21,7 +26,7 @@ class AisFile:
 def ensure_file_for_date(date: datetime, config) -> str:
     """
     Ensures that the file for the given date exists and return the file path.
-    If it does not exist, try every trick in the book to gather it. If it still does not exist, raise an exception.
+    Raises exception if file has not already been downloaded and cannot be found on AIS website.
 
     Keyword arguments:
         date: the date to ensure the file for
