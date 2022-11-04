@@ -54,6 +54,9 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 def _create_trajectory(grouped_data) -> pd.DataFrame:
     mmsi, data = grouped_data
 
+    # Sort the data by timestamp
+    data = data.sort_values(by=TIMESTAMP_COL)
+
     dataframe = _remove_outliers(dataframe=data)
     # Reset the index as some rows might have been classified as outliers and removed
     dataframe.reset_index(inplace=True)
