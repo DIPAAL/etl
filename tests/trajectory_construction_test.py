@@ -9,7 +9,7 @@ from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe
     _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
-    TIMESTAMP_COL
+    TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
     T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, \
@@ -37,7 +37,7 @@ def test_euclidian_dist(a_long, a_lat, b_long, b_lat, expected):
 def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
     columns_dtype_int64 = [T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL,
-                           T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL]
+                           T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL, T_LENGTH_COL]
     columns_dtype_float64 = [T_DRAUGHT_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL]
     columns_dtype_object = [T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL,
                             T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL]
@@ -218,3 +218,14 @@ def test_point_to_trajectory_threshold_above_returns_trajectory():
                                         to_idx=to_idx, infer_stopped=False)
 
     assert expected_dataframe_size == len(result_frame.index)
+
+
+def test_point_to_trajectory_correct_length():
+    test_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
+    test_dataframe = test_dataframe.iloc[0:10]
+    expected_length = 10
+
+    result_frame = _finalize_trajectory(mmsi=219000734, trajectory_dataframe=test_dataframe, from_idx=0, to_idx=10,
+                                        infer_stopped=False)
+
+    assert expected_length == result_frame[T_LENGTH_COL].iloc[0]
