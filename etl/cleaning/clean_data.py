@@ -10,10 +10,20 @@ from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIM
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
+# Specifies the number of partition for DAsk Dataframes based on the number of CPU cores available
 NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
 
 
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
+    """
+    Reads AIS data from a file and returns the cleaned data.
+    Raises exception if file extension is not supported.
+    Currently supported extensions are: .csv
+
+    Keyword arguments:
+        config: the application configuration
+        ais_file_path: the absolute or relative file path to AIS data file
+    """
     if ais_file_path.endswith(CSV_EXTENSION):
         return _clean_csv_data(config, ais_file_path)
 
@@ -23,24 +33,19 @@ def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
 
 
 def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
-    # Read into pandas
-    # Keep dictionary of known entities (mimicking staging DB)
-    # Coarse cleaning
-    #   - Remove where draught >= 28.5 (keep nulls/none)
-    #   - Remove where width >= 75
-    #   - Remove where length >= 488
-    #   - Remove where 99999999 =< MMSI >= 990000000
-    #   - Remove where 112000000 < MMSI > 111000000
-    #   - Remove where not within geometry of Danish_waters
+    """Reads AIS data from a CSV file and returns the cleaned data.
 
+    Keyword arguments:
+        config: the application configuration
+        ais_file_path_csv: the absolute or relative file path to the AIS data csv file
+    """
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
-    # Then uses that to filter on latitude and longitude
     danish_waters_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_danish_waters_boundary(config))
 
     # Read from georeferenced AIS dataframe from csv file
     dirty_geo_dataframe = wrap_with_timings(
         'Create Geodataframe from CSV',
-        lambda: create_dirty_df_from_ais_cvs(csv_path=ais_file_path_csv)
+        lambda: create_dirty_df_from_ais_csv(csv_path=ais_file_path_csv)
     )
 
     # Initial cleaning of AIS dataframe
@@ -58,6 +63,12 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
 
 
 def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
+    """
+    Returns Danish Waters geometry bounds from the DWH.
+
+    Keyword arguments:
+        config: the application configuration
+    """
     conn = _create_pandas_postgresql_connection(config)
 
     query = get_first_query_in_file(GEOMETRY_BOUNDS_QUERY)
@@ -65,7 +76,13 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
 
 
-def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
+def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
+    """
+    Returns a dask dataframe containing the raw data within the csv file.
+
+    Keyword arguments:
+        csv_path: absolute or relative file path to a csv file containing AIS data
+    """
     dirty_frame = dd.read_csv(
         csv_path,
         dtype={
@@ -102,6 +119,20 @@ def create_dirty_df_from_ais_cvs(csv_path: str) -> d_gpd.GeoDataFrame:
 
 
 def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
+    """
+    Remove raw AIS data that does not conform to pre-defined non-spatial cleaning rules and return the rest.
+
+    Keyword arguments:
+        dirty_dataframe: a Dask Dataframe containing raw AIS data
+
+    Cleaning rules
+    --------------
+    >>> Remove where draught >= 28.5 (keep nulls/none)
+    >>> Remove where width >= 75
+    >>> Remove where length >= 488
+    >>> Remove where 99999999 =< MMSI >= 990000000
+    >>> Remove where 112000000 < MMSI > 111000000
+    """
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
     dirty_dataframe = wrap_with_timings("Initial data filter", lambda: dirty_dataframe.query(expr=(
                                 '(Draught < 28.5 | Draught.isna()) & '
@@ -126,7 +157,10 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
 
 def _create_pandas_postgresql_connection(config):
     """
-    Creates a connection to the database using SQLalchemy as it is the only connection type supported by pandas
+    Returns a connection to the database using SQLalchemy, as it is the only connection type supported by pandas.
+
+    Keyword arguments:
+        config: the application configuration
     """
     host, port = config['Database']['host'].split(':')
     user = config['Database']['user']
