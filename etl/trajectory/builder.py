@@ -31,9 +31,16 @@ UNKNOWN_FLOAT_VALUE = -1.0
 
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
+    """
+    Build and return a pandas dataframe containing built trajectories based on the provided AIS data.
+
+    Keyword arguments:
+        clean_sorted_ais: A GeoDataFrame of cleaned and ascending timestamp sorted AIS data.
+    """
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
     # https://gist.github.com/alexeygrigorev/79c97c1e9dd854562df9bbeea76fc5de
+    # Build trajectories in parallel
     with ProcessPoolExecutor() as pool:
         with tqdm(total=len(grouped_data)) as progress:
             futures = []
@@ -52,6 +59,13 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
 
 def _create_trajectory(grouped_data) -> pd.DataFrame:
+    """
+    Create and return trajectories for a single ship identified by MMSI as a pandas dataframe.
+    During creation AIS outlier points are detected and removed.
+
+    Keyword arguments:
+        grouped_data: a DataFrameGroupBy on MMSI of AIS point data
+    """
     mmsi, data = grouped_data
 
     dataframe = _remove_outliers(dataframe=data)
@@ -62,14 +76,25 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
 
 
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+    """
+    Construct and returns trajectories from the AIS data as a pandas dataframe.
+
+    Keyword arguments:
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from
+    """
     idx_cannot_handle = None
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
+        # Has the ship possibly stopped?
         if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
+            # Have we already detected a possible stop?
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
                 prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+                # How long has the ship been stopped for?
                 if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                     trajectory = _finalize_trajectory(
                         mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
@@ -77,8 +102,10 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
                     trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
                     return pd.concat([trajectory, trajectories])
             else:
+                # We have a possible stop
                 idx_cannot_handle = idx
         else:
+            # Reset any possible stop because we are currently moving
             idx_cannot_handle = None
 
     return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
@@ -87,6 +114,15 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
 
 def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int,
                          infer_stopped: bool) -> pd.DataFrame:
+    """
+    Construct a trajectory as a pandas dataframe from a given set of AIS points.
+
+    Keyword arguements:
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from (inclusive)
+        to_idx: the index to stop creating trajectories at (exclusive)
+    """
     to_idx -= 1  # to_idx is exclusive
     dataframe = _create_trajectory_db_df()
     # If there is no point in a trajectory which contain less points than in threshold, return empty dataframe
@@ -122,6 +158,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
     trajectory_dataframe.replace(['Unknown', 'Undefined'], pd.NA, inplace=True)
+    # Find the most recurring information for the different AIS message attributes
     most_recurring = \
         _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
     imo = most_recurring[IMO_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_INT_VALUE
@@ -190,18 +227,37 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
 
 def _extract_date_smart_id(datetime: datetime) -> int:
+    """
+    Extracts the date integer smart-key from a given datetime.
+
+    Keyword arguments:
+        datetime: object representation of a datetime to extract date smart-key from
+    """
     if pd.isna(datetime):
         return UNKNOWN_INT_VALUE
     return (datetime.year * 10000) + (datetime.month * 100) + datetime.day
 
 
 def _extract_time_smart_id(datetime: datetime) -> int:
+    """
+    Extracts the time integer smart-key from a given datetime.
+
+    Keyword arguments:
+        datetime: object representation of a datetime to extract time smart-key from
+    """
     if pd.isna(datetime):
         return UNKNOWN_INT_VALUE
     return (datetime.hour * 10000) + (datetime.minute * 100) + datetime.second
 
 
 def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TFloatInstSet:
+    """
+    Convert a geodataframe float64 column's values to a MobilityDB temporal float instant set.
+
+    Keyword arguments:
+        dataframe: geodataframe containing the float_column and timestamps
+        float_column: name of the column containing the float values
+    """
     tfloat_lst = []
     for _, row in dataframe.iterrows():
         mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
@@ -212,10 +268,26 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TF
 
 
 def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
+    """
+    Create and return a pandas series containing the values in descending order of occurrence.
+
+    Keyword arguments:
+        dataframe: dataframe containing the data to search through
+        column_subset: list of column names that to find most recurring values for
+        drop_na: indicates if pandas or numpy NA values should be included
+    """
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+    """
+    Construct and returns trajectories as a pandas dataframe from the AIS data.
+
+    Keyword arguments:
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from
+    """
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
@@ -230,6 +302,12 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
 
 
 def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeomPointSeq:
+    """
+    Create MobilityDB trajectory representation from a trajectory dataframe.
+
+    Keyword arguments:
+        trajectory_dataframe: dataframe containing trajectory data
+    """
     mobilitydb_dataframe = pd.DataFrame(columns=[MBDB_TRAJECTORY_COL])
     mobilitydb_dataframe[TIMESTAMP_COL] = trajectory_dataframe[TIMESTAMP_COL].apply(
         func=lambda t: t.strftime(MOBILITYDB_TIMESTAMP_FORMAT))
@@ -242,6 +320,12 @@ def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeo
 
 
 def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
+    """
+    Rebuild a geodataframe from a pandas dataframe.
+
+    Keyword arguements:
+        pandas_dataframe: pandas dataframe with an existing 'geomtry' column
+    """
     if GEO_PANDAS_GEOMETRY_COL in pandas_dataframe.columns:
         pandas_dataframe.drop(labels=GEO_PANDAS_GEOMETRY_COL, axis='columns', inplace=True)
     return gpd.GeoDataFrame(data=pandas_dataframe, geometry=gpd.points_from_xy(x=pandas_dataframe[LONGITUDE_COL],
@@ -249,7 +333,13 @@ def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
                                                                                crs=COORDINATE_REFERENCE_SYSTEM))
 
 
-def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
+def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Detect and remove outliers from geopandas geodataframe.
+
+    Keyword arguements:
+        dataframe: dataframe containing sorted AIS data points
+    """
     prev_row: Optional[pd.Series] = None
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
     dataframe['is_outlier'] = False
@@ -278,13 +368,13 @@ def _remove_outliers(dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
 def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, speed_threshold: float,
                    dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
-    Checks whether the distance between two points, given the provided distance function and threshold, is an outlier
-        cur_point: Point as the geopandas row
-        prev_point: Point as the geopandas row
-        dist_threshold: Threshold distance which determines whether distance between the points indicates an outlier
-        dist_function: A distance function that takes in 4 parameters (cur_long, cur_lat, prev_long, prev_lat)
+    Checks whether the current point is an outlier.
 
-        Returns: A bool indicating that an outlier is detected
+    Keyword arguments:
+        cur_point: the current AIS point that is checked
+        prev_point: the last non-outlier AIS point checked
+        speed_threshold: max speed that determine whether an AIS point is an outlier
+        dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
 
     time_delta = cur_point[TIMESTAMP_COL].iloc[0] - prev_point[TIMESTAMP_COL].iloc[0]
@@ -307,12 +397,27 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
 
 
 def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) -> float:
+    """
+    Calculate the euclidean distance between 2 points.
+
+    Keyword arguments:
+        a_long: longitude value for point a
+        a_lat: latitude value for point a
+        b_long: longitude value for point b
+        b_lat: latitude value for point b
+    """
     return math.sqrt(
         (math.pow((b_long - a_long), 2) + math.pow((b_lat - a_lat), 2))
     )
 
 
 def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
+    """
+    Create trajectory dataframe representing DWH structure.
+
+    Keyword arguments:
+        dict: a dictionary with initial values for the created dataframe (default {})
+    """
     return pd.DataFrame({
         # Dimensions
         T_START_DATE_COL: pd.Series(dtype='int64', data=dict[T_START_DATE_COL] if T_START_DATE_COL in dict else []),
