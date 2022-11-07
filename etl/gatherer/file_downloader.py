@@ -11,17 +11,26 @@ from etl.helper_functions import wrap_with_timings
 
 @dataclass
 class AisFile:
+    """
+    Class representing an AIS file.
+
+    Attributes
+    ----------
+    name: name of the file
+    url: link to download file
+    """
     name: str
     url: str
 
 
 def ensure_file_for_date(date: datetime, config) -> str:
     """
-        Ensures that the file for the given date exists.
-        If it does not exist, try every trick in the book to gather it. If it still does not exist, raise an exception.
-    :param date: The date to ensure the file for.
-    :param config:
-    :return: The path to the file.
+    Ensures that the file for the given date exists and return the file path.
+    Raises exception if file has not already been downloaded and cannot be found on AIS website.
+
+    Keyword arguments:
+        date: the date to ensure the file for
+        config: the application configuration
     """
     expected_filename = f"aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv"
     path = os.path.join(config['DataSource']['ais_path'], expected_filename)
@@ -56,9 +65,18 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
 def date_from_filename(file_name):
     """
-        Eg "aisdk-2007-04.zip" -> datetime(2007, 4, 1), "aisdk-2007-04-03.zip" -> datetime(2007, 4, 3)
-    :param file_name:
-    :return:
+    Extracts and return date information from a given filename.
+
+    Keyword arguments:
+        file_name: the name of the file used to extract date information
+
+    Examples
+    --------
+    >>> date_from_filename("aisdk-2007-04.zip")
+    datetime(2007, 4, 1)
+
+    >>> date_from_filename("aisdk-2007-04-03.zip")
+    datetime(2007, 4, 3)
     """
     file_name = file_name.replace('aisdk-', '').replace('.zip', '').replace('.rar', '')
     file_name = file_name.split('-')
@@ -73,6 +91,12 @@ def date_from_filename(file_name):
 
 
 def get_file_names(ais_url: str) -> dict:
+    """
+    Fetch and return AIS filenames from webpage.
+
+    Keyword arguments:
+        ais_url: url to html page containing AIS archieves hyperlinks
+    """
     # Fetch the HTML from DMA.
     response = requests.get(ais_url)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -93,7 +117,13 @@ def get_file_names(ais_url: str) -> dict:
     return ais_files
 
 
-def extract(file, config):
+def extract(file: AisFile, config):
+    """
+    Extracts the AIS file from its archieve.
+
+    Keyword arguments:
+        file: name and url of the AIS file
+    """
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if path.endswith('.zip'):
         with zipfile.ZipFile(path, 'r') as zip_ref:
@@ -103,6 +133,14 @@ def extract(file, config):
 
 
 def ensure_file(file: AisFile, config):
+    """
+    Ensures that the AIS file is present in the file system.
+    Downloads the file if not found in file system.
+
+    Keyword arguements:
+        file: name and url of a AIS file
+        config: the application configuration
+    """
     # Download the file if it does not exist.
     path = os.path.join(config['DataSource']['ais_path'], file.name)
     if not os.path.isfile(path):
