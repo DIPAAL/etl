@@ -1,8 +1,8 @@
 CREATE TABLE dim_cell_50m (
-    cell_id serial PRIMARY KEY,
-    row int NOT NULL,
-    col int NOT NULL,
+    i integer NOT NULL,
+    j integer NOT NULL,
     geom geometry NOT NULL
+    PRIMARY KEY (i, j)
 );
 
 -- Create the 50m grid
@@ -11,8 +11,8 @@ CREATE TABLE dim_cell_50m (
 -- LowerRight = 4392275,3055475
 INSERT INTO dim_cell_50m (row, col, geom)
 SELECT
-    i AS row,
-    j AS col,
+    i,
+    j,
     geom
 FROM
     ST_SquareGrid(5000, ST_SetSRID(ST_MakeBox2D(ST_Point(3602375, 3055475), ST_Point(4392275, 3471675)), 3034)) AS geom;
