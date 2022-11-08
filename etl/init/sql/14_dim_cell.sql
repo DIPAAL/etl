@@ -1,7 +1,7 @@
 CREATE TABLE dim_cell_50m (
     i integer NOT NULL,
     j integer NOT NULL,
-    geom geometry NOT NULL
+    geom geometry NOT NULL,
     PRIMARY KEY (i, j)
 );
 
