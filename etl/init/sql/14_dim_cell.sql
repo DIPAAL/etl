@@ -9,7 +9,7 @@ CREATE TABLE dim_cell_50m (
 -- EPSG3034
 -- UpperLeft = 3602375,3471675
 -- LowerRight = 4392275,3055475
-INSERT INTO dim_cell_50m (row, col, geom)
+INSERT INTO dim_cell_50m (i, j, geom)
 SELECT
     i,
     j,
