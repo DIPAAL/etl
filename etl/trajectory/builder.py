@@ -200,8 +200,8 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
     # Metadata
-    # The length of the trajectory
-    length = len(working_dataframe)
+    # The total delta length of all points in the trajectory
+    total_length = _calculate_delta_length(working_dataframe)
 
     return pd.concat([dataframe, _create_trajectory_db_df(dict={
         T_START_DATE_COL: start_date_id,
@@ -232,7 +232,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_C_COL: c,
         T_D_COL: d,
         # Metadata
-        T_LENGTH_COL: length
+        T_LENGTH_COL: total_length
     })])
 
 
@@ -287,6 +287,19 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
         drop_na: indicates if pandas or numpy NA values should be included
     """
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
+
+
+def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
+    """
+    Calculate the total delta length of all points in the trajectory.
+
+    Keyword arguments:
+        dataframe: dataframe containing the data to calculate delta length for
+    """
+    point_GeoSeries1 = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(epsg=4326)
+    point_GeoSeries2 = point_GeoSeries1.shift(-1).iloc[:-1]  # Shift the series by one and remove the last element
+    point_GeoSeries1 = point_GeoSeries1.iloc[:-1]
+    return sum(point_GeoSeries1.distance(point_GeoSeries2))
 
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
