@@ -221,11 +221,11 @@ def test_point_to_trajectory_threshold_above_returns_trajectory():
 
 
 def test_point_to_trajectory_correct_length():
-    test_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
-    test_dataframe = test_dataframe.iloc[0:10]
-    expected_length = 10
+    ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
+    result_dataframe = build_from_geopandas(ferry_dataframe)
+    total_length = result_dataframe[T_LENGTH_COL].sum()
 
-    result_frame = _finalize_trajectory(mmsi=219000734, trajectory_dataframe=test_dataframe, from_idx=0, to_idx=10,
-                                        infer_stopped=False)
+    expected_length = _euclidian_dist(57.298418, 10.921814, 57.434897, 10.547164)  # The distance between the two ports
 
-    assert expected_length == result_frame[T_LENGTH_COL].iloc[0]
+    assert expected_length >= total_length  # Lower bound
+    assert expected_length * 1.2 <= total_length  # Upper bound
