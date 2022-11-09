@@ -1,5 +1,6 @@
 import pytest
 import geopandas as gpd
+from shapely.geometry import Point
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
@@ -7,7 +8,7 @@ from datetime import datetime
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, COORDINATE_REFERENCE_SYSTEM_METERS
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
@@ -225,7 +226,14 @@ def test_point_to_trajectory_correct_length():
     result_dataframe = build_from_geopandas(ferry_dataframe)
     total_length = result_dataframe[T_LENGTH_COL].sum()
 
-    expected_length = _euclidian_dist(57.298418, 10.921814, 57.434897, 10.547164)  # The distance between the two ports
+    point_harbor1 = Point(57.434897, 10.547164)
+    point_harbor2 = Point(57.298418, 10.921814)
 
-    assert expected_length >= total_length  # Lower bound
-    assert expected_length * 1.2 <= total_length  # Upper bound
+    points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
+    points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
+    expected_length = 27.19  # km
+    expected_length = points_journey.distance(points_journey) / 1000  # Distance between the 2 ports in km (27.19 km)
+    a = 2
+
+    assert total_length >= expected_length
+    assert total_length <= expected_length + 2
