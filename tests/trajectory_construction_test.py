@@ -231,9 +231,11 @@ def test_point_to_trajectory_correct_length():
 
     points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
     points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
-    expected_length = 27.19  # km
-    expected_length = points_journey.distance(points_journey) / 1000  # Distance between the 2 ports in km (27.19 km)
-    a = 2
+    points_journey2 = points_journey.shift(-1).iloc[:-1]
+    points_journey = points_journey.iloc[:-1]
+
+    # expected_length = 27.19  # km
+    expected_length = sum(points_journey.distance(points_journey2)) / 1000  # Expected distance between the 2 ports in km (27.19 km)
 
     assert total_length >= expected_length
     assert total_length <= expected_length + 2
