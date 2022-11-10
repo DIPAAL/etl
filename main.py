@@ -67,6 +67,12 @@ def clean_range(date_from: datetime, date_to: datetime, config):
 
 
 def clean_date(date: datetime, config):
+    """
+    Apply cleaning, trajectory construction, and insert/rollup the results.
+    :param date: The date to clean
+    :param config: The application config
+    :return:
+    """
     file_path = wrap_with_timings(
         "Ensuring file for current date exists",
         lambda: ensure_file_for_date(date, config)
