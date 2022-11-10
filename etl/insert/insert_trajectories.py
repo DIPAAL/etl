@@ -24,7 +24,7 @@ class TrajectoryInserter (BulkInserter):
 
         self._insert_trajectories(df, conn)
 
-        conn.commit()
+        return conn
 
     def _insert_trajectories(self, df, conn):
         # TODO: hack while length is not available

@@ -12,6 +12,7 @@ from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
+from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
 
 
@@ -80,7 +81,10 @@ def clean_date(date: datetime, config):
         trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
         trajectories.to_pickle(pickle_path)
 
-    wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config))
+    conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config))
+    wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date))
+
+    conn.commit()
 
 
 if __name__ == '__main__':
