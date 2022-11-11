@@ -10,7 +10,7 @@ CREATE TABLE fact_cell (
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
     trajectory_id integer NOT NULL,
-    PRIMARY KEY (cell_i, cell_j, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_id),
+    PRIMARY KEY (cell_i, cell_j, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_id),
 
     sog float NOT NULL,
     delta_heading float NOT NULL,
