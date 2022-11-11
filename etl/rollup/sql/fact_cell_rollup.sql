@@ -17,14 +17,12 @@ SELECT
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
     trajectory_id,
-    CASE
-        WHEN durationSeconds = 0 THEN 0
-        ELSE (length(crossing) / durationSeconds) * 1.94 -- 1 m/s = 1.94 knots
-    END sog,
+    length(crossing) / MIN(durationSecond, INTERVAL '1 second') * 1.94 sog -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     0 delta_heading,
     draught
 FROM (
         SELECT
+            -- Select the JSON keys (north, south, east, west) with the lowest distance.
             (
               SELECT key FROM json_each_text(start_edges)
               ORDER BY value::float ASC LIMIT 1
@@ -47,6 +45,7 @@ FROM (
             (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
         FROM (
             SELECT
+                -- Construct the JSON objects existing of direction key, and distance to the cell edge
                 JSON_BUILD_OBJECT(
                     'South', ST_Distance(startValue(crossing), south),
                     'North', ST_Distance(startValue(crossing), north),
@@ -68,11 +67,13 @@ FROM (
                 trajectory_id,
                 draught,
                 heading,
+                -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
                 date_trunc('second', endTimestamp(crossing) + INTERVAL '999999 microseconds') endTime
             FROM (
                 SELECT
                     unnest(sequences(atGeometry(fdt.trajectory, dc.geom))) crossing,
+                    -- Create the 4 lines representing the cell edges
                     ST_SetSRID(ST_MakeLine(
                         ST_MakePoint(ST_XMin(dc.geom), ST_YMin(dc.geom)),
                         ST_MakePoint(ST_XMax(dc.geom), ST_YMin(dc.geom))
@@ -100,6 +101,7 @@ FROM (
                 FROM (
                     SELECT
                         ft.*,
+                        -- Split the trajectory into cells of 2500m x 2500m. This makes it much faster to join to cell dimension.
                         (spaceSplit(transform(setSRID(dt.trajectory,4326),3034),2500)).tpoint point,
                         transform(setSRID(dt.trajectory, 4326), 3034) trajectory,
                         dt.heading heading,
