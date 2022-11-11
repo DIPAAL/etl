@@ -299,7 +299,7 @@ def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
     point_gs1 = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)  # Extract geometry column as a GeoSeries with CRS for meters
     point_gs2 = point_gs1.shift(-1).iloc[:-1]  # Shift the series by one and remove the last element
     point_gs1 = point_gs1.iloc[:-1]
-    return sum(point_gs1.distance(point_gs2))/1000  # Converted to kilometers
+    return sum(point_gs1.distance(point_gs2)) / 1000  # Converted to kilometers
 
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
