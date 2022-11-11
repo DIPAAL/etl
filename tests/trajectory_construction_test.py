@@ -227,7 +227,7 @@ def test_point_to_trajectory_correct_length():
     total_length = result_dataframe[T_LENGTH_COL].sum()
 
     # Point for each of the 2 harbours between which the ferry sails, should be around 27,19 km between them.
-    point_harbor1 = Point(10.547164, 57.434897) # (x, y) AKA (lon, lat)
+    point_harbor1 = Point(10.547164, 57.434897)  # (x, y) AKA (lon, lat)
     point_harbor2 = Point(10.921814, 57.298418)
 
     points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
