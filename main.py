@@ -67,9 +67,9 @@ def clean_range(date_from: datetime, date_to: datetime, config):
     if not date_from or not date_to:
         raise ValueError("Please provide both from_date and to_date when cleaning data")
 
-    # ensure date_from is before date_to
+    # ensure date_from is before or equal to date_to
     if date_from > date_to:
-        raise ValueError("from_date must be before to_date")
+        raise ValueError("from_date must be before or equal to to_date")
 
     # loop through all dates and clean them
     while date_from <= date_to:
