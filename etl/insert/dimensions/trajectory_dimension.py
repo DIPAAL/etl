@@ -6,7 +6,22 @@ from etl.insert.bulk_inserter import BulkInserter
 
 
 class TrajectoryDimensionInserter(BulkInserter):
+    """
+    Class responsible for bulk inserting trajectory dimension data into a database.
+    Inherits from the BulkInserter class.
+
+    Methods
+    -------
+    ensure(df, conn): ensures the existence of a trajectory in the trajectory dimension
+    """
     def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+        """
+        Ensures the existence of a trajectory in the trajectory dimension.
+
+        Keyword arguments:
+            df: dataframe containing trajectory information
+            conn: database connection used for insertion
+        """
         trajectories = df[[
             T_TRAJECTORY_COL,
             T_ROT_COL,

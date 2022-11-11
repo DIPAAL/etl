@@ -5,7 +5,22 @@ from etl.insert.bulk_inserter import BulkInserter
 
 
 class NavigationalStatusDimensionInserter (BulkInserter):
+    """
+    Class responsible for bulk inserting navigational status dimension data into a database.
+    Inherits from the BulkInserter class.
+
+    Methods
+    -------
+    ensure(df, conn): ensures the existence of a navigational status in the navigational status dimension
+    """
     def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+        """
+        Ensures the existence of a navigation status in the navigational status dimension.
+
+        Keyword arguments:
+            df: dataframe containing navigational status information
+            conn: database connection used for insertion
+        """
         unique_columns = [
             T_NAVIGATIONAL_STATUS_COL
         ]

@@ -1,3 +1,4 @@
+import pandas as pd
 from etl.constants import T_SHIP_ID_COL, T_SHIP_TRAJECTORY_ID_COL, T_SHIP_JUNK_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
     T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_LENGTH_COL, T_INFER_STOPPED_COL
@@ -10,8 +11,23 @@ from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInsert
 
 
 class TrajectoryInserter (BulkInserter):
+    """
+    Class responsible for bulk inserting trajectories in a database.
+    Inherits from the BulkInserter class.
 
-    def persist(self, df, config):
+    Methods
+    -------
+    persist(df, config): persist trajectory data into a database
+    """
+
+    def persist(self, df: pd.DataFrame, config):
+        """
+        Persist trajectory data into a database.
+
+        Keyword arguments:
+            df: dataframe containing trajectory to insert
+            config: the application configuration
+        """
         # rebuild index to be able to loop over it.
         df = df.reset_index()
 
@@ -26,7 +42,14 @@ class TrajectoryInserter (BulkInserter):
 
         return conn
 
-    def _insert_trajectories(self, df, conn):
+    def _insert_trajectories(self, df: pd.DataFrame, conn):
+        """
+        Insert trajectories into database.
+
+        Keyword arguments:
+            df: dataframe containing trajectory data
+            conn: database connection
+        """
         # TODO: hack while length is not available
         df[T_LENGTH_COL] = 0
 

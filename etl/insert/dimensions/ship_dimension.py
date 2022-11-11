@@ -6,7 +6,22 @@ from etl.insert.bulk_inserter import BulkInserter
 
 
 class ShipDimensionInserter (BulkInserter):
+    """
+    Class responsible for bulk inserting ship dimension data into a database.
+    Inherits from the BulkInserter class.
+
+    Methods
+    -------
+    ensure(df, conn): ensures the existence of a ship in the ship dimension
+    """
     def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+        """
+        Ensures the existence of a ship in the ship dimension.
+
+        Keyword arguments:
+            df: dataframe containing ship dimension data
+            conn: database connection used for insertion
+        """
         unique_columns = [
             T_MMSI_COL, T_IMO_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL,
             T_A_COL, T_B_COL, T_C_COL, T_D_COL
