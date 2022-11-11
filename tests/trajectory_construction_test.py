@@ -226,16 +226,14 @@ def test_point_to_trajectory_correct_length():
     result_dataframe = build_from_geopandas(ferry_dataframe)
     total_length = result_dataframe[T_LENGTH_COL].sum()
 
-    point_harbor1 = Point(57.434897, 10.547164)
-    point_harbor2 = Point(57.298418, 10.921814)
+    # Point for each of the 2 harbours between which the ferry sails, should be around 27,19 km between them.
+    point_harbor1 = Point(10.547164, 57.434897) # (x, y) AKA (lon, lat)
+    point_harbor2 = Point(10.921814, 57.298418)
 
     points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
     points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
-    points_journey2 = points_journey.shift(-1).iloc[:-1]
-    points_journey = points_journey.iloc[:-1]
 
-    # expected_length = 27.19  # km
-    expected_length = sum(points_journey.distance(points_journey2)) / 1000  # Expected distance between the 2 ports in km (27.19 km)
+    expected_length = points_journey[0].distance(points_journey[1]) / 1000
 
     assert total_length >= expected_length
     assert total_length <= expected_length + 2
