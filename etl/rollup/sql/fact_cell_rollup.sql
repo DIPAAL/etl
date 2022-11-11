@@ -1,13 +1,13 @@
 INSERT INTO fact_cell (
-    cell_i, cell_j, ship_id, ship_junk_id,
+    cell_x, cell_y, ship_id, ship_junk_id,
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
     direction_id, nav_status_id, trajectory_id,
     sog, delta_heading, draught
 )
 SELECT
-    cell_i,
-	cell_j,
+    cell_x,
+	cell_y,
     ship_id,
     ship_junk_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
@@ -32,8 +32,8 @@ FROM (
               ORDER BY value::float ASC LIMIT 1
             ) as exit_direction,
             crossing,
-            cell_i,
-            cell_j,
+            cell_x,
+            cell_y,
             ship_id,
             ship_junk_id,
             nav_status_id,
@@ -59,8 +59,8 @@ FROM (
                     'West', ST_Distance(endValue(crossing), west)
                     ) AS end_edges,
                 crossing,
-                cell_i,
-                cell_j,
+                cell_x,
+                cell_y,
                 ship_id,
                 ship_junk_id,
                 nav_status_id,
@@ -90,8 +90,8 @@ FROM (
                         ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
                         ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
                     ), 3034) north,
-                    dc.i cell_i,
-                    dc.j cell_j,
+                    dc.x cell_x,
+                    dc.y cell_y,
                     fdt.ship_id ship_id,
                     fdt.ship_junk_id ship_junk_id,
                     fdt.nav_status_id nav_status_id,

@@ -1,6 +1,6 @@
 CREATE TABLE fact_cell (
-    cell_i integer NOT NULL,
-    cell_j integer NOT NULL,
+    cell_x integer NOT NULL,
+    cell_y integer NOT NULL,
     ship_id integer NOT NULL,
     ship_junk_id smallint NOT NULL,
     entry_date_id integer NOT NULL,
@@ -10,13 +10,13 @@ CREATE TABLE fact_cell (
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
     trajectory_id integer NOT NULL,
-    PRIMARY KEY (cell_i, cell_j, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_id),
 
     sog float NOT NULL,
     delta_heading float NOT NULL,
     draught float NOT NULL,
 
-    FOREIGN KEY (cell_i, cell_j) REFERENCES dim_cell_50m(i,j),
+    FOREIGN KEY (cell_x, cell_y) REFERENCES dim_cell_50m(i,j),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (ship_junk_id) REFERENCES dim_ship_junk(ship_junk_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
