@@ -62,7 +62,7 @@ def clean_range(date_from: datetime, date_to: datetime, config):
 
     # loop through all dates and clean them
     while date_from <= date_to:
-        wrap_with_timings(f"Cleaning data for {date_from}", lambda: clean_date(date_from, config))
+        wrap_with_timings(f'Cleaning data for {date_from}', lambda: clean_date(date_from, config))
         date_from += timedelta(days=1)
 
 
