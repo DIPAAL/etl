@@ -476,5 +476,5 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
         T_D_COL: pd.Series(dtype='float64', data=dict[T_D_COL] if T_D_COL in dict else []),
         # Metadata
-        T_LENGTH_COL: pd.Series(dtype='int64', data=dict[T_LENGTH_COL] if T_LENGTH_COL in dict else []),
+        T_LENGTH_COL: pd.Series(dtype='float64', data=dict[T_LENGTH_COL] if T_LENGTH_COL in dict else []),
     })
