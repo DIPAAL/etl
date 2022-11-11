@@ -17,7 +17,7 @@ SELECT
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
     trajectory_id,
-    length(crossing) / MIN(durationSecond, INTERVAL '1 second') * 1.94 sog -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
+    length(crossing) / LEAST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     0 delta_heading,
     draught
 FROM (
@@ -108,7 +108,7 @@ FROM (
                         dt.draught draught
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
-                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = $1
+                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci

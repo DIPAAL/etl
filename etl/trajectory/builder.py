@@ -111,11 +111,11 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     destination = sorted_series_by_frequency[DESTINATION_COL][0]
 
     # Split eta, start_datetime, and end_datetime and create their smart keys
-    eta_date_id = _extract_date_smart_id(eta)
+    eta_date_id = extract_date_smart_id(eta)
     eta_time_id = _extract_time_smart_id(eta)
-    start_date_id = _extract_date_smart_id(start_datetime)
+    start_date_id = extract_date_smart_id(start_datetime)
     start_time_id = _extract_time_smart_id(start_datetime)
-    end_date_id = _extract_date_smart_id(end_datetime)
+    end_date_id = extract_date_smart_id(end_datetime)
     end_time_id = _extract_time_smart_id(end_datetime)
 
     duration = end_datetime - start_datetime
@@ -192,7 +192,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     })])
 
 
-def _extract_date_smart_id(datetime: datetime) -> int:
+def extract_date_smart_id(datetime: datetime) -> int:
     if pd.isna(datetime):
         return UNKNOWN_INT_VALUE
     return (datetime.year * 10000) + (datetime.month * 100) + datetime.day

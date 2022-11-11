@@ -6,7 +6,7 @@ from datetime import datetime
 
 from etl.cleaning.clean_data import create_dirty_df_from_ais_cvs
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
-    _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
+    _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL
@@ -96,7 +96,7 @@ test_data_date_smart_key_extraction = [
 
 @pytest.mark.parametrize('date, expected_smart_key', test_data_date_smart_key_extraction)
 def test_date_smart_key_extraction(date, expected_smart_key):
-    assert _extract_date_smart_id(date) == expected_smart_key
+    assert extract_date_smart_id(date) == expected_smart_key
 
 
 test_data_time_smart_key_extraction = [
