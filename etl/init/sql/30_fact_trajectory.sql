@@ -24,5 +24,5 @@ CREATE TABLE fact_trajectory (
     FOREIGN KEY (eta_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (eta_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
-    FOREIGN KEY (trajectory_id) REFERENCES dim_trajectory(trajectory_id)
+    FOREIGN KEY (start_date_id, trajectory_id) REFERENCES dim_trajectory(date_id, trajectory_id)
 ) PARTITION BY RANGE (start_date_id);

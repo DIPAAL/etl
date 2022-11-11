@@ -1,8 +1,8 @@
 """Module for inserting trajectories in bulk."""
 import pandas as pd
-from etl.constants import T_SHIP_ID_COL, T_SHIP_TRAJECTORY_ID_COL, T_SHIP_JUNK_ID_COL, \
+from etl.constants import T_SHIP_ID_COL, T_SHIP_JUNK_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
-    T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_LENGTH_COL, T_INFER_STOPPED_COL
+    T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_LENGTH_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_ID_COL
 from etl.helper_functions import get_connection
 from etl.insert.bulk_inserter import BulkInserter
 from etl.insert.dimensions.navigational_status_dimension import NavigationalStatusDimensionInserter
@@ -64,7 +64,7 @@ class TrajectoryInserter (BulkInserter):
 
         columns = [
             T_SHIP_ID_COL,
-            T_SHIP_TRAJECTORY_ID_COL,
+            T_TRAJECTORY_ID_COL,
             T_SHIP_JUNK_ID_COL,
             T_SHIP_NAVIGATIONAL_STATUS_ID_COL,
             T_START_DATE_COL,

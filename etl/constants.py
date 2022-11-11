@@ -59,7 +59,7 @@ T_SHIP_CALLSIGN_COL = 'ship_callsign'
 T_SHIP_ID_COL = 'ship_id'
 T_LOCATION_SYSTEM_TYPE_COL = 'location_system_type'
 T_SHIP_JUNK_ID_COL = 'ship_junk_id'
-T_SHIP_TRAJECTORY_ID_COL = 'ship_trajectory_id'
+T_TRAJECTORY_ID_COL = 'trajectory_id'
 T_SHIP_NAVIGATIONAL_STATUS_ID_COL = 'ship_navigational_status_id'
 T_LENGTH_COL = 'length'
 
