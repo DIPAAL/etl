@@ -1,3 +1,4 @@
+"""Responsible for ensuring the trajectory dimension."""
 import pandas as pd
 
 from etl.constants import T_TRAJECTORY_COL, T_ROT_COL, T_HEADING_COL, T_DRAUGHT_COL, T_DESTINATION_COL, \
@@ -8,15 +9,17 @@ from etl.insert.bulk_inserter import BulkInserter
 class TrajectoryDimensionInserter(BulkInserter):
     """
     Class responsible for bulk inserting trajectory dimension data into a database.
+
     Inherits from the BulkInserter class.
 
     Methods
     -------
     ensure(df, conn): ensures the existence of a trajectory in the trajectory dimension
     """
+
     def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
         """
-        Ensures the existence of a trajectory in the trajectory dimension.
+        Ensure the existence of a trajectory in the trajectory dimension.
 
         Keyword arguments:
             df: dataframe containing trajectory information

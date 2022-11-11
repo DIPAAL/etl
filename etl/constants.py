@@ -1,3 +1,4 @@
+"""Exports constants used in the project."""
 # Common constants
 TRAJECTORY_SRID = 4326
 COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'

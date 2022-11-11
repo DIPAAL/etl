@@ -1,3 +1,4 @@
+"""Module handling trajectory construction and outlier detection."""
 from concurrent.futures import ProcessPoolExecutor
 import geopandas as gpd
 import pandas as pd
@@ -62,6 +63,7 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 def _create_trajectory(grouped_data) -> pd.DataFrame:
     """
     Create and return trajectories for a single ship identified by MMSI as a pandas dataframe.
+
     During creation AIS outlier points are detected and removed.
 
     Keyword arguments:
@@ -238,7 +240,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
 
 def extract_date_smart_id(datetime: datetime) -> int:
     """
-    Extracts the date integer smart-key from a given datetime.
+    Extract the date integer smart-key from a given datetime.
 
     Keyword arguments:
         datetime: object representation of a datetime to extract date smart-key from
@@ -250,7 +252,7 @@ def extract_date_smart_id(datetime: datetime) -> int:
 
 def _extract_time_smart_id(datetime: datetime) -> int:
     """
-    Extracts the time integer smart-key from a given datetime.
+    Extract the time integer smart-key from a given datetime.
 
     Keyword arguments:
         datetime: object representation of a datetime to extract time smart-key from
@@ -390,7 +392,7 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, speed_threshold: float,
                    dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
-    Checks whether the current point is an outlier.
+    Check whether the current point is an outlier.
 
     Keyword arguments:
         cur_point: the current AIS point that is checked
@@ -398,7 +400,6 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
         speed_threshold: max speed that determine whether an AIS point is an outlier
         dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
-
     time_delta = cur_point[TIMESTAMP_COL].iloc[0] - prev_point[TIMESTAMP_COL].iloc[0]
     # Previous and current point is in the same timestamp, detect it as an outlier
     if time_delta.seconds == 0:

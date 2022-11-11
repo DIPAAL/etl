@@ -1,10 +1,11 @@
+"""Module to facilitate running sql files."""
 import os
 
 from etl.helper_functions import wrap_with_timings, get_connection
 
 
 def get_sql_files(folder):
-    """Get all sql files in a folder"""
+    """Get all sql files in a folder."""
     files = [f for f in os.listdir(folder) if f.endswith('.sql')]
     # sort alphabetically
     files.sort()
@@ -13,6 +14,14 @@ def get_sql_files(folder):
 
 
 def run_sql_file_with_timings(sql_file, config, conn=None):
+    """
+    Run a single sql file with timings for every statement.
+
+    Args:
+        sql_file: The sql file to run
+        config: The config to use
+        conn: The connection to use. If None, a new connection will be created
+    """
     conn.set_session(autocommit=True)
     conn = get_connection(config) if conn is None else conn
 
@@ -27,6 +36,14 @@ def run_sql_file_with_timings(sql_file, config, conn=None):
 
 
 def run_sql_folder_with_timings(folder: str, config, conn=None) -> None:
+    """
+    Run all sql files in a folder.
+
+    Args:
+        folder: The folder to run the sql files in
+        config: The config to use
+        conn: The connection to use. If None, a new connection will be created
+    """
     conn = get_connection(config) if conn is None else conn
 
     for sql_file in get_sql_files(folder):

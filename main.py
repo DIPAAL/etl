@@ -1,4 +1,4 @@
-
+"""The main module."""
 import sys
 import argparse
 import configparser
@@ -17,6 +17,7 @@ from etl.trajectory.builder import build_from_geopandas
 
 
 def get_config():
+    """Get the application configuration."""
     path = './config.properties'
     local_path = './config-local.properties'
     if os.path.isfile(local_path):
@@ -28,6 +29,7 @@ def get_config():
 
 
 def main(argv):
+    """Execute the main program."""
     config = get_config()
 
     parser = argparse.ArgumentParser()
@@ -52,6 +54,15 @@ def main(argv):
 
 
 def clean_range(date_from: datetime, date_to: datetime, config):
+    """
+    Apply cleaning for all dates in the given range.
+
+    Date from must be before or equal to date to.
+
+    Arguments:
+        date_from: the date to start from
+        date_to: the date to end at
+    """
     # ensure date_from and date_to is set
     if not date_from or not date_to:
         raise ValueError("Please provide both from_date and to_date when cleaning data")
@@ -69,9 +80,10 @@ def clean_range(date_from: datetime, date_to: datetime, config):
 def clean_date(date: datetime, config):
     """
     Apply cleaning, trajectory construction, and insert/rollup the results.
-    :param date: The date to clean
-    :param config: The application config
-    :return:
+
+    Arguments:
+        date: the date to clean
+        config: the application configuration
     """
     file_path = wrap_with_timings(
         "Ensuring file for current date exists",
