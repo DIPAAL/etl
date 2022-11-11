@@ -27,6 +27,3 @@ def apply_cell_fact_rollup(conn, date: datetime) -> None:
     date_smart_key = extract_date_smart_id(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
-
-
-
