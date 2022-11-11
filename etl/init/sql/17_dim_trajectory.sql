@@ -8,4 +8,4 @@ CREATE TABLE dim_trajectory
     draught float NOT NULL,
     destination text NOT NULL,
     PRIMARY KEY (date_id, trajectory_id)
-)
+) PARTITION BY RANGE (start_date_id);
