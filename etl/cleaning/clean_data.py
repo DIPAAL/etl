@@ -25,6 +25,7 @@ def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
         ais_file_path: the absolute or relative file path to AIS data file
     """
     if ais_file_path.endswith(CSV_EXTENSION):
+
         return _clean_csv_data(config, ais_file_path)
 
     raise NotImplementedError(

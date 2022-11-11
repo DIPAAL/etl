@@ -1,3 +1,5 @@
+from etl.audit.logger import AuditLogger
+
 # Common constants
 TRAJECTORY_SRID = 4326
 COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'
@@ -66,5 +68,9 @@ T_LENGTH_COL = 'length'
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
 
-# Version Numbering, currently only used for the audit database
+# Version numbering, currently only used for the audit table in the database.
 ETL_PROCESS_VERSION = 'v1.0.0'  # Increment this when making changes to the ETL process
+
+# Global audit logger class object, to store the audit log in memory until it is written to the database.
+GLOBAL_AUDIT_LOGGER = AuditLogger()
+GLOBAL_AUDIT_LOGGER.log_version('etl_version', ETL_PROCESS_VERSION)

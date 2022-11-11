@@ -13,7 +13,7 @@ from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.trajectory.builder import build_from_geopandas
-
+from etl.constants import GLOBAL_AUDIT_LOGGER
 
 def get_config():
     path = './config.properties'
@@ -40,25 +40,44 @@ def main(argv):
     date = datetime.strptime(args.date, '%Y-%m-%d') if args.date else None
 
     if args.init:
-        wrap_with_timings("Database init", lambda: init_database(config))
+        wrap_with_timings("Database init", lambda: init_database(config), audit_log=True)
 
     if args.clean:
 
         file_path = wrap_with_timings(
             "Ensuring file for current date exists",
-            lambda: ensure_file_for_date(date, config)
+            lambda: ensure_file_for_date(date, config),
+            audit_log=True
         )
+        # Audit logging - Renaming the key to be more descriptive
+        GLOBAL_AUDIT_LOGGER.dict_process['File Loading'].pop('Ensuring file for current date exists')
+        # Audit logging - Number of rows in the file
+        # TODO: Iterate over the content of the file and log the number of rows
+
+
         pickle_path = file_path.replace('.csv', '.pkl')
 
         if os.path.isfile(pickle_path):
             print("Cached pickled data found..")
             trajectories = pd.read_pickle(pickle_path)
         else:
-            clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
-            trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
+            clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
+                                                 audit_log=True)
+
+            # Audit logging - Number of rows in clean_sorted_ais
+            GLOBAL_AUDIT_LOGGER.log_processs('Data Cleaning', process_rows=len(clean_sorted_ais.index))
+
+            trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
+                                             audit_log=True)
+
+            # Audit logging - Number of row in trajectories
+            GLOBAL_AUDIT_LOGGER.log_processs('Trajectory construction', process_rows=len(trajectories.index))
+
             trajectories.to_pickle(pickle_path)
 
-        wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config))
+        wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
+                          audit_log=True)
+
 
 
 if __name__ == '__main__':
