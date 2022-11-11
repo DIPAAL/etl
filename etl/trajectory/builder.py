@@ -8,7 +8,8 @@ from typing import Callable, Optional, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
-    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, TRAJECTORY_SRID
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, \
+    TRAJECTORY_SRID
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -292,7 +293,8 @@ def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
     Keyword arguments:
         dataframe: dataframe containing the data to calculate delta length for
     """
-    point_gs1 = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)  # Extract geometry column as a GeoSeries with CRS for meters
+    # Extract geometry column as a GeoSeries with CRS for meters
+    point_gs1 = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
     point_gs2 = point_gs1.shift(-1).iloc[:-1]  # Shift the series by one and remove the last element
     point_gs1 = point_gs1.iloc[:-1]
     return sum(point_gs1.distance(point_gs2)) / 1000  # Converted to kilometers
