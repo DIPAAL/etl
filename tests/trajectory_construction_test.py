@@ -1,5 +1,6 @@
 import pytest
 import geopandas as gpd
+from shapely.geometry import Point
 import pandas as pd
 import pandas.api.types as ptypes
 from datetime import datetime
@@ -7,9 +8,9 @@ from datetime import datetime
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, _extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, COORDINATE_REFERENCE_SYSTEM_METERS
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
-    TIMESTAMP_COL
+    TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
     T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, \
@@ -37,7 +38,7 @@ def test_euclidian_dist(a_long, a_lat, b_long, b_lat, expected):
 def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
     columns_dtype_int64 = [T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL,
-                           T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL]
+                           T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL, T_LENGTH_COL]
     columns_dtype_float64 = [T_DRAUGHT_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL]
     columns_dtype_object = [T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL,
                             T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL]
@@ -218,3 +219,21 @@ def test_point_to_trajectory_threshold_above_returns_trajectory():
                                         to_idx=to_idx, infer_stopped=False)
 
     assert expected_dataframe_size == len(result_frame.index)
+
+
+def test_point_to_trajectory_correct_length():
+    ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
+    result_dataframe = build_from_geopandas(ferry_dataframe)
+    total_length = result_dataframe[T_LENGTH_COL].sum()
+
+    # Point for each of the 2 harbours between which the ferry sails, should be around 27,19 km between them.
+    point_harbor1 = Point(10.547164, 57.434897)  # (x, y) AKA (lon, lat)
+    point_harbor2 = Point(10.921814, 57.298418)
+
+    points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
+    points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
+
+    expected_length = points_journey.distance(points_journey.shift(1)).sum() / 1000
+
+    assert total_length >= expected_length
+    assert total_length <= expected_length + 2

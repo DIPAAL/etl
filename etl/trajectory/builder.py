@@ -8,7 +8,8 @@ from typing import Callable, Optional, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
-    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, TRAJECTORY_SRID
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, \
+    TRAJECTORY_SRID
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -195,6 +196,10 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
+    # Metadata
+    # The total delta length of all points in the trajectory
+    total_length = _calculate_delta_length(working_dataframe)
+
     return pd.concat([dataframe, _create_trajectory_db_df(dict={
         T_START_DATE_COL: start_date_id,
         T_START_TIME_COL: start_time_id,
@@ -222,7 +227,9 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_A_COL: a,
         T_B_COL: b,
         T_C_COL: c,
-        T_D_COL: d
+        T_D_COL: d,
+        # Metadata
+        T_LENGTH_COL: total_length
     })])
 
 
@@ -277,6 +284,18 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
         drop_na: indicates if pandas or numpy NA values should be included
     """
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
+
+
+def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
+    """
+    Calculate the total delta length of all points in the trajectory.
+
+    Keyword arguments:
+        dataframe: dataframe containing the data to calculate delta length for
+    """
+    # Extract geometry column as a GeoSeries with CRS for meters
+    point_gs = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
+    return point_gs.distance(point_gs.shift(1)).sum() / 1000  # Converted to kilometers
 
 
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
@@ -453,4 +472,6 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_B_COL: pd.Series(dtype='float64', data=dict[T_B_COL] if T_B_COL in dict else []),
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
         T_D_COL: pd.Series(dtype='float64', data=dict[T_D_COL] if T_D_COL in dict else []),
+        # Metadata
+        T_LENGTH_COL: pd.Series(dtype='int64', data=dict[T_LENGTH_COL] if T_LENGTH_COL in dict else []),
     })

@@ -50,8 +50,6 @@ class TrajectoryInserter (BulkInserter):
             df: dataframe containing trajectory data
             conn: database connection
         """
-        # TODO: hack while length is not available
-        df[T_LENGTH_COL] = 0
 
         query = """
             INSERT INTO fact_trajectory (
