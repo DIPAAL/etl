@@ -1,9 +1,11 @@
+"""Class implementing bulk insertion of data into a database."""
 import pandas as pd
 
 
 class BulkInserter:
     """
     Class responsible for bulk inserting data into a database.
+
     Intended to be used as a subclass.
 
     Attributes
@@ -11,9 +13,10 @@ class BulkInserter:
     bulk_size: number of rows to insert in a single transaction
 
     """
+
     def __init__(self, bulk_size: int = 1000):
         """
-        Constructs an instance of the BulkInserter class.
+        Construct an instance of the BulkInserter class.
 
         bulk_size: number of rows to insert in a single transaction
         """
@@ -41,7 +44,7 @@ class BulkInserter:
     @staticmethod
     def __insert(batch: pd.DataFrame, conn, query: str, fetch: bool) -> pd.Series:
         """
-        Inserts a batch into the database and returns database IDs.
+        Insert a batch into the database and returns database IDs.
 
         Keyword arguments:
             batch: dataframe containing rows for a single batch

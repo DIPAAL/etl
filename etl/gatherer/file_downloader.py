@@ -1,3 +1,4 @@
+"""Module for download missing AIS files on demand."""
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -19,13 +20,15 @@ class AisFile:
     name: name of the file
     url: link to download file
     """
+
     name: str
     url: str
 
 
 def ensure_file_for_date(date: datetime, config) -> str:
     """
-    Ensures that the file for the given date exists and return the file path.
+    Ensure that the file for the given date exists and return the file path.
+
     Raises exception if file has not already been downloaded and cannot be found on AIS website.
 
     Keyword arguments:
@@ -65,7 +68,7 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
 def date_from_filename(file_name):
     """
-    Extracts and return date information from a given filename.
+    Extract and return date information from a given filename.
 
     Keyword arguments:
         file_name: the name of the file used to extract date information
@@ -119,7 +122,7 @@ def get_file_names(ais_url: str) -> dict:
 
 def extract(file: AisFile, config):
     """
-    Extracts the AIS file from its archieve.
+    Extract the AIS file from its archieve.
 
     Keyword arguments:
         file: name and url of the AIS file
@@ -134,10 +137,11 @@ def extract(file: AisFile, config):
 
 def ensure_file(file: AisFile, config):
     """
-    Ensures that the AIS file is present in the file system.
+    Ensure that the AIS file is present in the file system.
+
     Downloads the file if not found in file system.
 
-    Keyword arguements:
+    Keyword arguments:
         file: name and url of a AIS file
         config: the application configuration
     """

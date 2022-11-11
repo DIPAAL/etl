@@ -1,3 +1,4 @@
+"""Helper functions for the ETL process."""
 from datetime import datetime, timedelta
 from typing import List
 from time import perf_counter
@@ -6,7 +7,7 @@ import psycopg2
 
 def wrap_with_timings(name: str, func):
     """
-    Executes a given function and prints the time it took the function to execute.
+    Execute a given function and prints the time it took the function to execute.
 
     Keyword arguments:
         name: identifier for the function execution, used to identify it in the output
@@ -30,7 +31,7 @@ def wrap_with_timings(name: str, func):
 
 def get_connection(config, database=None, host=None, user=None, password=None):
     """
-    Returns a connection to the database.
+    Return a connection to the database.
 
     Keyword arguments:
         config: the application configuration
@@ -54,7 +55,7 @@ def get_connection(config, database=None, host=None, user=None, password=None):
 
 def get_first_query_in_file(file_path: str) -> str:
     """
-    Returns the first query found in a given file.
+    Return the first query found in a given file.
 
     Keyword arguments:
         file_path: absolute or relative file path to the file containing the sql queries
@@ -65,7 +66,7 @@ def get_first_query_in_file(file_path: str) -> str:
 
 def get_queries_in_file(file_path: str) -> List[str]:
     """
-    Returns the queries found within a file.
+    Return the queries found within a file.
 
     Keywork arguments:
         file_path: absolute or relative file path to the file containing the sql queries

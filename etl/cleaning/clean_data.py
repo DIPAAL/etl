@@ -1,3 +1,4 @@
+"""Module responsible for cleaning raw AIS data points."""
 import geopandas as gpd
 import dask.dataframe as dd
 import dask_geopandas as d_gpd
@@ -16,7 +17,8 @@ NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
 
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     """
-    Reads AIS data from a file and returns the cleaned data.
+    Read AIS data from a file and returns the cleaned data.
+
     Raises exception if file extension is not supported.
     Currently supported extensions are: .csv
 
@@ -33,7 +35,7 @@ def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
 
 
 def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
-    """Reads AIS data from a CSV file and returns the cleaned data.
+    """Read AIS data from a CSV file and returns the cleaned data.
 
     Keyword arguments:
         config: the application configuration
@@ -64,7 +66,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
 
 def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     """
-    Returns Danish Waters geometry bounds from the DWH.
+    Return Danish Waters geometry bounds from the DWH.
 
     Keyword arguments:
         config: the application configuration
@@ -78,7 +80,7 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
 
 def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
     """
-    Returns a dask dataframe containing the raw data within the csv file.
+    Return a dask dataframe containing the raw data within the csv file.
 
     Keyword arguments:
         csv_path: absolute or relative file path to a csv file containing AIS data
@@ -157,7 +159,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
 
 def _create_pandas_postgresql_connection(config):
     """
-    Returns a connection to the database using SQLalchemy, as it is the only connection type supported by pandas.
+    Return a connection to the database using SQLalchemy, as it is the only connection type supported by pandas.
 
     Keyword arguments:
         config: the application configuration
