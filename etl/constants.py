@@ -65,3 +65,6 @@ T_LENGTH_COL = 'length'
 # Other dataframe columns
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
+
+# Version Numbering, currently only used for the audit database
+ETL_PROCESS_VERSION = 'v1.0.0'  # Increment this when making changes to the ETL process
