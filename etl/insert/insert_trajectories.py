@@ -26,23 +26,24 @@ class TrajectoryInserter (BulkInserter):
     """
 
     @staticmethod
-    def generate_unique_random_series(df, max):
+    def generate_unique_random_series(df, max, sampler=random.sample):
         """
-        Generates a unique random series with length equal to the length of the dataframe.
+        Generate a unique random series with length equal to the length of the dataframe.
 
         This method can become very computationally heavy if the dataframe length is approaching the max value.
 
         Args:
             df: dataframe to generate a random series for
             max: maximum value of the random series
+            sampler: function to use to generate the random series
         """
-        initial = pd.Series(random.sample(range(max), len(df)))
+        initial = pd.Series(sampler(range(max), len(df)))
         # remove duplicates
         initial = initial[~initial.duplicated()]
 
         # if there were duplicates, make sure to match length of dataframe
         while len(initial) < len(df):
-            initial = initial.append(pd.Series(random.sample(range(max), len(df) - len(initial))))
+            initial = initial.append(pd.Series(sampler(range(max), len(df) - len(initial))))
             initial = initial[~initial.duplicated()]
         return initial
 

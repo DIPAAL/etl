@@ -25,7 +25,6 @@ class TrajectoryDimensionInserter(BulkInserter):
             df: dataframe containing trajectory information
             conn: database connection used for insertion
         """
-
         trajectories = df[[
             T_START_DATE_COL,
             T_TRAJECTORY_SUB_ID_COL,
