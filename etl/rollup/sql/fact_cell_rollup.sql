@@ -50,13 +50,15 @@ FROM (
                     'South', ST_Distance(startValue(crossing), south),
                     'North', ST_Distance(startValue(crossing), north),
                     'East', ST_Distance(startValue(crossing), east),
-                    'West', ST_Distance(startValue(crossing), west)
+                    'West', ST_Distance(startValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
                     ) AS start_edges,
                 JSON_BUILD_OBJECT(
                     'South', ST_Distance(endValue(crossing), south),
                     'North', ST_Distance(endValue(crossing), north),
                     'East', ST_Distance(endValue(crossing), east),
-                    'West', ST_Distance(endValue(crossing), west)
+                    'West', ST_Distance(endValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
                     ) AS end_edges,
                 crossing,
                 cell_x,
@@ -90,6 +92,7 @@ FROM (
                         ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
                         ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
                     ), 3034) north,
+                    0.2 threshold_distance_to_cell_edge,
                     dc.x cell_x,
                     dc.y cell_y,
                     fdt.ship_id ship_id,
