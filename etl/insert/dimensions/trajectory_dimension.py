@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_TRAJECTORY_COL, T_ROT_COL, T_HEADING_COL, T_DRAUGHT_COL, T_DESTINATION_COL, \
-    T_START_DATE_COL, T_TRAJECTORY_ID_COL
+    T_START_DATE_COL, T_TRAJECTORY_SUB_ID_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -25,12 +25,10 @@ class TrajectoryDimensionInserter(BulkInserter):
             df: dataframe containing trajectory information
             conn: database connection used for insertion
         """
-        # Add an incrementing trajectory id to the dataframe
-        df[T_TRAJECTORY_ID_COL] = pd.RangeIndex(0, len(df))
 
         trajectories = df[[
             T_START_DATE_COL,
-            T_TRAJECTORY_ID_COL,
+            T_TRAJECTORY_SUB_ID_COL,
             T_TRAJECTORY_COL,
             T_ROT_COL,
             T_HEADING_COL,
@@ -41,7 +39,7 @@ class TrajectoryDimensionInserter(BulkInserter):
         query = """
             INSERT INTO dim_trajectory (
                 date_id,
-                trajectory_id,
+                trajectory_sub_id,
                 trajectory,
                 rot,
                 heading,

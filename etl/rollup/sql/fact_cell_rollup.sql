@@ -2,7 +2,7 @@ INSERT INTO fact_cell (
     cell_x, cell_y, ship_id, ship_junk_id,
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
-    direction_id, nav_status_id, trajectory_id,
+    direction_id, nav_status_id, trajectory_sub_id,
     sog, delta_heading, draught
 )
 SELECT
@@ -16,7 +16,7 @@ SELECT
     (EXTRACT(HOUR FROM endTime) * 10000) + (EXTRACT(MINUTE FROM endTime) * 100) + (EXTRACT(SECOND FROM endTime)) AS exit_time_id,
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
-    trajectory_id,
+    trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     0 delta_heading,
     draught
@@ -37,7 +37,7 @@ FROM (
             ship_id,
             ship_junk_id,
             nav_status_id,
-            trajectory_id,
+            trajectory_sub_id,
             draught,
             atPeriod(heading, period(startTime, endTime, true, true)) heading,
             startTime,
@@ -64,7 +64,7 @@ FROM (
                 ship_id,
                 ship_junk_id,
                 nav_status_id,
-                trajectory_id,
+                trajectory_sub_id,
                 draught,
                 heading,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
@@ -95,7 +95,7 @@ FROM (
                     fdt.ship_id ship_id,
                     fdt.ship_junk_id ship_junk_id,
                     fdt.nav_status_id nav_status_id,
-                    fdt.trajectory_id trajectory_id,
+                    fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
                     fdt.heading heading
                 FROM (
@@ -107,7 +107,7 @@ FROM (
                         dt.heading heading,
                         dt.draught draught
                     FROM fact_trajectory ft
-                    JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
+                    JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id
                     WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
