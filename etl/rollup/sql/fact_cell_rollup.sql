@@ -3,11 +3,11 @@ INSERT INTO fact_cell (
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
     direction_id, nav_status_id, trajectory_id,
-    sog, delta_heading, draught
+    sog, delta_heading, draught, delta_cog
 )
 SELECT
-    cell_x,
-	cell_y,
+    cell_i,
+	cell_j,
     ship_id,
     ship_junk_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
@@ -18,8 +18,14 @@ SELECT
     nav_status_id,
     trajectory_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    0 delta_heading,
-    draught
+    (
+		SELECT COALESCE(SUM(ABS(diff)),-1) FROM ( -- NULL check, -1 if heading is NULL
+			SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
+			) AS diffs
+	) delta_heading,
+	heading,
+    draught,
+	delta_cog
 FROM (
         SELECT
             -- Select the JSON keys (north, south, east, west) with the lowest distance.
@@ -32,8 +38,8 @@ FROM (
               ORDER BY value::float ASC LIMIT 1
             ) as exit_direction,
             crossing,
-            cell_x,
-            cell_y,
+            cell_i,
+            cell_j,
             ship_id,
             ship_junk_id,
             nav_status_id,
@@ -42,6 +48,7 @@ FROM (
             atPeriod(heading, period(startTime, endTime, true, true)) heading,
             startTime,
             endTime,
+			delta_cog,
             (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
         FROM (
             SELECT
@@ -59,14 +66,17 @@ FROM (
                     'West', ST_Distance(endValue(crossing), west)
                     ) AS end_edges,
                 crossing,
-                cell_x,
-                cell_y,
+                cell_i,
+                cell_j,
                 ship_id,
                 ship_junk_id,
                 nav_status_id,
                 trajectory_id,
                 draught,
                 heading,
+				( -- Calculate the Delta COG
+					SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+				) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
                 date_trunc('second', endTimestamp(crossing) + INTERVAL '999999 microseconds') endTime
@@ -90,8 +100,8 @@ FROM (
                         ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
                         ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
                     ), 3034) north,
-                    dc.x cell_x,
-                    dc.y cell_y,
+                    dc.i cell_i,
+                    dc.j cell_j,
                     fdt.ship_id ship_id,
                     fdt.ship_junk_id ship_junk_id,
                     fdt.nav_status_id nav_status_id,
@@ -108,7 +118,8 @@ FROM (
                         dt.draught draught
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
-                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
+                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = 20220101
+					  AND ft.trajectory_id = 24
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci
