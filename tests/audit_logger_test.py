@@ -5,8 +5,9 @@ def test_audit_logger_version_number():
     al = AuditLogger()
     version_name = 'test_version'
     version_number = 'v2.3.5'
+    dict_version = { version_name: version_number }
 
-    al.log_version(version_name, version_number)
+        al.log_version(dict_version)
 
     assert al.dict_version[version_name] == version_number
 
@@ -24,7 +25,8 @@ def test_audit_logger_process_time():
     process_end_time = 25
     process_rows = 100
 
-    al.log_process(process_name, process_start_time, process_end_time, process_rows)
+    al.log_process(process_name, process_start_time, process_end_time)
+    al.log_process(process_name, process_rows=process_rows)
 
     expected_timespan = process_end_time - process_start_time
 
