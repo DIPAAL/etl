@@ -1,3 +1,4 @@
+"""Module for inserting trajectories in bulk."""
 import pandas as pd
 from etl.constants import T_SHIP_ID_COL, T_SHIP_TRAJECTORY_ID_COL, T_SHIP_JUNK_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
@@ -13,6 +14,7 @@ from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInsert
 class TrajectoryInserter (BulkInserter):
     """
     Class responsible for bulk inserting trajectories in a database.
+
     Inherits from the BulkInserter class.
 
     Methods
@@ -40,7 +42,7 @@ class TrajectoryInserter (BulkInserter):
 
         self._insert_trajectories(df, conn)
 
-        conn.commit()
+        return conn
 
     def _insert_trajectories(self, df: pd.DataFrame, conn):
         """
@@ -50,7 +52,6 @@ class TrajectoryInserter (BulkInserter):
             df: dataframe containing trajectory data
             conn: database connection
         """
-
         query = """
             INSERT INTO fact_trajectory (
                 ship_id, trajectory_id, ship_junk_id, nav_status_id,

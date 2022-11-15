@@ -52,6 +52,11 @@ init:
   script:
     - envsubst < jobs/init-job.yml | kubectl apply -f -
 
+clean:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/clean-job.yml | kubectl apply -f -
+
 pytest:
   stage: test
   image: docker:latest
