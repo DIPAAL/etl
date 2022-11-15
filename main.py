@@ -14,7 +14,7 @@ from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
-from etl.constants import GLOBAL_AUDIT_LOGGER
+from etl.constants import GLOBAL_AUDIT_LOGGER, ETL_PROJECT_VERSION
 
 def get_config():
     """Get the application configuration."""
@@ -87,21 +87,31 @@ def clean_date(date: datetime, config):
     """
     file_path = wrap_with_timings(
         "Ensuring file for current date exists",
-        lambda: ensure_file_for_date(date, config)
+        lambda: ensure_file_for_date(date, config),
+        audit_log=False
     )
+    GLOBAL_AUDIT_LOGGER.log_file(file_path)  # logs the name, rows and size of the file for the current date
     pickle_path = file_path.replace('.csv', '.pkl')
 
     if os.path.isfile(pickle_path):
         print("Cached pickled data found..")
         trajectories = pd.read_pickle(pickle_path)
     else:
-        clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path))
-        trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais))
+        clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
+                                             audit_log=True, audit_name="cleaning")
+        trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
+                                         audit_log=True, audit_name="trajectory")
         trajectories.to_pickle(pickle_path)
 
-    conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config))
-    wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date))
+    conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
+                             audit_log=True, audit_name="bulk_insert")
+    wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
+                      audit_log=True, audit_name="cell_construct")
 
+    GLOBAL_AUDIT_LOGGER.log_etl_version(ETL_PROJECT_VERSION)
+    GLOBAL_AUDIT_LOGGER.log_requirements()
+    # TODO: GLOBAL_AUDIT_LOGGER.insert_audit(conn, date)  # insert the audit log into the database
+    GLOBAL_AUDIT_LOGGER.reset_logs() # reset the logs for the next date
     conn.commit()
 
 

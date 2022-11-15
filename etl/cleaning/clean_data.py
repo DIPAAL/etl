@@ -59,7 +59,9 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
 
     # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters
     lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
-    clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute())
+    clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute(),
+                                  audit_log=True, audit_name='spatial_join'
+                                  )
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf

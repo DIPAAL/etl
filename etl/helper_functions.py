@@ -6,7 +6,7 @@ import psycopg2
 from etl.constants import GLOBAL_AUDIT_LOGGER
 
 
-def wrap_with_timings(name: str, func, audit_log : bool = False ):
+def wrap_with_timings(name: str, func, audit_log : bool = False, audit_name : str = None):
     """
     Execute a given function and prints the time it took the function to execute.
 
@@ -30,7 +30,7 @@ def wrap_with_timings(name: str, func, audit_log : bool = False ):
 
     # Audit logging - Execution time and name of the function
     if audit_log:
-        GLOBAL_AUDIT_LOGGER.log_process(name, start, end)
+        GLOBAL_AUDIT_LOGGER.log_etl_stage(name, start, end)
 
     return result
 
