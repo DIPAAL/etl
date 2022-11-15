@@ -240,6 +240,7 @@ def test_point_to_trajectory_correct_length():
     assert total_length >= expected_length
     assert total_length <= expected_length + 2
 
+
 def create_nan_test_dataframe(float_values: List[float]) -> gpd.GeoDataFrame:
     col_1 = 'col_1'
     values_size = len(float_values)
@@ -269,7 +270,8 @@ def test_nan_values_removed(test_frame, defaulted, remove, expected_number_of_va
     float_column = 'col_1'
     original_num_values = len(test_frame)
 
-    actual = _tfloat_from_dataframe(test_frame, float_column=float_column) if defaulted else _tfloat_from_dataframe(test_frame, float_column=float_column, remove_nan=remove)
+    actual = _tfloat_from_dataframe(test_frame, float_column=float_column) if defaulted else \
+        _tfloat_from_dataframe(test_frame, float_column=float_column, remove_nan=remove)
 
     assert expected_number_of_values == actual.numInstants
     assert original_num_values == len(test_frame)  # Test original frame has not been changed
