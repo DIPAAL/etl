@@ -24,9 +24,9 @@ SELECT
             SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
         ) AS diffs
     ) delta_heading,
-	heading,
+    heading,
     draught,
-	delta_cog
+    delta_cog
 FROM (
         SELECT
             -- Select the JSON keys (north, south, east, west) with the lowest distance.
@@ -49,7 +49,7 @@ FROM (
             atPeriod(heading, period(startTime, endTime, true, true)) heading,
             startTime,
             endTime,
-			delta_cog,
+            delta_cog,
             (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
         FROM (
             SELECT
@@ -77,9 +77,9 @@ FROM (
                 trajectory_id,
                 draught,
                 heading,
-				( -- Calculate the Delta COG
-					SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
-				) AS delta_cog,
+                ( -- Calculate the Delta COG
+                    SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
                 date_trunc('second', endTimestamp(crossing) + INTERVAL '999999 microseconds') endTime
@@ -123,7 +123,7 @@ FROM (
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
                     WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
-					  AND ft.trajectory_id = 24
+                      AND ft.trajectory_id = 24
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci
