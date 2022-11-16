@@ -35,7 +35,7 @@ class TrajectoryInserter (BulkInserter):
         Args:
             df: dataframe to generate a random series for
             max: maximum value of the random series
-            sampler: function to use to generate the random series
+            sampler: function used to generate a random series
         """
         initial = pd.Series(sampler(range(max), len(df)))
         # remove duplicates
