@@ -19,9 +19,10 @@ SELECT
     trajectory_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     (
-		SELECT COALESCE(SUM(ABS(diff)),-1) FROM ( -- NULL check, -1 if heading is NULL
-			SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
-			) AS diffs
+	  SELECT COALESCE(SUM(ABS(diff)),-1) FROM 
+        (
+		  SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
+        ) AS diffs
 	) delta_heading,
 	heading,
     draught,
@@ -121,7 +122,7 @@ FROM (
                         dt.draught draught
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
-                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = 20220101
+                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
 					  AND ft.trajectory_id = 24
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
