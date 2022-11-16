@@ -7,7 +7,7 @@ INSERT INTO fact_cell (
 )
 SELECT
     cell_x,
-	cell_y,
+    cell_y,
     ship_id,
     ship_junk_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
@@ -18,9 +18,12 @@ SELECT
     nav_status_id,
     trajectory_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    (SELECT COALESCE(SUM(ABS(diff)),-1) FROM 
-        ( SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas) AS diffs
-	) delta_heading,
+    (
+        SELECT COALESCE(SUM(ABS(diff)),-1) FROM 
+        (
+            SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
+        ) AS diffs
+    ) delta_heading,
 	heading,
     draught,
 	delta_cog
