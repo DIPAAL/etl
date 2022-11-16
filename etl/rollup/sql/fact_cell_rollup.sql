@@ -6,8 +6,8 @@ INSERT INTO fact_cell (
     sog, delta_heading, draught, delta_cog
 )
 SELECT
-    cell_i,
-	cell_j,
+    cell_x,
+	cell_y,
     ship_id,
     ship_junk_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
@@ -38,8 +38,8 @@ FROM (
               ORDER BY value::float ASC LIMIT 1
             ) as exit_direction,
             crossing,
-            cell_i,
-            cell_j,
+            cell_x,
+            cell_y,
             ship_id,
             ship_junk_id,
             nav_status_id,
@@ -57,17 +57,19 @@ FROM (
                     'South', ST_Distance(startValue(crossing), south),
                     'North', ST_Distance(startValue(crossing), north),
                     'East', ST_Distance(startValue(crossing), east),
-                    'West', ST_Distance(startValue(crossing), west)
+                    'West', ST_Distance(startValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
                     ) AS start_edges,
                 JSON_BUILD_OBJECT(
                     'South', ST_Distance(endValue(crossing), south),
                     'North', ST_Distance(endValue(crossing), north),
                     'East', ST_Distance(endValue(crossing), east),
-                    'West', ST_Distance(endValue(crossing), west)
+                    'West', ST_Distance(endValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
                     ) AS end_edges,
                 crossing,
-                cell_i,
-                cell_j,
+                cell_x,
+                cell_y,
                 ship_id,
                 ship_junk_id,
                 nav_status_id,
@@ -100,8 +102,9 @@ FROM (
                         ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
                         ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
                     ), 3034) north,
-                    dc.i cell_i,
-                    dc.j cell_j,
+                    0.2 threshold_distance_to_cell_edge,
+                    dc.x cell_x,
+                    dc.y cell_y,
                     fdt.ship_id ship_id,
                     fdt.ship_junk_id ship_junk_id,
                     fdt.nav_status_id nav_status_id,
