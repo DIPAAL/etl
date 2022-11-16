@@ -123,7 +123,6 @@ FROM (
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_id = dt.trajectory_id
                     WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
-                      AND ft.trajectory_id = 24
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci
