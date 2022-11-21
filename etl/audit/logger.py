@@ -1,45 +1,48 @@
+"""
+Module responsible for logging details about the execution of each stage of the ETL process.
+"""
 from datetime import datetime, timedelta
 
 import os
 import pandas as pd
 
-class AuditLogger():
-
+class AuditLogger:
+    """ Class responsible for logging details about the execution of each stage of the ETL process. """
     def __init__(self):
         now = datetime.now()
         self.log_dict = {
-            'import_date': now.date(),
-            'import_time': now.time(),
-            'requirements': {},
-            'etl_version' : None,
+            'import_date' : now.date(),
+            'import_time' : now.time(),
+            'requirements' : [],
+            'etl_version'  : None,
 
-            'file_name': None,
-            'file_size': None,
-            'file_rows': None,
+            'file_name' : None,
+            'file_size' : None,
+            'file_rows' : None,
 
-            'cleaning_delta_time': None,
-            'cleaning_rows': None,
+            'cleaning_delta_time' : None,
+            'cleaning_rows' : None,
 
-            'spatial_join_delta_time': None,
-            'spatial_join_rows': None,
+            'spatial_join_delta_time' : None,
+            'spatial_join_rows' : None,
 
-            'trajectory_delta_time': None,
-            'trajectory_rows': None,
+            'trajectory_delta_time' : None,
+            'trajectory_rows' : None,
 
-            'cell_construct_delta_time': None,
-            'cell_construct_rows': None,
+            'cell_construct_delta_time' : None,
+            'cell_construct_rows' : None,
 
-            'bulk_insert_delta_time': None,
-            'bulk_insert_rows': None,
+            'bulk_insert_delta_time' : None,
+            'bulk_insert_rows' : None,
 
-            'total_delta_time': None,
+            'total_delta_time' : None,
         }
 
         self._log_settings = {
-            'log_etl_stage_time': True,
-            'log_etl_stage_rows': True,
-            'log_file': True,
-            'log_requirements': True,
+            'log_etl_stage_time' : True,
+            'log_etl_stage_rows' : True,
+            'log_file' : True,
+            'log_requirements' : True,
         }
 
     def get_logs(self):
@@ -47,7 +50,7 @@ class AuditLogger():
 
     def log_etl_stage(self, stage_name, stage_start_time = None, stage_end_time = None, stage_rows = None):
         if stage_name + '_rows' not in self.log_dict:
-            raise ValueError(f'Invalid stage name: {stage_name}')
+            raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
         if self._log_settings['log_etl_stage_time']:
             if isinstance(stage_start_time and stage_end_time, datetime):
@@ -56,11 +59,12 @@ class AuditLogger():
                 time_delta = stage_end_time - stage_start_time
 
             self.log_dict[stage_name + '_delta_time'] = time_delta
+            self._log_total_delta_time()
 
         if self._log_settings['log_etl_stage_rows']:
             self.log_dict[stage_name + '_rows'] = stage_rows
 
-    def log_total_delta_time(self):
+    def _log_total_delta_time(self):
         suffix = '_delta_time'
         self.log_dict['total_delta_time'] = sum([self.log_dict[key] for key in self.log_dict
                                                  if key.endswith(suffix)
@@ -84,12 +88,12 @@ class AuditLogger():
         return count + 1
 
     def log_requirements(self, requirements_path='requirements.txt'):
-        requirements = {}
+        requirements = []
         if self._log_settings['log_requirements']:
-            for line in open(requirements_path):
+            for line in open(requirements_path, 'r'):
                 if line.startswith('#'):
                     continue
-                requirements[line.split('==')[0]] = line.split('==')[1].strip()
+                requirements.append(line.strip())
         self.log_dict['requirements'] = requirements
 
     def config_log_settings(self, log_etl_stage_time = True, log_etl_stage_rows = True,
@@ -108,12 +112,11 @@ class AuditLogger():
     def reset_log(self):
         for key in self.log_dict:
             self.log_dict[key] = None
-        self.log_dict['import_date'] = datetime.now()
-        self.log_dict['requirements'] = {}
+        now = datetime.now()
+        self.log_dict['import_date'] = now.date()
+        self.log_dict['import_time'] = now.time()
+        self.log_dict['requirements'] = []
 
     def get_db(self):
-        self.log_total_delta_time()
-        #dict to list
-        self.log_dict['requirements'] = [f'{key}=={value}' for key, value in self.log_dict['requirements'].items()]
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
         return df

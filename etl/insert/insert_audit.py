@@ -1,3 +1,4 @@
+"""Module responsible for inserting all audit data into the audit_log table."""
 from etl.constants import GLOBAL_AUDIT_LOGGER
 from etl.insert.bulk_inserter import BulkInserter
 
