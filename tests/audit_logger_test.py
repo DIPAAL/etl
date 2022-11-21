@@ -38,6 +38,16 @@ def test_audit_log_etl_stage():
 
 TEST_FILES = ['tests/data/ferry.csv', 'tests/data/clean_df.csv']
 
+def test_audit_log_etl_stage_raises_error():
+    with pytest.raises(ValueError):
+        al = AuditLogger()
+        al.log_etl_stage('invalid_stage_name', 0, 42, 100)
+
+def test_audit_log_file_raises_error():
+    with pytest.raises(FileNotFoundError):
+        al = AuditLogger()
+        al.log_file('invalid_file_path')
+
 @pytest.mark.parametrize('file_path', TEST_FILES)
 def test_audit_log_file(file_path):
     al = AuditLogger()
@@ -45,9 +55,16 @@ def test_audit_log_file(file_path):
 
     file_name = os.path.basename(file_path)
     file_size = os.path.getsize(file_path)
-    file_rows = len(open(file_path).readlines())
+    file_rows = len(open(file_path).readlines())  # Loads entire file into memory but fast
 
     assert al.log_dict['file_name'] == file_name
     assert al.log_dict['file_size'] == file_size
     assert al.log_dict['file_rows'] == file_rows
 
+def test_audit_log_requirements():
+    al = AuditLogger()
+    al.log_requirements('requirements.txt')
+
+    derp = al.get_db()
+
+    assert al.log_dict['requirements_name'] == 'requirements.txt'

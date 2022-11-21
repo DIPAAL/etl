@@ -1,10 +1,9 @@
 CREATE TABLE audit_log (
     audit_id serial PRIMARY KEY,
-    import_date integer NOT NULL,
-    import_time integer NOT NULL,
+    import_date date NOT NULL,
+    import_time time NOT NULL,
     etl_version text,
-    requirements_name text[],
-    requirements_version text[],
+    requirements text[],
 
     file_name text,
     file_size integer,
