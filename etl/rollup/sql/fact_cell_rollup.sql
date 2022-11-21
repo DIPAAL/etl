@@ -2,12 +2,12 @@ INSERT INTO fact_cell (
     cell_x, cell_y, ship_id, ship_junk_id,
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
-    direction_id, nav_status_id, trajectory_sub_id,
-    sog, delta_heading, draught
+    direction_id, nav_status_id, trajectory_id,
+    sog, delta_heading, draught, delta_cog
 )
 SELECT
     cell_x,
-	cell_y,
+    cell_y,
     ship_id,
     ship_junk_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
@@ -18,8 +18,14 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    0 delta_heading,
-    draught
+    (
+        SELECT COALESCE(SUM(ABS(diff)),-1) FROM 
+        (
+            SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
+        ) AS diffs
+    ) delta_heading,
+    draught,
+    delta_cog
 FROM (
         SELECT
             -- Select the JSON keys (north, south, east, west) with the lowest distance.
@@ -42,6 +48,7 @@ FROM (
             atPeriod(heading, period(startTime, endTime, true, true)) heading,
             startTime,
             endTime,
+            delta_cog,
             (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
         FROM (
             SELECT
@@ -69,6 +76,9 @@ FROM (
                 trajectory_sub_id,
                 draught,
                 heading,
+                ( -- Calculate the Delta COG
+                    SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
                 date_trunc('second', endTimestamp(crossing) + INTERVAL '999999 microseconds') endTime

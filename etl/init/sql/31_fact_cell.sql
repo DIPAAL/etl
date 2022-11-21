@@ -15,6 +15,7 @@ CREATE TABLE fact_cell (
     sog float NOT NULL,
     delta_heading float NOT NULL,
     draught float NOT NULL,
+    delta_cog float NOT NULL,
 
     FOREIGN KEY (cell_x, cell_y) REFERENCES dim_cell_50m(x, y),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
