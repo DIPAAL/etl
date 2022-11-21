@@ -2,7 +2,6 @@
 from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings
-from etl.init.sqlrunner import run_sql_file_with_timings
 from etl.trajectory.builder import extract_date_smart_id
 
 
