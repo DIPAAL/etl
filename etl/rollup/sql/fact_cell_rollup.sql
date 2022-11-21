@@ -24,7 +24,6 @@ SELECT
             SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
         ) AS diffs
     ) delta_heading,
-    heading,
     draught,
     delta_cog
 FROM (
