@@ -3,6 +3,7 @@
 TRAJECTORY_SRID = 4326
 COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'
 CVS_TIMESTAMP_FORMAT = '%d/%m/%Y %H:%M:%S'  # 07/09/2021 00:00:00
+INT32_MAX = 2147483647
 
 # AIS data column names
 TIMESTAMP_COL = '# Timestamp'
@@ -59,7 +60,7 @@ T_SHIP_CALLSIGN_COL = 'ship_callsign'
 T_SHIP_ID_COL = 'ship_id'
 T_LOCATION_SYSTEM_TYPE_COL = 'location_system_type'
 T_SHIP_JUNK_ID_COL = 'ship_junk_id'
-T_SHIP_TRAJECTORY_ID_COL = 'ship_trajectory_id'
+T_TRAJECTORY_SUB_ID_COL = 'trajectory_sub_id'
 T_SHIP_NAVIGATIONAL_STATUS_ID_COL = 'ship_navigational_status_id'
 T_LENGTH_COL = 'length'
 
