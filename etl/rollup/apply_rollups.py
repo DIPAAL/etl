@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings
+from etl.init.sqlrunner import run_sql_file_with_timings
 from etl.trajectory.builder import extract_date_smart_id
 
 
@@ -13,6 +14,7 @@ def apply_rollups(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to apply the rollups for
     """
+    run_sql_file_with_timings(conn, 'etl/rollup/sql/simplify_trajectories.sql')
     wrap_with_timings("Applying cell fact rollup", lambda: apply_cell_fact_rollup(conn, date))
 
 

@@ -1,0 +1,1 @@
+UPDATE dim_trajectory SET trajectory = transform(simplify(transform(setSRID(trajectory, 4326), 3034), 10, true), 4326);
