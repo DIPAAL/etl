@@ -262,16 +262,20 @@ def _extract_time_smart_id(datetime: datetime) -> int:
     return (datetime.hour * 10000) + (datetime.minute * 100) + datetime.second
 
 
-def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str) -> TFloatInstSet:
+def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remove_nan: bool = True) -> TFloatInstSet:
     """
     Convert a geodataframe float64 column's values to a MobilityDB temporal float instant set.
 
     Keyword arguments:
         dataframe: geodataframe containing the float_column and timestamps
         float_column: name of the column containing the float values
+        remove_nan: ensure NaN-values are not added to the tfloat (default: True)
     """
+    if remove_nan:
+        dataframe = dataframe.dropna(axis='index', subset=[float_column])
     tfloat_lst = []
     for _, row in dataframe.iterrows():
+
         mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
         float_val = str(row[float_column])
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
