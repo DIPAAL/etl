@@ -1,54 +1,70 @@
-"""
-Module responsible for logging details about the execution of each stage of the ETL process.
-"""
+"""Module responsible for logging details about the execution of each stage of the ETL process."""
 from datetime import datetime, timedelta
 
 import os
 import pandas as pd
 
+
 class AuditLogger:
-    """ Class responsible for logging details about the execution of each stage of the ETL process. """
+    """Class responsible for logging details about the execution of each stage of the ETL process.
+
+    Attributes:
+        log_dict (dict): dictionary containing the logs
+        _log_settings (dict): dictionary containing the log settings
+    """
+
     def __init__(self):
+        """
+        Construct an instance of the AuditLogger class.
+
+        log_dict: dictionary containing the logs
+        _log_settings: dictionary containing the log settings
+        """
         now = datetime.now()
         self.log_dict = {
-            'import_date' : now.date(),
-            'import_time' : now.time(),
-            'requirements' : [],
-            'etl_version'  : None,
+            'import_date': now.date(),
+            'import_time': now.time(),
+            'requirements': [],
+            'etl_version': None,
 
-            'file_name' : None,
-            'file_size' : None,
-            'file_rows' : None,
+            'file_name': None,
+            'file_size': None,
+            'file_rows': None,
 
-            'cleaning_delta_time' : None,
-            'cleaning_rows' : None,
+            'cleaning_delta_time': None,
+            'cleaning_rows': None,
 
-            'spatial_join_delta_time' : None,
-            'spatial_join_rows' : None,
+            'spatial_join_delta_time': None,
+            'spatial_join_rows': None,
 
-            'trajectory_delta_time' : None,
-            'trajectory_rows' : None,
+            'trajectory_delta_time': None,
+            'trajectory_rows': None,
 
-            'cell_construct_delta_time' : None,
-            'cell_construct_rows' : None,
+            'cell_construct_delta_time': None,
+            'cell_construct_rows': None,
 
-            'bulk_insert_delta_time' : None,
-            'bulk_insert_rows' : None,
+            'bulk_insert_delta_time': None,
+            'bulk_insert_rows': None,
 
-            'total_delta_time' : None,
+            'total_delta_time': None,
         }
 
         self._log_settings = {
-            'log_etl_stage_time' : True,
-            'log_etl_stage_rows' : True,
-            'log_file' : True,
-            'log_requirements' : True,
+            'log_etl_stage_time': True,
+            'log_etl_stage_rows': True,
+            'log_file': True,
+            'log_requirements': True,
         }
 
-    def get_logs(self):
-        return self.log_dict
+    def log_etl_stage(self, stage_name: str, stage_start_time=None, stage_end_time=None, stage_rows=None):
+        """Logs the time and number of rows of a given ETL stage.
 
-    def log_etl_stage(self, stage_name, stage_start_time = None, stage_end_time = None, stage_rows = None):
+        Keyword arguments:
+            stage_name: name of the ETL stage, must be one of the following:
+                'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
+            stage_start_time: start time of the ETL stage
+            stage_end_time: end time of the ETL stage
+        """
         if stage_name + '_rows' not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
@@ -65,16 +81,27 @@ class AuditLogger:
             self.log_dict[stage_name + '_rows'] = stage_rows
 
     def _log_total_delta_time(self):
+        """Calculates the total time of the ETL process."""
         suffix = '_delta_time'
         self.log_dict['total_delta_time'] = sum([self.log_dict[key] for key in self.log_dict
                                                  if key.endswith(suffix)
                                                  and not key.startswith('total')
                                                  and self.log_dict[key] is not None])
 
-    def log_etl_version(self, etl_version):
+    def log_etl_version(self, etl_version: str):
+        """Logs the version of the ETL process.
+
+        Keyword arguments:
+            etl_version: version of the ETL process
+        """
         self.log_dict['etl_version'] = etl_version
 
     def log_file(self, file_path):
+        """Logs the file name, size and number of rows.
+
+        Keyword arguments:
+            file_path: path to the file
+        """
         if self._log_settings['log_file']:
             self.log_dict['file_name'] = os.path.basename(file_path)
             self.log_dict['file_size'] = os.path.getsize(file_path)
@@ -82,12 +109,22 @@ class AuditLogger:
 
     @staticmethod
     def _get_file_rows(file_path):
+        """Returns the number of rows of a given file.
+
+        Keyword arguments:
+            file_path: path to the file
+        """
         with open(file_path, 'r') as f:
             for count, lines in enumerate(f):
                 pass
         return count + 1
 
     def log_requirements(self, requirements_path='requirements.txt'):
+        """Logs the requirements of the ETL process.
+
+        Keyword arguments:
+            requirements_path: path to the requirements file
+        """
         requirements = []
         if self._log_settings['log_requirements']:
             for line in open(requirements_path, 'r'):
@@ -96,20 +133,30 @@ class AuditLogger:
                 requirements.append(line.strip())
         self.log_dict['requirements'] = requirements
 
-    def config_log_settings(self, log_etl_stage_time = True, log_etl_stage_rows = True,
-                                  log_file = True, log_requirements = True):
+    def config_log_settings(self, log_etl_stage_time=True, log_etl_stage_rows=True,
+                                  log_file=True, log_requirements=True):
+        """Configures the log settings, in case the user wants to log only some information.
+
+        Keyword arguments:
+            log_etl_stage_time: if True, logs the delta time of each ETL stage
+            log_etl_stage_rows: if True, logs the number of rows for each ETL stage
+            log_file: if True, logs the name, size and number of rows of files
+            log_requirements: if True, logs the requirements of the ETL process
+        """
         self._log_settings['log_etl_stage_time'] = log_etl_stage_time
         self._log_settings['log_etl_stage_rows'] = log_etl_stage_rows
         self._log_settings['log_file'] = log_file
         self._log_settings['log_requirements'] = log_requirements
 
     def config_log_false(self):
+        """Configures the log settings to False, in case the user wants to log nothing."""
         self._log_settings['log_etl_stage_time'] = False
         self._log_settings['log_etl_stage_rows'] = False
         self._log_settings['log_file'] = False
         self._log_settings['log_requirements'] = False
 
     def reset_log(self):
+        """Resets the log dictionary."""
         for key in self.log_dict:
             self.log_dict[key] = None
         now = datetime.now()
@@ -117,6 +164,11 @@ class AuditLogger:
         self.log_dict['import_time'] = now.time()
         self.log_dict['requirements'] = []
 
-    def get_db(self):
+    def get_logs_db(self):
+        """Returns a pandas DataFrame containing the logs."""
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
         return df
+
+    def get_logs_dict(self):
+        """Returns a dictionary containing the logs."""
+        return self.log_dict

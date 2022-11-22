@@ -6,7 +6,7 @@ class AuditInserter(BulkInserter):
 
     def insert_audit(self, conn):
         """"""
-        df = GLOBAL_AUDIT_LOGGER.get_db()
+        df = GLOBAL_AUDIT_LOGGER.get_logs_db()
 
         query = """
             INSERT INTO audit_log (

@@ -65,6 +65,6 @@ def test_audit_log_requirements():
     al = AuditLogger()
     al.log_requirements('requirements.txt')
 
-    derp = al.get_db()
+    derp = al.get_logs_db()
 
     assert al.log_dict['requirements_name'] == 'requirements.txt'
