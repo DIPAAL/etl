@@ -35,6 +35,16 @@ def test_audit_log_etl_stage():
     assert al.log_dict['spatial_join_rows'] == expected_rows
     assert al.log_dict['total_delta_time'] == expected_time + expected_datetime
 
+    al.reset_log()
+    al.configure_log_settings(log_etl_stage_time=False, log_etl_stage_rows=False)
+    al.log_etl_stage('cleaning', start_time, end_time, expected_rows)
+    al.log_etl_stage('spatial_join', start_datetime, end_datetime, expected_rows)
+
+    assert al.log_dict['cleaning_delta_time'] is None
+    assert al.log_dict['cleaning_rows'] is None
+    assert al.log_dict['spatial_join_delta_time'] is None
+    assert al.log_dict['spatial_join_rows'] is None
+
 
 def test_audit_log_etl_stage_raises_error():
     with pytest.raises(ValueError):
@@ -63,3 +73,12 @@ def test_audit_log_file(file_path):
     assert al.log_dict['file_name'] == file_name
     assert al.log_dict['file_size'] == file_size
     assert al.log_dict['file_rows'] == file_rows
+
+    al.configure_log_settings(log_file_rows=False)
+
+    al.reset_log()
+    al.log_file(file_path)
+
+    assert al.log_dict['file_name'] == file_name
+    assert al.log_dict['file_size'] == file_size
+    assert al.log_dict['file_rows'] is None

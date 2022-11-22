@@ -52,7 +52,7 @@ class AuditLogger:
         self._log_settings = {
             'log_etl_stage_time': True,
             'log_etl_stage_rows': True,
-            'log_file': True,
+            'log_file_rows': True,
             'log_requirements': True,
         }
 
@@ -102,9 +102,9 @@ class AuditLogger:
         Keyword arguments:
             file_path: path to the file
         """
-        if self._log_settings['log_file']:
-            self.log_dict['file_name'] = os.path.basename(file_path)
-            self.log_dict['file_size'] = os.path.getsize(file_path)
+        self.log_dict['file_name'] = os.path.basename(file_path)
+        self.log_dict['file_size'] = os.path.getsize(file_path)
+        if self._log_settings['log_file_rows']:
             self.log_dict['file_rows'] = self._get_file_rows(file_path)
 
     @staticmethod
@@ -134,25 +134,25 @@ class AuditLogger:
         self.log_dict['requirements'] = requirements
 
     def configure_log_settings(self, log_etl_stage_time=True, log_etl_stage_rows=True,
-                               log_file=True, log_requirements=True):
+                               log_file_rows=True, log_requirements=True):
         """Configure the log settings, in case the user wants to only log some information.
 
         Keyword arguments:
             log_etl_stage_time: if True, logs the delta time of each ETL stage
             log_etl_stage_rows: if True, logs the number of rows for each ETL stage
-            log_file: if True, logs the name, size and number of rows of files
+            log_file_rows: if True, logs the name, size and number of rows of files
             log_requirements: if True, logs the requirements of the ETL process
         """
         self._log_settings['log_etl_stage_time'] = log_etl_stage_time
         self._log_settings['log_etl_stage_rows'] = log_etl_stage_rows
-        self._log_settings['log_file'] = log_file
+        self._log_settings['log_file_rows'] = log_file_rows
         self._log_settings['log_requirements'] = log_requirements
 
     def configure_log_false(self):
         """Configure the log settings to False, in case the user wants to log nothing."""
         self._log_settings['log_etl_stage_time'] = False
         self._log_settings['log_etl_stage_rows'] = False
-        self._log_settings['log_file'] = False
+        self._log_settings['log_file_rows'] = False
         self._log_settings['log_requirements'] = False
 
     def reset_log(self):
