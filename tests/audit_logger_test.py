@@ -6,6 +6,7 @@ import pytest
 
 VERSION_NUMBERS_LIST = ['v1.0.2', 'version 2', 'final final', '2nd prototype', None, 'v1.22.12']
 
+
 @pytest.mark.parametrize('version_number', VERSION_NUMBERS_LIST)
 def test_audit_log_version_number(version_number):
     al = AuditLogger()
@@ -13,6 +14,7 @@ def test_audit_log_version_number(version_number):
     al.log_etl_version(version_number)
 
     assert al.log_dict['etl_version'] == version_number
+
 
 def test_audit_log_etl_stage():
     al = AuditLogger()
@@ -31,22 +33,23 @@ def test_audit_log_etl_stage():
     assert al.log_dict['cleaning_rows'] == expected_rows
     assert al.log_dict['spatial_join_delta_time'] == expected_datetime
     assert al.log_dict['spatial_join_rows'] == expected_rows
-
-    al.log_total_delta_time()
     assert al.log_dict['total_delta_time'] == expected_time + expected_datetime
 
-
-TEST_FILES = ['tests/data/ferry.csv', 'tests/data/clean_df.csv']
 
 def test_audit_log_etl_stage_raises_error():
     with pytest.raises(ValueError):
         al = AuditLogger()
         al.log_etl_stage('invalid_stage_name', 0, 42, 100)
 
+
 def test_audit_log_file_raises_error():
     with pytest.raises(FileNotFoundError):
         al = AuditLogger()
         al.log_file('invalid_file_path')
+
+
+TEST_FILES = ['tests/data/ferry.csv', 'tests/data/clean_df.csv']
+
 
 @pytest.mark.parametrize('file_path', TEST_FILES)
 def test_audit_log_file(file_path):
@@ -60,11 +63,3 @@ def test_audit_log_file(file_path):
     assert al.log_dict['file_name'] == file_name
     assert al.log_dict['file_size'] == file_size
     assert al.log_dict['file_rows'] == file_rows
-
-def test_audit_log_requirements():
-    al = AuditLogger()
-    al.log_requirements('requirements.txt')
-
-    derp = al.get_logs_db()
-
-    assert al.log_dict['requirements_name'] == 'requirements.txt'

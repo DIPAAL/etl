@@ -17,6 +17,7 @@ from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
 from etl.constants import GLOBAL_AUDIT_LOGGER, ETL_PROJECT_VERSION
 
+
 def get_config():
     """Get the application configuration."""
     path = './config.properties'
@@ -109,12 +110,13 @@ def clean_date(date: datetime, config):
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_log=True, audit_name="cell_construct")
 
-    GLOBAL_AUDIT_LOGGER.log_etl_version(ETL_PROJECT_VERSION) # logs the version of the ETL project
-    GLOBAL_AUDIT_LOGGER.log_requirements() # logs the versions of the requirements
+    GLOBAL_AUDIT_LOGGER.log_etl_version(ETL_PROJECT_VERSION)  # logs the version of the ETL project
+    GLOBAL_AUDIT_LOGGER.log_requirements()  # logs the versions of the requirements
     wrap_with_timings("Inserting audit", lambda: AuditInserter().insert_audit(conn))
-    GLOBAL_AUDIT_LOGGER.reset_log() # reset the log for the next loop
+    GLOBAL_AUDIT_LOGGER.reset_log()  # reset the log for the next loop
 
     conn.commit()
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
