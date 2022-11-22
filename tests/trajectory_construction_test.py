@@ -1,14 +1,16 @@
 import pytest
 import geopandas as gpd
-from shapely.geometry import Point
 import pandas as pd
 import pandas.api.types as ptypes
-from datetime import datetime
+import numpy as np
 
+from typing import List
+from datetime import datetime
+from shapely.geometry import Point
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, COORDINATE_REFERENCE_SYSTEM_METERS
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, COORDINATE_REFERENCE_SYSTEM_METERS, _tfloat_from_dataframe
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
@@ -237,3 +239,39 @@ def test_point_to_trajectory_correct_length():
 
     assert total_length >= expected_length
     assert total_length <= expected_length + 2
+
+
+def create_nan_test_dataframe(float_values: List[float]) -> gpd.GeoDataFrame:
+    col_1 = 'col_1'
+    values_size = len(float_values)
+    timestamp_list = pd.date_range(start='01/01/2022 00:00:00', periods=values_size).to_list()
+    latitude_list = [10] * values_size
+    longitude_list = [57] * values_size
+
+    dataframe: pd.DataFrame = pd.DataFrame(data={
+        col_1: pd.Series(data=float_values, dtype='float64'),
+        TIMESTAMP_COL: pd.Series(data=timestamp_list, dtype='object'),
+        LONGITUDE_COL: pd.Series(data=longitude_list, dtype='float64'),
+        LATITUDE_COL: pd.Series(data=latitude_list, dtype='float64')
+    })
+    dataframe[TIMESTAMP_COL] = pd.to_datetime(dataframe[TIMESTAMP_COL], format='%Y-%m-%d %H:%M:%S')
+    return rebuild_to_geodataframe(dataframe)
+
+
+test_nan_removal_data = [
+    (create_nan_test_dataframe([13, 14, 15, np.nan, 17, 29]), True, False, 5),
+    (create_nan_test_dataframe([np.nan, 13, 7.43, 3.14, np.nan, 10]), False, True, 4),
+    (create_nan_test_dataframe([1, 2, 3, 4, 5, np.nan]), False, False, 6)
+]
+
+
+@pytest.mark.parametrize('test_frame, defaulted, remove, expected_number_of_values', test_nan_removal_data)
+def test_nan_values_removed(test_frame, defaulted, remove, expected_number_of_values):
+    float_column = 'col_1'
+    original_num_values = len(test_frame)
+
+    actual = _tfloat_from_dataframe(test_frame, float_column=float_column) if defaulted else \
+        _tfloat_from_dataframe(test_frame, float_column=float_column, remove_nan=remove)
+
+    assert expected_number_of_values == actual.numInstants
+    assert original_num_values == len(test_frame)  # Test original frame has not been changed

@@ -79,6 +79,11 @@ def create_fact_partitions(config):
             PARTITION OF fact_cell FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
 
+        cur.execute(f"""
+            CREATE TABLE dim_trajectory_{year}_{month}
+            PARTITION OF dim_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+        """)
+
 
 def init_database(config):
     """

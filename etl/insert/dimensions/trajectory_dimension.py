@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_TRAJECTORY_COL, T_ROT_COL, T_HEADING_COL, T_DRAUGHT_COL, T_DESTINATION_COL, \
-    T_SHIP_TRAJECTORY_ID_COL
+    T_START_DATE_COL, T_TRAJECTORY_SUB_ID_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -26,6 +26,8 @@ class TrajectoryDimensionInserter(BulkInserter):
             conn: database connection used for insertion
         """
         trajectories = df[[
+            T_START_DATE_COL,
+            T_TRAJECTORY_SUB_ID_COL,
             T_TRAJECTORY_COL,
             T_ROT_COL,
             T_HEADING_COL,
@@ -35,6 +37,8 @@ class TrajectoryDimensionInserter(BulkInserter):
 
         query = """
             INSERT INTO dim_trajectory (
+                date_id,
+                trajectory_sub_id,
                 trajectory,
                 rot,
                 heading,
@@ -42,8 +46,6 @@ class TrajectoryDimensionInserter(BulkInserter):
                 destination
             )
             VALUES {}
-            RETURNING trajectory_id
         """
-
-        df[T_SHIP_TRAJECTORY_ID_COL] = self._bulk_insert(trajectories, conn, query)
+        self._bulk_insert(trajectories, conn, query, fetch=False)
         return df
