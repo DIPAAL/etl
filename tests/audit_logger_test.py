@@ -2,7 +2,10 @@ from etl.audit.logger import AuditLogger
 from datetime import datetime, timedelta
 import os
 import pytest
-
+import pandas as pd
+import geopandas as gpd
+import numpy as np
+import psycopg2 as pg
 
 VERSION_NUMBERS_LIST = ['v1.0.2', 'version 2', 'final final', '2nd prototype', None, 'v1.22.12']
 
@@ -25,9 +28,13 @@ def test_audit_log_etl_stage():
     start_datetime = datetime(2022, 11, 15, 11, 25, 0)
     end_datetime = datetime(2022, 11, 15, 11, 25, 22)
     expected_datetime = timedelta.total_seconds(end_datetime - start_datetime)
+    dataframe_pandas = pd.DataFrame(index=np.arange(0, expected_rows), columns=['col1', 'col2', 'col3'])
+    dataframe_geopandas = gpd.GeoDataFrame(index=np.arange(0, expected_rows), columns=['col1', 'col2', 'col3'])
 
-    al.log_etl_stage('cleaning', start_time, end_time, expected_rows)
-    al.log_etl_stage('spatial_join', start_datetime, end_datetime, expected_rows)
+    al.log_etl_stage_time('cleaning', start_time, end_time)
+    al.log_etl_stage_rows('cleaning', dataframe_pandas)
+    al.log_etl_stage_time('spatial_join', start_datetime, end_datetime)
+    al.log_etl_stage_rows('spatial_join', dataframe_geopandas)
 
     assert al.log_dict['cleaning_delta_time'] == expected_time
     assert al.log_dict['cleaning_rows'] == expected_rows
@@ -37,8 +44,10 @@ def test_audit_log_etl_stage():
 
     al.reset_log()
     al.configure_log_settings(log_etl_stage_time=False, log_etl_stage_rows=False)
-    al.log_etl_stage('cleaning', start_time, end_time, expected_rows)
-    al.log_etl_stage('spatial_join', start_datetime, end_datetime, expected_rows)
+    al.log_etl_stage_time('cleaning', start_time, end_time)
+    al.log_etl_stage_rows('cleaning', dataframe_pandas)
+    al.log_etl_stage_time('spatial_join', start_datetime, end_datetime)
+    al.log_etl_stage_rows('spatial_join', dataframe_geopandas)
 
     assert al.log_dict['cleaning_delta_time'] is None
     assert al.log_dict['cleaning_rows'] is None
@@ -46,11 +55,15 @@ def test_audit_log_etl_stage():
     assert al.log_dict['spatial_join_rows'] is None
 
 
-def test_audit_log_etl_stage_raises_error():
+def test_audit_log_etl_stage_time_raises_error():
     with pytest.raises(ValueError):
         al = AuditLogger()
-        al.log_etl_stage('invalid_stage_name', 0, 42, 100)
+        al.log_etl_stage_time('invalid_stage_name', 0, 42)
 
+def test_audit_log_etl_stage_rows_raises_error():
+    with pytest.raises(ValueError):
+        al = AuditLogger()
+        al.log_etl_stage_rows('invalid_stage_name', pd.DataFrame())
 
 def test_audit_log_file_raises_error():
     with pytest.raises(FileNotFoundError):

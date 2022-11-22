@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 
 import os
 import pandas as pd
-
+import geopandas as gpd
+from typing import Union
+from psycopg2 import extensions as pg_ext
 
 class AuditLogger:
     """Class responsible for logging details about the execution of each stage of the ETL process.
@@ -56,7 +58,7 @@ class AuditLogger:
             'log_requirements': True,
         }
 
-    def log_etl_stage(self, stage_name: str, stage_start_time=None, stage_end_time=None, stage_rows=None):
+    def log_etl_stage_time(self, stage_name: str, stage_start_time=None, stage_end_time=None):
         """Log the time and number of rows of a given ETL stage.
 
         Keyword arguments:
@@ -65,8 +67,7 @@ class AuditLogger:
             stage_start_time: start time of the ETL stage
             stage_end_time: end time of the ETL stage
         """
-        if stage_name + '_rows' not in self.log_dict:
-            raise ValueError(f'Invalid name for ETL stage: {stage_name}')
+        self._valid_stage_name(stage_name)
 
         if self._log_settings['log_etl_stage_time']:
             if isinstance(stage_start_time and stage_end_time, datetime):
@@ -77,8 +78,35 @@ class AuditLogger:
             self.log_dict[stage_name + '_delta_time'] = time_delta
             self._log_total_delta_time()
 
+    def log_etl_stage_rows(self, stage_name: str, stage_data: Union[pd.DataFrame, gpd.GeoDataFrame, pg_ext.connection, pg_ext.cursor]):
+        """Log the number of rows of a given ETL stage.
+
+        Keyword arguments:
+            stage_name: name of the ETL stage, must be one of the following:
+                'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
+            stage_df: dataframe of the ETL stage
+        """
+        self._valid_stage_name(stage_name)
+
         if self._log_settings['log_etl_stage_rows']:
-            self.log_dict[stage_name + '_rows'] = stage_rows
+            if isinstance(stage_data, (pd.DataFrame, gpd.GeoDataFrame)):
+                self.log_dict[stage_name + '_rows'] = len(stage_data.index)
+            if isinstance(stage_data, pg_ext.cursor):
+                self.log_dict[stage_name + '_rows'] = stage_data.rowcount
+            if isinstance(stage_data, pg_ext.connection):
+                with stage_data.cursor() as cursor:
+                    self.log_dict[stage_name + '_rows'] = cursor.rowcount
+            else:
+                raise TypeError(f'Invalid type for stage_data: {type(stage_data)}')
+
+
+
+
+
+    def _valid_stage_name(self, stage_name):
+        """Check if the stage name is valid."""
+        if stage_name + '_rows' not in self.log_dict:
+            raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
     def _log_total_delta_time(self):
         """Calculate the total time of the ETL process."""

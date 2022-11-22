@@ -30,7 +30,7 @@ def wrap_with_timings(name: str, func, audit_log: bool = False, audit_name: str 
 
     # Audit logging - Execution time and name of the function
     if audit_log:
-        GLOBAL_AUDIT_LOGGER.log_etl_stage(audit_name, start, end)
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_time(audit_name, start, end)
 
     return result
 

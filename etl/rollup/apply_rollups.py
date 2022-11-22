@@ -3,6 +3,7 @@ from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings
 from etl.trajectory.builder import extract_date_smart_id
+from etl.constants import GLOBAL_AUDIT_LOGGER
 
 
 def apply_rollups(conn, date: datetime) -> None:
@@ -27,6 +28,8 @@ def apply_cell_fact_rollup(conn, date: datetime) -> None:
     """
     with open('etl/rollup/sql/fact_cell_rollup.sql', 'r') as f:
         query = f.read()
+
+    GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("cell_construct", conn)
 
     date_smart_key = extract_date_smart_id(date)
     with conn.cursor() as cursor:

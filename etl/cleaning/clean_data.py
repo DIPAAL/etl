@@ -13,7 +13,7 @@ CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
 # Specifies the number of partition for DAsk Dataframes based on the number of CPU cores available
 NUM_PARTITIONS = 4 * multiprocessing.cpu_count()
-
+from etl.constants import GLOBAL_AUDIT_LOGGER
 
 def clean_data(config, ais_file_path: str) -> gpd.GeoDataFrame:
     """
@@ -62,6 +62,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute(),
                                   audit_log=True, audit_name='spatial_join'
                                   )
+    GLOBAL_AUDIT_LOGGER.log_etl_stage_rows('spatial_join', clean_gdf)
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf

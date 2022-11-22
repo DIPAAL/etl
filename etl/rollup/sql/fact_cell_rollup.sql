@@ -2,7 +2,7 @@ INSERT INTO fact_cell (
     cell_x, cell_y, ship_id, ship_junk_id,
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
-    direction_id, nav_status_id, trajectory_id,
+    direction_id, nav_status_id, trajectory_sub_id,
     sog, delta_heading, draught, delta_cog
 )
 SELECT
@@ -120,7 +120,7 @@ FROM (
                         dt.heading heading,
                         dt.draught draught
                     FROM fact_trajectory ft
-                    JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id
+                    JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
                     WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)

@@ -101,8 +101,10 @@ def clean_date(date: datetime, config):
     else:
         clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
                                              audit_log=True, audit_name="cleaning")
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("cleaning", clean_sorted_ais)
         trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
                                          audit_log=True, audit_name="trajectory")
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("trajectory", trajectories)
         trajectories.to_pickle(pickle_path)
 
     conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
