@@ -7,16 +7,20 @@ import numpy as np
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL
 
 
-VERSION_NUMBERS_LIST = ['v1.0.2', 'version 2', 'final final', '2nd prototype', None, 'v1.22.12']
-
-
-@pytest.mark.parametrize('version_number', VERSION_NUMBERS_LIST)
-def test_audit_log_version_number(version_number):
+def test_audit_log_version_number():
     al = AuditLogger()
+    al.log_etl_version()
+    if os.getenv('tag'):
+        del os.environ['tag']
 
-    al.log_etl_version(version_number)
+    assert al.log_dict['etl_version'] == 'local_dev'
 
-    assert al.log_dict['etl_version'] == version_number
+    al.reset_log()
+    expected_tag = 'v1.0.0'
+    os.environ['tag'] = expected_tag
+    al.log_etl_version()
+
+    assert al.log_dict['etl_version'] == expected_tag
 
 
 def test_audit_log_etl_stage():

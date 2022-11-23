@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import geopandas as gpd
 from typing import Union
-from etl.constants import ETL_PROJECT_VERSION, ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, \
+from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, \
     ETL_STAGE_CELL, ETL_STAGE_BULK
 
 
@@ -122,13 +122,12 @@ class AuditLogger:
         if stage_name + '_rows' not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
-    def log_etl_version(self, etl_version: str):
-        """Log the version of the ETL process.
-
-        Keyword arguments:
-            etl_version: version of the ETL process
-        """
-        self.log_dict['etl_version'] = etl_version
+    def log_etl_version(self):
+        """Log the version of the ETL process."""
+        if os.getenv('tag'):
+            self.log_dict['etl_version'] = os.getenv('tag')
+        else:
+            self.log_dict['etl_version'] = 'local_dev'
 
     def log_file(self, file_path):
         """Log the file name, size and number of rows.
@@ -194,4 +193,4 @@ class AuditLogger:
 
 # Global audit logger class object, for storing logs.
 global_audit_logger = AuditLogger()
-global_audit_logger.log_etl_version(ETL_PROJECT_VERSION)
+global_audit_logger.log_etl_version()
