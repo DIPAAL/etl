@@ -15,8 +15,8 @@ from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.insert.insert_audit import AuditInserter
 from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
-from etl.constants import GLOBAL_AUDIT_LOGGER
-
+from etl.audit.logger import global_audit_logger as gal
+from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL
 
 def get_config():
     """Get the application configuration."""
@@ -49,7 +49,7 @@ def main(argv):
     date_to = datetime.strptime(args.to_date, '%Y-%m-%d') if args.to_date else None
 
     if args.init:
-        wrap_with_timings("Database init", lambda: init_database(config), audit_log=False)
+        wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean:
         clean_range(date_from, date_to, config)
@@ -90,9 +90,8 @@ def clean_date(date: datetime, config):
     file_path = wrap_with_timings(
         "Ensuring file for current date exists",
         lambda: ensure_file_for_date(date, config),
-        audit_log=False
     )
-    GLOBAL_AUDIT_LOGGER.log_file(file_path)  # logs the name, rows and size of the file
+    gal.log_file(file_path)  # logs the name, rows and size of the file
     pickle_path = file_path.replace('.csv', '.pkl')
 
     if os.path.isfile(pickle_path):
@@ -100,21 +99,21 @@ def clean_date(date: datetime, config):
         trajectories = pd.read_pickle(pickle_path)
     else:
         clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
-                                             audit_log=True, audit_name="cleaning")
-        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
+                                             audit_etl_stage=ETL_STAGE_CLEAN)
+        gal.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
         trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
-                                         audit_log=True, audit_name="trajectory")
-        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_df("trajectory", trajectories)
+                                         audit_etl_stage=ETL_STAGE_TRAJECTORY)
+        gal.log_etl_stage_rows_df("trajectory", trajectories)
         trajectories.to_pickle(pickle_path)
 
     conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
-                             audit_log=True, audit_name="bulk_insert")
+                             audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
-                      audit_log=True, audit_name="cell_construct")
+                      audit_etl_stage=ETL_STAGE_CELL)
 
-    GLOBAL_AUDIT_LOGGER.log_requirements()  # logs the versions of the requirements
+    gal.log_requirements()  # logs the versions of the requirements
     wrap_with_timings("Inserting audit", lambda: AuditInserter().insert_audit(conn))
-    GLOBAL_AUDIT_LOGGER.reset_log()  # reset the log for the next loop
+    gal.reset_log()  # reset the log for the next loop
 
     conn.commit()
 

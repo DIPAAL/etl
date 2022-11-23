@@ -1,5 +1,4 @@
 """Exports constants used in the project."""
-from etl.audit.logger import AuditLogger
 
 # Common constants
 TRAJECTORY_SRID = 4326
@@ -70,10 +69,12 @@ T_LENGTH_COL = 'length'
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
 
-# Version numbering, currently only used for the audit table in the database.
-# TODO: Update the number with each change to the ETL process.
-ETL_PROJECT_VERSION = '0.9.1'
+# NOTE: This number should be updated with each change to the ETL process so changes are reflected in the audit logs.
+ETL_PROJECT_VERSION = '0.9.11'
 
-# Global audit logger class object, for storing logs.
-GLOBAL_AUDIT_LOGGER = AuditLogger()
-GLOBAL_AUDIT_LOGGER.log_etl_version(ETL_PROJECT_VERSION)
+# Audit log constants - Valid ETL stage names
+ETL_STAGE_CLEAN = 'cleaning'
+ETL_STAGE_SPATIAL = 'spatial_join'
+ETL_STAGE_TRAJECTORY = 'trajectory'
+ETL_STAGE_CELL = 'cell_construct'
+ETL_STAGE_BULK = 'bulk_insert'

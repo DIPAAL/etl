@@ -4,11 +4,11 @@ import dask.dataframe as dd
 import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
+from etl.audit.logger import global_audit_logger as gal
 from sqlalchemy import create_engine
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
     LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL, A_COL, B_COL, C_COL, D_COL, WIDTH_COL, \
-    SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL, \
-    GLOBAL_AUDIT_LOGGER
+    SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL, ETL_STAGE_SPATIAL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
@@ -61,9 +61,9 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters
     lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute(),
-                                  audit_log=True, audit_name='spatial_join'
+                                  audit_etl_stage=ETL_STAGE_SPATIAL
                                   )
-    GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_df('spatial_join', clean_gdf)
+    gal.log_etl_stage_rows_df('spatial_join', clean_gdf)
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf

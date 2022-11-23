@@ -1,5 +1,5 @@
 """Module responsible for inserting all audit data into the database."""
-from etl.constants import GLOBAL_AUDIT_LOGGER
+from etl.audit.logger import global_audit_logger as gal
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -14,17 +14,21 @@ class AuditInserter(BulkInserter):
     """
 
     def insert_audit(self, conn):
-        """Insert all audit data into the database."""
-        """"""
-        df = GLOBAL_AUDIT_LOGGER.get_logs_db()
+        """Insert all audit data into the database.
+
+        Keyword arguments:
+            conn: database connection used for insertion
+        """
+
+        df = gal.to_dataframe()
 
         query = """
             INSERT INTO audit_log (
-            import_date, import_time, requirements, etl_version,
-            file_name, file_size, file_rows, cleaning_delta_time, cleaning_rows,
-            spatial_join_delta_time, spatial_join_rows, trajectory_delta_time, trajectory_rows,
-            cell_construct_delta_time, cell_construct_rows, bulk_insert_delta_time, bulk_insert_rows,
-            total_delta_time
+                import_datetime, requirements, etl_version,
+                file_name, file_size, file_rows, cleaning_delta_time, cleaning_rows,
+                spatial_join_delta_time, spatial_join_rows, trajectory_delta_time, trajectory_rows,
+                cell_construct_delta_time, cell_construct_rows, bulk_insert_delta_time, bulk_insert_rows,
+                total_delta_time
             )
             VALUES {}
             """

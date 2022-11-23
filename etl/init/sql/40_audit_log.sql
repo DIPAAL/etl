@@ -1,7 +1,6 @@
 CREATE TABLE audit_log (
     audit_id serial PRIMARY KEY,
-    import_date date NOT NULL,
-    import_time time NOT NULL,
+    import_datetime timestamp,
     etl_version text,
     requirements text[],
 
@@ -24,7 +23,8 @@ CREATE TABLE audit_log (
     cell_construct_rows integer,
 
     bulk_insert_delta_time integer,
-    bulk_insert_rows integer,  -- Summation. All rows inserted into the database using bulk insert
+    bulk_insert_rows integer,  -- All rows the bulk inserter attempted to insert
+    bulk_insert_success_rows integer,  -- All rows the bulk inserter successfully inserted
 
     total_delta_time integer
 )

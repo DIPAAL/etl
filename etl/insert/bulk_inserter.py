@@ -1,6 +1,7 @@
 """Class implementing bulk insertion of data into a database."""
 import pandas as pd
-from etl.constants import GLOBAL_AUDIT_LOGGER
+from etl.audit.logger import global_audit_logger as gal
+from etl.constants import ETL_STAGE_BULK
 
 
 class BulkInserter:
@@ -59,7 +60,7 @@ class BulkInserter:
         query = query.format(placeholders)
         cursor = conn.cursor()
         cursor.execute(query, batch.values.flatten())
-        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_cursor('bulk_insert', cursor)
+        gal.log_etl_stage_rows_cursor(ETL_STAGE_BULK, cursor)
         if not fetch:
             return
 
