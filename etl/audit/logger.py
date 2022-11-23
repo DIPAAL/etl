@@ -66,10 +66,7 @@ class AuditLogger:
         """
         self._validate_stage_name(stage_name)
 
-        if isinstance(stage_start_time and stage_end_time, datetime):
-            time_delta = timedelta.total_seconds(stage_end_time - stage_start_time)
-        else:
-            time_delta = stage_end_time - stage_start_time
+        time_delta = stage_end_time - stage_start_time
 
         self.log_dict[stage_name + '_delta_time'] = time_delta
         self._log_total_delta_time()
