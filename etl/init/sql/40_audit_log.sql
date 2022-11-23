@@ -10,7 +10,7 @@ CREATE TABLE audit_log (
     file_rows integer,
 
     -- Delta time is the time each stage took to complete in seconds
-    -- Row count is the number of rows after being processed by each stage
+    -- Row count is the number of rows after being processed by each stage with the exception of bulk insert
     cleaning_delta_time integer,
     cleaning_rows integer,
 
@@ -24,7 +24,7 @@ CREATE TABLE audit_log (
     cell_construct_rows integer,
 
     bulk_insert_delta_time integer,
-    bulk_insert_rows integer,
+    bulk_insert_rows integer,  -- Summation. All rows inserted into the database using bulk insert
 
     total_delta_time integer
 )

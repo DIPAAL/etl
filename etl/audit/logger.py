@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import geopandas as gpd
 from typing import Union
-from psycopg2 import extensions as pg_ext
+
 
 class AuditLogger:
     """Class responsible for logging details about the execution of each stage of the ETL process.
@@ -78,36 +78,6 @@ class AuditLogger:
             self.log_dict[stage_name + '_delta_time'] = time_delta
             self._log_total_delta_time()
 
-    def log_etl_stage_rows(self, stage_name: str, stage_data: Union[pd.DataFrame, gpd.GeoDataFrame, pg_ext.connection, pg_ext.cursor]):
-        """Log the number of rows of a given ETL stage.
-
-        Keyword arguments:
-            stage_name: name of the ETL stage, must be one of the following:
-                'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
-            stage_df: dataframe of the ETL stage
-        """
-        self._valid_stage_name(stage_name)
-
-        if self._log_settings['log_etl_stage_rows']:
-            if isinstance(stage_data, (pd.DataFrame, gpd.GeoDataFrame)):
-                self.log_dict[stage_name + '_rows'] = len(stage_data.index)
-            if isinstance(stage_data, pg_ext.cursor):
-                self.log_dict[stage_name + '_rows'] = stage_data.rowcount
-            if isinstance(stage_data, pg_ext.connection):
-                with stage_data.cursor() as cursor:
-                    self.log_dict[stage_name + '_rows'] = cursor.rowcount
-            else:
-                raise TypeError(f'Invalid type for stage_data: {type(stage_data)}')
-
-
-
-
-
-    def _valid_stage_name(self, stage_name):
-        """Check if the stage name is valid."""
-        if stage_name + '_rows' not in self.log_dict:
-            raise ValueError(f'Invalid name for ETL stage: {stage_name}')
-
     def _log_total_delta_time(self):
         """Calculate the total time of the ETL process."""
         suffix = '_delta_time'
@@ -115,6 +85,45 @@ class AuditLogger:
                                                  if key.endswith(suffix)
                                                  and not key.startswith('total')
                                                  and self.log_dict[key] is not None])
+
+    def log_etl_stage_rows_df(self, stage_name: str, stage_df: Union[pd.DataFrame, gpd.GeoDataFrame]):
+        """Log the number of rows of a given ETL stage.
+
+        Keyword arguments:
+            stage_name: name of the ETL stage, must be one of the following:
+                'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
+            stage_df: dataframe for the ETL stage
+        """
+        self._valid_stage_name(stage_name)
+
+        if self._log_settings['log_etl_stage_rows']:
+            if isinstance(stage_df, (pd.DataFrame, gpd.GeoDataFrame)):
+                self.log_dict[stage_name + '_rows'] = len(stage_df.index)
+            else:
+                raise TypeError(f'Invalid type for stage_df: {type(stage_df)}')
+
+    def log_etl_stage_rows_cursor(self, stage_name: str, cursor):
+        """Log the number of rows of a given ETL stage.
+
+        Keyword arguments:
+            stage_name: name of the ETL stage, must be one of the following:
+                'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
+            cursor: cursor object for the ETL stage
+        """
+        self._valid_stage_name(stage_name)
+        if self._log_settings['log_etl_stage_rows']:
+            try:
+                if self.log_dict[stage_name + '_rows'] is None:
+                    self.log_dict[stage_name + '_rows'] = cursor.rowcount
+                else:
+                    self.log_dict[stage_name + '_rows'] += cursor.rowcount  # To account for bulk insert which needs
+            except AttributeError:
+                raise AttributeError(f'Invalid cursor object: {type(cursor)}')
+
+    def _valid_stage_name(self, stage_name):
+        """Check if the stage name is valid."""
+        if stage_name + '_rows' not in self.log_dict:
+            raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
     def log_etl_version(self, etl_version: str):
         """Log the version of the ETL process.

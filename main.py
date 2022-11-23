@@ -15,7 +15,7 @@ from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.insert.insert_audit import AuditInserter
 from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
-from etl.constants import GLOBAL_AUDIT_LOGGER, ETL_PROJECT_VERSION
+from etl.constants import GLOBAL_AUDIT_LOGGER
 
 
 def get_config():
@@ -101,10 +101,10 @@ def clean_date(date: datetime, config):
     else:
         clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
                                              audit_log=True, audit_name="cleaning")
-        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("cleaning", clean_sorted_ais)
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
         trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
                                          audit_log=True, audit_name="trajectory")
-        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("trajectory", trajectories)
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_df("trajectory", trajectories)
         trajectories.to_pickle(pickle_path)
 
     conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
@@ -112,7 +112,6 @@ def clean_date(date: datetime, config):
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_log=True, audit_name="cell_construct")
 
-    GLOBAL_AUDIT_LOGGER.log_etl_version(ETL_PROJECT_VERSION)  # logs the version of the ETL project
     GLOBAL_AUDIT_LOGGER.log_requirements()  # logs the versions of the requirements
     wrap_with_timings("Inserting audit", lambda: AuditInserter().insert_audit(conn))
     GLOBAL_AUDIT_LOGGER.reset_log()  # reset the log for the next loop

@@ -29,11 +29,10 @@ def apply_cell_fact_rollup(conn, date: datetime) -> None:
     with open('etl/rollup/sql/fact_cell_rollup.sql', 'r') as f:
         query = f.read()
 
-    GLOBAL_AUDIT_LOGGER.log_etl_stage_rows("cell_construct", conn)
-
     date_smart_key = extract_date_smart_id(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
+        GLOBAL_AUDIT_LOGGER.log_etl_stage_rows_cursor("cell_construct", cursor)
 
 
 def apply_simplify_query(conn, date: datetime) -> None:

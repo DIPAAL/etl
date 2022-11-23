@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import psycopg2 as pg
+
 
 VERSION_NUMBERS_LIST = ['v1.0.2', 'version 2', 'final final', '2nd prototype', None, 'v1.22.12']
 
@@ -32,9 +32,9 @@ def test_audit_log_etl_stage():
     dataframe_geopandas = gpd.GeoDataFrame(index=np.arange(0, expected_rows), columns=['col1', 'col2', 'col3'])
 
     al.log_etl_stage_time('cleaning', start_time, end_time)
-    al.log_etl_stage_rows('cleaning', dataframe_pandas)
+    al.log_etl_stage_rows_df('cleaning', dataframe_pandas)
     al.log_etl_stage_time('spatial_join', start_datetime, end_datetime)
-    al.log_etl_stage_rows('spatial_join', dataframe_geopandas)
+    al.log_etl_stage_rows_df('spatial_join', dataframe_geopandas)
 
     assert al.log_dict['cleaning_delta_time'] == expected_time
     assert al.log_dict['cleaning_rows'] == expected_rows
@@ -45,9 +45,9 @@ def test_audit_log_etl_stage():
     al.reset_log()
     al.configure_log_settings(log_etl_stage_time=False, log_etl_stage_rows=False)
     al.log_etl_stage_time('cleaning', start_time, end_time)
-    al.log_etl_stage_rows('cleaning', dataframe_pandas)
+    al.log_etl_stage_rows_df('cleaning', dataframe_pandas)
     al.log_etl_stage_time('spatial_join', start_datetime, end_datetime)
-    al.log_etl_stage_rows('spatial_join', dataframe_geopandas)
+    al.log_etl_stage_rows_df('spatial_join', dataframe_geopandas)
 
     assert al.log_dict['cleaning_delta_time'] is None
     assert al.log_dict['cleaning_rows'] is None
@@ -60,10 +60,30 @@ def test_audit_log_etl_stage_time_raises_error():
         al = AuditLogger()
         al.log_etl_stage_time('invalid_stage_name', 0, 42)
 
-def test_audit_log_etl_stage_rows_raises_error():
+
+def test_audit_log_etl_stage_rows_df_raises_error():
     with pytest.raises(ValueError):
         al = AuditLogger()
-        al.log_etl_stage_rows('invalid_stage_name', pd.DataFrame())
+        al.log_etl_stage_rows_df('invalid_stage_name', pd.DataFrame())
+
+
+def test_audit_log_etl_stage_rows_df_raises_type_error():
+    with pytest.raises(TypeError):
+        al = AuditLogger()
+        al.log_etl_stage_rows_df('cleaning', None)
+
+
+def test_audit_log_etl_stage_rows_cursor_raises_name_error():
+    with pytest.raises(ValueError):
+        al = AuditLogger()
+        al.log_etl_stage_rows_cursor('invalid_stage_name', None)
+
+
+def test_audit_log_etl_stage_rows_cursor_raises_attribute_error():
+    with pytest.raises(AttributeError):
+        al = AuditLogger()
+        al.log_etl_stage_rows_cursor('cleaning', None)
+
 
 def test_audit_log_file_raises_error():
     with pytest.raises(FileNotFoundError):
