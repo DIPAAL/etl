@@ -10,4 +10,8 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
+ARG tag
+
+ENV tag=$tag
+
 COPY . .
