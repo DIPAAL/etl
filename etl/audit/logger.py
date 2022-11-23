@@ -1,5 +1,5 @@
 """Module responsible for logging details about the execution of each stage of the ETL process."""
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import os
 import pandas as pd
@@ -24,7 +24,6 @@ class AuditLogger:
         log_dict: dictionary containing the logs
         _log_settings: dictionary containing the log settings
         """
-
         self.log_dict = {
             'import_datetime': datetime.now(),
             'requirements': [],
@@ -170,7 +169,9 @@ class AuditLogger:
 
     def log_rows_false(self):
         """Configure the log so that it seizes to log row counts for file and ETL stages.
-        Should only be used if performance is an issue."""
+
+        Should only be used if performance is an issue.
+        """
         self.log_file_rows = False
         self.log_etl_stage_rows = False
 
@@ -194,5 +195,3 @@ class AuditLogger:
 # Global audit logger class object, for storing logs.
 global_audit_logger = AuditLogger()
 global_audit_logger.log_etl_version(ETL_PROJECT_VERSION)
-
-

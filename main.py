@@ -18,6 +18,7 @@ from etl.trajectory.builder import build_from_geopandas
 from etl.audit.logger import global_audit_logger as gal
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL
 
+
 def get_config():
     """Get the application configuration."""
     path = './config.properties'

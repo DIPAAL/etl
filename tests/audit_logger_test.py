@@ -1,11 +1,10 @@
 from etl.audit.logger import AuditLogger
-from datetime import datetime, timedelta
 import os
 import pytest
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, ETL_STAGE_CELL, ETL_STAGE_BULK
+from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL
 
 
 VERSION_NUMBERS_LIST = ['v1.0.2', 'version 2', 'final final', '2nd prototype', None, 'v1.22.12']
@@ -32,10 +31,12 @@ def test_audit_log_etl_stage():
     al.log_etl_stage_time(ETL_STAGE_CLEAN, start_time, end_time)
     al.log_etl_stage_rows_df(ETL_STAGE_CLEAN, dataframe_pandas)
     al.log_etl_stage_time(ETL_STAGE_SPATIAL, start_time, end_time)
+    al.log_etl_stage_rows_df(ETL_STAGE_SPATIAL, dataframe_geopandas)
 
     assert al.log_dict[f'{ETL_STAGE_CLEAN}_delta_time'] == expected_time
     assert al.log_dict[f'{ETL_STAGE_CLEAN}_rows'] == expected_rows
     assert al.log_dict[f'{ETL_STAGE_SPATIAL}_delta_time'] == expected_time
+    assert al.log_dict[f'{ETL_STAGE_SPATIAL}_rows'] == expected_rows
     assert al.log_dict['total_delta_time'] == expected_time * 2
 
     al.reset_log()
