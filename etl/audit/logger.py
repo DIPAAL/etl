@@ -1,4 +1,5 @@
 """Module responsible for logging details about the execution of each stage of the ETL process."""
+import json
 from datetime import datetime, timedelta
 
 import os
@@ -47,7 +48,7 @@ class AuditLogger:
             f'{ETL_STAGE_CELL}_rows': None,
 
             f'{ETL_STAGE_BULK}_delta_time': None,
-            f'{ETL_STAGE_BULK}_rows': None,
+            f'{ETL_STAGE_BULK}_stats': {},
 
             'total_delta_time': None,
         }
@@ -64,7 +65,7 @@ class AuditLogger:
             stage_start_time: start time of the ETL stage
             stage_end_time: end time of the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, "_delta_time")
 
         if isinstance(stage_start_time and stage_end_time, datetime):
             time_delta = timedelta.total_seconds(stage_end_time - stage_start_time)
@@ -90,7 +91,7 @@ class AuditLogger:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
             stage_df: dataframe for the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, "_rows")
 
         if self.log_etl_stage_rows:
             if isinstance(stage_df, (pd.DataFrame, gpd.GeoDataFrame)):
@@ -106,7 +107,7 @@ class AuditLogger:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
             cursor: cursor object for the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, "_rows")
         if self.log_etl_stage_rows:
             try:
                 if self.log_dict[stage_name + '_rows'] is None:
@@ -116,14 +117,29 @@ class AuditLogger:
             except AttributeError:
                 raise AttributeError(f'Invalid cursor object: {type(cursor)}')
 
-    def _validate_stage_name(self, stage_name):
+    def log_bulk_insertion(self, sequence_name, inserted_rows):
+        """Add the bulk insertion statistics to the log dictionary for a given sequence name.
+
+        Accumulate the number of rows inserted for each sequence name, to allow batching.
+
+        Keyword arguments:
+            sequence_name: name of the sequence
+            inserted_rows: number of rows inserted
+        """
+        if self.log_dict[f'{ETL_STAGE_BULK}_stats'].get(sequence_name) is None:
+            self.log_dict[f'{ETL_STAGE_BULK}_stats'][sequence_name] = inserted_rows
+            return
+
+        self.log_dict[f'{ETL_STAGE_BULK}_stats'][sequence_name] += inserted_rows
+
+    def _validate_stage_name(self, stage_name, suffix):
         """Check if the stage name is valid.
 
         Keyword arguments:
             stage_name: name of the ETL stage, must be one of the following:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
         """
-        if stage_name + '_rows' not in self.log_dict:
+        if stage_name + suffix not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
     def log_etl_version(self, etl_version: str):
@@ -187,6 +203,7 @@ class AuditLogger:
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
+        df[ETL_STAGE_BULK + '_stats'] = df[ETL_STAGE_BULK + '_stats'].apply(lambda x: json.dumps(x))
         return df
 
     def get_logs_dict(self):
