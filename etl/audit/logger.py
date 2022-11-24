@@ -21,7 +21,8 @@ class AuditLogger:
         log_etl_stage_time(stage_name, stage_start_time, stage_end_time): log the delta time of a given ETL stage
         log_etl_stage_rows_df(stage_name, stage_df): log the number of rows of a given ETL stage given a dataframe
         log_etl_stage_rows_cursor(stage_name, cursor): log the number of rows of a given ETL stage given a cursor
-        log_bulk_insertion(sequence_name, inserted_rows): add the bulk insertion statistics to the log dictionary for a given sequence name
+        log_bulk_insertion(sequence_name, inserted_rows): add the bulk insertion statistics to the log dictionary
+            for a given sequence name
         log_file(file_path): log the name, size and number of rows for a given file
         log_etl_version(): log the version of the ETL process
         log_requirements(requirements_path): log the requirements of the ETL process
