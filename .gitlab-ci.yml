@@ -43,7 +43,7 @@ build:
     entrypoint: ['']
   before_script:
     - export JOB_ID=$(date +%F-%H-%M-%S)
-    - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-$CI_PIPELINE_ID}
+    - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
     - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
   when: manual
 
