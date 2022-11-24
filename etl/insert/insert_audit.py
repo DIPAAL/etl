@@ -33,5 +33,3 @@ class AuditInserter(BulkInserter):
             """
 
         self._bulk_insert(df, conn, query, fetch=False)
-
-        pass

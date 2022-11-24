@@ -17,18 +17,27 @@ STATS_SUFFIX = '_stats'
 class AuditLogger:
     """Class responsible for logging details about the execution of each stage of the ETL process.
 
+    Methods:
+        log_etl_stage_time: log the delta time of a given ETL stage
+        log_etl_stage_rows_df: log the number of rows of a given ETL stage given a dataframe
+        log_etl_stage_rows_cursor: log the number of rows of a given ETL stage given a cursor
+        log_bulk_insertion: add the bulk insertion statistics to the log dictionary for a given sequence name
+        log_file: log the name, size and number of rows for a given file
+        log_etl_version: log the version of the ETL process
+        log_requirements: log the requirements of the ETL process
+        log_row_false: configure the logger to not log the number of rows of each ETL stage
+        reset_logs: reset the logs
+        to_df: return a dataframe containing the logs
+        get_logs_dict: return the dictionary containing the logs
+
     Attributes:
         log_dict (dict): dictionary containing the logs
+        log_file_rows: boolean indicating if the number of rows of the input file should be logged
+        log_etl_stage_rows: boolean indicating if the number of rows of each ETL stage should be logged
     """
 
     def __init__(self):
-        """
-        Construct an instance of the AuditLogger class.
-
-        log_dict: dictionary containing the logs
-        log_file_rows: boolean indicating if the number of rows of the input file should be logged
-        log_etl_stage_rows: boolean indicating if the number of rows of each ETL stage should be logged
-        """
+        """Construct an instance of the AuditLogger class."""
         self.log_dict = {
             'import_datetime': datetime.now(),
             'requirements': [],
@@ -135,6 +144,8 @@ class AuditLogger:
         Keyword arguments:
             stage_name: name of the ETL stage, must be one of the following:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
+            suffix: suffix to be appended to the stage name, representing the type of log, must be one of the following:
+                '_delta_time', '_rows', '_stats'
         """
         if stage_name + suffix not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')

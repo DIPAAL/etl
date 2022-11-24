@@ -69,9 +69,6 @@ T_LENGTH_COL = 'length'
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
 
-# NOTE: This number should be updated with each change to the ETL process so changes are reflected in the audit logs.
-ETL_PROJECT_VERSION = '0.9.11'
-
 # Audit log constants - Valid ETL stage names
 ETL_STAGE_CLEAN = 'cleaning'
 ETL_STAGE_SPATIAL = 'spatial_join'
