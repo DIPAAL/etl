@@ -19,7 +19,10 @@ class BulkInserter:
         """
         Construct an instance of the BulkInserter class.
 
-        bulk_size: number of rows to insert in a single transaction
+        Keyword arguments:
+            dimension_name: the table name of the dimension being inserted into
+            bulk_size: the number of rows to insert in a single transaction
+            id_col_name: the name of the column containing the id of the dimension
         """
         self.bulk_size = bulk_size
         self.dimension_name = dimension_name
