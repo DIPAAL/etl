@@ -1,12 +1,12 @@
 """Module responsible for logging details about the execution of each stage of the ETL process."""
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import os
 import pandas as pd
 import geopandas as gpd
 from typing import Union
-from etl.constants import ETL_PROJECT_VERSION, ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, \
+from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, \
     ETL_STAGE_CELL, ETL_STAGE_BULK
 
 
@@ -25,7 +25,6 @@ class AuditLogger:
         log_dict: dictionary containing the logs
         _log_settings: dictionary containing the log settings
         """
-
         self.log_dict = {
             'import_datetime': datetime.now(),
             'requirements': [],
@@ -67,10 +66,7 @@ class AuditLogger:
         """
         self._validate_stage_name(stage_name, "_delta_time")
 
-        if isinstance(stage_start_time and stage_end_time, datetime):
-            time_delta = timedelta.total_seconds(stage_end_time - stage_start_time)
-        else:
-            time_delta = stage_end_time - stage_start_time
+        time_delta = stage_end_time - stage_start_time
 
         self.log_dict[stage_name + '_delta_time'] = time_delta
         self._log_total_delta_time()
@@ -142,13 +138,12 @@ class AuditLogger:
         if stage_name + suffix not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
-    def log_etl_version(self, etl_version: str):
-        """Log the version of the ETL process.
-
-        Keyword arguments:
-            etl_version: version of the ETL process
-        """
-        self.log_dict['etl_version'] = etl_version
+    def log_etl_version(self):
+        """Log the version of the ETL process."""
+        if os.getenv('tag'):
+            self.log_dict['etl_version'] = os.getenv('tag')
+        else:
+            self.log_dict['etl_version'] = 'local_dev'
 
     def log_file(self, file_path):
         """Log the file name, size and number of rows.
@@ -189,7 +184,9 @@ class AuditLogger:
 
     def log_rows_false(self):
         """Configure the log so that it seizes to log row counts for file and ETL stages.
-        Should only be used if performance is an issue."""
+
+        Should only be used if performance is an issue.
+        """
         self.log_file_rows = False
         self.log_etl_stage_rows = False
 
@@ -213,4 +210,4 @@ class AuditLogger:
 
 # Global audit logger class object, for storing logs.
 global_audit_logger = AuditLogger()
-global_audit_logger.log_etl_version(ETL_PROJECT_VERSION)
+global_audit_logger.log_etl_version()
