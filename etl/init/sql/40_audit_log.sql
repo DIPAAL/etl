@@ -23,8 +23,7 @@ CREATE TABLE audit_log (
     cell_construct_rows integer,
 
     bulk_insert_delta_time integer,
-    bulk_insert_rows integer,  -- All rows the bulk inserter attempted to insert
-    bulk_insert_success_rows integer,  -- All rows the bulk inserter successfully inserted
+    bulk_insert_insertion_stats jsonb,
 
     total_delta_time integer
 )

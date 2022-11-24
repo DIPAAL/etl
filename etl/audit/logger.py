@@ -1,4 +1,5 @@
 """Module responsible for logging details about the execution of each stage of the ETL process."""
+import json
 from datetime import datetime
 
 import os
@@ -8,13 +9,16 @@ from typing import Union
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL, ETL_STAGE_TRAJECTORY, \
     ETL_STAGE_CELL, ETL_STAGE_BULK
 
+DELTA_TIME_SUFFIX = '_delta_time'
+ROWS_SUFFIX = '_rows'
+STATS_SUFFIX = '_stats'
+
 
 class AuditLogger:
     """Class responsible for logging details about the execution of each stage of the ETL process.
 
     Attributes:
         log_dict (dict): dictionary containing the logs
-        _log_settings (dict): dictionary containing the log settings
     """
 
     def __init__(self):
@@ -33,20 +37,20 @@ class AuditLogger:
             'file_size': None,
             'file_rows': None,
 
-            f'{ETL_STAGE_CLEAN}_delta_time': None,
-            f'{ETL_STAGE_CLEAN}_rows': None,
+            f'{ETL_STAGE_CLEAN}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_CLEAN}{ROWS_SUFFIX}': None,
 
-            f'{ETL_STAGE_SPATIAL}_delta_time': None,
-            f'{ETL_STAGE_SPATIAL}_rows': None,
+            f'{ETL_STAGE_SPATIAL}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_SPATIAL}{ROWS_SUFFIX}': None,
 
-            f'{ETL_STAGE_TRAJECTORY}_delta_time': None,
-            f'{ETL_STAGE_TRAJECTORY}_rows': None,
+            f'{ETL_STAGE_TRAJECTORY}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_TRAJECTORY}{ROWS_SUFFIX}': None,
 
-            f'{ETL_STAGE_CELL}_delta_time': None,
-            f'{ETL_STAGE_CELL}_rows': None,
+            f'{ETL_STAGE_CELL}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_CELL}{ROWS_SUFFIX}': None,
 
-            f'{ETL_STAGE_BULK}_delta_time': None,
-            f'{ETL_STAGE_BULK}_rows': None,
+            f'{ETL_STAGE_BULK}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_BULK}{STATS_SUFFIX}': {},
 
             'total_delta_time': None,
         }
@@ -63,16 +67,16 @@ class AuditLogger:
             stage_start_time: start time of the ETL stage
             stage_end_time: end time of the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, DELTA_TIME_SUFFIX)
 
         time_delta = stage_end_time - stage_start_time
 
-        self.log_dict[stage_name + '_delta_time'] = time_delta
+        self.log_dict[stage_name + DELTA_TIME_SUFFIX] = time_delta
         self._log_total_delta_time()
 
     def _log_total_delta_time(self):
         """Calculate the total time of the ETL process."""
-        suffix = '_delta_time'
+        suffix = DELTA_TIME_SUFFIX
         self.log_dict['total_delta_time'] = sum([self.log_dict[key] for key in self.log_dict
                                                  if key.endswith(suffix)
                                                  and key != 'total_delta_time'
@@ -86,11 +90,11 @@ class AuditLogger:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
             stage_df: dataframe for the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, ROWS_SUFFIX)
 
         if self.log_etl_stage_rows:
             if isinstance(stage_df, (pd.DataFrame, gpd.GeoDataFrame)):
-                self.log_dict[stage_name + '_rows'] = len(stage_df.index)
+                self.log_dict[stage_name + ROWS_SUFFIX] = len(stage_df.index)
             else:
                 raise TypeError(f'Invalid type for stage_df: {type(stage_df)}')
 
@@ -102,24 +106,36 @@ class AuditLogger:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
             cursor: cursor object for the ETL stage
         """
-        self._validate_stage_name(stage_name)
+        self._validate_stage_name(stage_name, ROWS_SUFFIX)
         if self.log_etl_stage_rows:
             try:
-                if self.log_dict[stage_name + '_rows'] is None:
-                    self.log_dict[stage_name + '_rows'] = cursor.rowcount
-                else:
-                    self.log_dict[stage_name + '_rows'] += cursor.rowcount  # += as bulk insert is called multiple times
+                self.log_dict[stage_name + ROWS_SUFFIX] = cursor.rowcount
             except AttributeError:
                 raise AttributeError(f'Invalid cursor object: {type(cursor)}')
 
-    def _validate_stage_name(self, stage_name):
+    def log_bulk_insertion(self, sequence_name, inserted_rows):
+        """Add the bulk insertion statistics to the log dictionary for a given sequence name.
+
+        Accumulate the number of rows inserted for each sequence name, to allow batching.
+
+        Keyword arguments:
+            sequence_name: name of the sequence
+            inserted_rows: number of rows inserted
+        """
+        if self.log_dict[f'{ETL_STAGE_BULK}{STATS_SUFFIX}'].get(sequence_name) is None:
+            self.log_dict[f'{ETL_STAGE_BULK}{STATS_SUFFIX}'][sequence_name] = inserted_rows
+            return
+
+        self.log_dict[f'{ETL_STAGE_BULK}{STATS_SUFFIX}'][sequence_name] += inserted_rows
+
+    def _validate_stage_name(self, stage_name, suffix):
         """Check if the stage name is valid.
 
         Keyword arguments:
             stage_name: name of the ETL stage, must be one of the following:
                 'cleaning', 'spatial_join', 'trajectory', 'cell_construct', 'bulk_insert'
         """
-        if stage_name + '_rows' not in self.log_dict:
+        if stage_name + suffix not in self.log_dict:
             raise ValueError(f'Invalid name for ETL stage: {stage_name}')
 
     def log_etl_version(self):
@@ -184,6 +200,7 @@ class AuditLogger:
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
+        df[ETL_STAGE_BULK + STATS_SUFFIX] = df[ETL_STAGE_BULK + STATS_SUFFIX].apply(lambda x: json.dumps(x))
         return df
 
     def get_logs_dict(self):

@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_MMSI_COL, T_IMO_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_A_COL, T_B_COL, T_C_COL, \
-    T_D_COL, T_SHIP_ID_COL
+    T_D_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -32,13 +32,19 @@ class ShipDimensionInserter (BulkInserter):
 
         ships = df[unique_columns].drop_duplicates()
 
-        query = """
+        insert_query = """
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d)
             VALUES {}
-            ON CONFLICT (mmsi, imo, name, callsign, a, b, c, d) DO UPDATE SET name = EXCLUDED.name
             RETURNING ship_id
         """
 
-        ships[T_SHIP_ID_COL] = self._bulk_insert(ships, conn, query)
+        select_query = """
+            SELECT
+                ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d
+            FROM dim_ship
+            WHERE (mmsi, imo, name, callsign, a, b, c, d) IN {}
+            """
+
+        ships = self._bulk_select_insert(ships, conn, insert_query, select_query)
 
         return df.merge(ships, on=unique_columns, how='left')

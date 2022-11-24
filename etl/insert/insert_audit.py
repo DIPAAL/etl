@@ -26,7 +26,7 @@ class AuditInserter(BulkInserter):
                 import_datetime, requirements, etl_version,
                 file_name, file_size, file_rows, cleaning_delta_time, cleaning_rows,
                 spatial_join_delta_time, spatial_join_rows, trajectory_delta_time, trajectory_rows,
-                cell_construct_delta_time, cell_construct_rows, bulk_insert_delta_time, bulk_insert_rows,
+                cell_construct_delta_time, cell_construct_rows, bulk_insert_delta_time, bulk_insert_insertion_stats,
                 total_delta_time
             )
             VALUES {}

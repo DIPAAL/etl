@@ -107,13 +107,14 @@ def clean_date(date: datetime, config):
         gal.log_etl_stage_rows_df("trajectory", trajectories)
         trajectories.to_pickle(pickle_path)
 
-    conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter().persist(trajectories, config),
+    conn = wrap_with_timings("Inserting trajectories",
+                             lambda: TrajectoryInserter("fact_trajectory").persist(trajectories, config),
                              audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
 
     gal.log_requirements()  # logs the versions of the requirements
-    wrap_with_timings("Inserting audit", lambda: AuditInserter().insert_audit(conn))
+    wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
     gal.reset_log()  # reset the log for the next loop
 
     conn.commit()
