@@ -3,15 +3,18 @@ from datetime import datetime, timedelta
 from typing import List
 from time import perf_counter
 import psycopg2
+from etl.audit.logger import global_audit_logger as gal
 
 
-def wrap_with_timings(name: str, func):
+def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
     """
     Execute a given function and prints the time it took the function to execute.
 
     Keyword arguments:
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to execute
+        audit_etl_stage: name of the ETL stage, must be a valid ETL stage name. If used, the ETL stage will be logged.
+            (default: None)
 
     Examples
     --------
@@ -26,6 +29,11 @@ def wrap_with_timings(name: str, func):
     end = perf_counter()
     print(f"{name} finished at {datetime.now()}")
     print(f"{name} took {timedelta(seconds=(end - start))}")
+
+    # Audit logging - Name of the ETL stage and the time it took to execute
+    if audit_etl_stage is not None:
+        gal.log_etl_stage_time(audit_etl_stage, start, end)
+
     return result
 
 

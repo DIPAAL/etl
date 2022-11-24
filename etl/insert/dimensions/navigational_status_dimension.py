@@ -30,14 +30,21 @@ class NavigationalStatusDimensionInserter (BulkInserter):
 
         nav_statuses = df[unique_columns].drop_duplicates()
 
-        query = """
+        insert_query = """
             INSERT INTO dim_nav_status (nav_status)
             VALUES {}
-            ON CONFLICT (nav_status)
-                DO UPDATE SET nav_status = EXCLUDED.nav_status
             RETURNING nav_status_id
         """
 
-        nav_statuses[T_SHIP_NAVIGATIONAL_STATUS_ID_COL] = self._bulk_insert(nav_statuses, conn, query)
+        select_query = """
+            SELECT
+                nav_status_id, nav_status
+            FROM dim_nav_status
+            WHERE (nav_status) IN {}
+        """
+
+        nav_statuses = self._bulk_select_insert(nav_statuses, conn, insert_query, select_query)
+
+        nav_statuses.rename(columns={'nav_status_id': T_SHIP_NAVIGATIONAL_STATUS_ID_COL}, inplace=True)
 
         return df.merge(nav_statuses, on=unique_columns, how='left')

@@ -61,10 +61,12 @@ class TrajectoryInserter (BulkInserter):
 
         conn = get_connection(config)
 
-        df = ShipDimensionInserter(self.bulk_size).ensure(df, conn)
-        df = ShipJunkDimensionInserter(self.bulk_size).ensure(df, conn)
-        df = NavigationalStatusDimensionInserter(self.bulk_size).ensure(df, conn)
-        df = TrajectoryDimensionInserter(self.bulk_size).ensure(df, conn)
+        df = ShipDimensionInserter("dim_ship", bulk_size=self.bulk_size, id_col_name="ship_id").ensure(df, conn)
+        df = ShipJunkDimensionInserter("dim_ship_junk", bulk_size=self.bulk_size,
+                                       id_col_name="ship_junk_id").ensure(df, conn)
+        df = NavigationalStatusDimensionInserter("dim_nav_status", bulk_size=self.bulk_size,
+                                                 id_col_name="nav_status_id").ensure(df, conn)
+        df = TrajectoryDimensionInserter("dim_trajectory", bulk_size=self.bulk_size).ensure(df, conn)
 
         self._insert_trajectories(df, conn)
 

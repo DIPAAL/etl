@@ -1,4 +1,5 @@
 """Exports constants used in the project."""
+
 # Common constants
 TRAJECTORY_SRID = 4326
 COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'
@@ -67,3 +68,10 @@ T_LENGTH_COL = 'length'
 # Other dataframe columns
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
+
+# Audit log constants - Valid ETL stage names
+ETL_STAGE_CLEAN = 'cleaning'
+ETL_STAGE_SPATIAL = 'spatial_join'
+ETL_STAGE_TRAJECTORY = 'trajectory'
+ETL_STAGE_CELL = 'cell_construct'
+ETL_STAGE_BULK = 'bulk_insert'

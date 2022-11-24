@@ -1,7 +1,7 @@
 """Responsible for ensuring the ship junk dimension."""
 import pandas as pd
 
-from etl.constants import T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_JUNK_ID_COL
+from etl.constants import T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -32,14 +32,19 @@ class ShipJunkDimensionInserter (BulkInserter):
 
         ship_junks = df[unique_columns].drop_duplicates()
 
-        query = """
+        insert_query = """
             INSERT INTO dim_ship_junk (location_system_type, mobile_type, ship_type)
             VALUES {}
-            ON CONFLICT (location_system_type, mobile_type, ship_type)
-                DO UPDATE SET ship_type = EXCLUDED.ship_type
             RETURNING ship_junk_id
         """
 
-        ship_junks[T_SHIP_JUNK_ID_COL] = self._bulk_insert(ship_junks, conn, query)
+        select_query = """
+            SELECT
+                ship_junk_id, location_system_type, mobile_type, ship_type
+            FROM dim_ship_junk
+            WHERE (location_system_type, mobile_type, ship_type) IN {}
+        """
+
+        ship_junks = self._bulk_select_insert(ship_junks, conn, insert_query, select_query)
 
         return df.merge(ship_junks, on=unique_columns, how='left')
