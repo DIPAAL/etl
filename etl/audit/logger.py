@@ -26,7 +26,8 @@ class AuditLogger:
         Construct an instance of the AuditLogger class.
 
         log_dict: dictionary containing the logs
-        _log_settings: dictionary containing the log settings
+        log_file_rows: boolean indicating if the number of rows of the input file should be logged
+        log_etl_stage_rows: boolean indicating if the number of rows of each ETL stage should be logged
         """
         self.log_dict = {
             'import_datetime': datetime.now(),
