@@ -152,10 +152,7 @@ class AuditLogger:
 
     def log_etl_version(self):
         """Log the version of the ETL process."""
-        if os.getenv('tag'):
-            self.log_dict['etl_version'] = os.getenv('tag')
-        else:
-            self.log_dict['etl_version'] = 'local_dev'
+        self.log_dict['etl_version'] = os.getenv('tag', 'local_dev')
 
     def log_file(self, file_path):
         """Log the file name, size and number of rows.
