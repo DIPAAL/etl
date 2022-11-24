@@ -9,9 +9,10 @@ from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_SPATIAL
 
 def test_audit_log_version_number():
     al = AuditLogger()
-    al.log_etl_version()
+
     if os.getenv('tag'):
         os.unsetenv('tag')
+    al.log_etl_version()
 
     assert al.log_dict['etl_version'] == 'local_dev'
 
