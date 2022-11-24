@@ -11,7 +11,7 @@ def test_audit_log_version_number():
     al = AuditLogger()
 
     if os.getenv('tag'):
-        os.unsetenv('tag')
+        del os.environ['tag']
     al.log_etl_version()
 
     assert al.log_dict['etl_version'] == 'local_dev'
