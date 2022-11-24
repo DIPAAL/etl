@@ -18,17 +18,17 @@ class AuditLogger:
     """Class responsible for logging details about the execution of each stage of the ETL process.
 
     Methods:
-        log_etl_stage_time: log the delta time of a given ETL stage
-        log_etl_stage_rows_df: log the number of rows of a given ETL stage given a dataframe
-        log_etl_stage_rows_cursor: log the number of rows of a given ETL stage given a cursor
-        log_bulk_insertion: add the bulk insertion statistics to the log dictionary for a given sequence name
-        log_file: log the name, size and number of rows for a given file
-        log_etl_version: log the version of the ETL process
-        log_requirements: log the requirements of the ETL process
-        log_row_false: configure the logger to not log the number of rows of each ETL stage
-        reset_logs: reset the logs
-        to_df: return a dataframe containing the logs
-        get_logs_dict: return the dictionary containing the logs
+        log_etl_stage_time(stage_name, stage_start_time, stage_end_time): log the delta time of a given ETL stage
+        log_etl_stage_rows_df(stage_name, stage_df): log the number of rows of a given ETL stage given a dataframe
+        log_etl_stage_rows_cursor(stage_name, cursor): log the number of rows of a given ETL stage given a cursor
+        log_bulk_insertion(sequence_name, inserted_rows): add the bulk insertion statistics to the log dictionary for a given sequence name
+        log_file(file_path): log the name, size and number of rows for a given file
+        log_etl_version(): log the version of the ETL process
+        log_requirements(requirements_path): log the requirements of the ETL process
+        log_row_false(): configure the logger to not log the number of rows of each ETL stage
+        reset_logs(): reset the logs
+        to_df(): return a dataframe containing the logs
+        get_logs_dict(): return the dictionary containing the logs
 
     Attributes:
         log_dict (dict): dictionary containing the logs

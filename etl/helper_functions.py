@@ -14,7 +14,7 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to execute
         audit_etl_stage: name of the ETL stage, must be a valid ETL stage name. If used, the ETL stage will be logged.
-            (default None)
+            (default: None)
 
     Examples
     --------
