@@ -19,7 +19,6 @@ class AuditInserter(BulkInserter):
         Keyword arguments:
             conn: database connection used for insertion
         """
-
         df = gal.to_dataframe()
 
         query = """

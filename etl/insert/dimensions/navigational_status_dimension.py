@@ -37,7 +37,7 @@ class NavigationalStatusDimensionInserter (BulkInserter):
         """
 
         select_query = """
-            SELECT 
+            SELECT
                 nav_status_id, nav_status
             FROM dim_nav_status
             WHERE (nav_status) IN {}

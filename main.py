@@ -18,6 +18,7 @@ from etl.trajectory.builder import build_from_geopandas
 from etl.audit.logger import global_audit_logger as gal
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL
 
+
 def get_config():
     """Get the application configuration."""
     path = './config.properties'
@@ -106,7 +107,8 @@ def clean_date(date: datetime, config):
         gal.log_etl_stage_rows_df("trajectory", trajectories)
         trajectories.to_pickle(pickle_path)
 
-    conn = wrap_with_timings("Inserting trajectories", lambda: TrajectoryInserter("fact_trajectory").persist(trajectories, config),
+    conn = wrap_with_timings("Inserting trajectories",
+                             lambda: TrajectoryInserter("fact_trajectory").persist(trajectories, config),
                              audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)

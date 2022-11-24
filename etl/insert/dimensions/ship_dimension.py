@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_MMSI_COL, T_IMO_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_A_COL, T_B_COL, T_C_COL, \
-    T_D_COL, T_SHIP_ID_COL
+    T_D_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -39,7 +39,7 @@ class ShipDimensionInserter (BulkInserter):
         """
 
         select_query = """
-            SELECT 
+            SELECT
                 ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d
             FROM dim_ship
             WHERE (mmsi, imo, name, callsign, a, b, c, d) IN {}

@@ -214,5 +214,3 @@ class AuditLogger:
 # Global audit logger class object, for storing logs.
 global_audit_logger = AuditLogger()
 global_audit_logger.log_etl_version(ETL_PROJECT_VERSION)
-
-

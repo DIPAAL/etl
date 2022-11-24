@@ -1,7 +1,7 @@
 """Responsible for ensuring the ship junk dimension."""
 import pandas as pd
 
-from etl.constants import T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_JUNK_ID_COL
+from etl.constants import T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -39,7 +39,7 @@ class ShipJunkDimensionInserter (BulkInserter):
         """
 
         select_query = """
-            SELECT 
+            SELECT
                 ship_junk_id, location_system_type, mobile_type, ship_type
             FROM dim_ship_junk
             WHERE (location_system_type, mobile_type, ship_type) IN {}
