@@ -39,33 +39,7 @@ class AuditLogger:
 
     def __init__(self):
         """Construct an instance of the AuditLogger class."""
-        self.log_dict = {
-            'import_datetime': datetime.now(),
-            'requirements': [],
-            'etl_version': None,
-
-            'file_name': None,
-            'file_size': None,
-            'file_rows': None,
-
-            f'{ETL_STAGE_CLEAN}{DELTA_TIME_SUFFIX}': None,
-            f'{ETL_STAGE_CLEAN}{ROWS_SUFFIX}': None,
-
-            f'{ETL_STAGE_SPATIAL}{DELTA_TIME_SUFFIX}': None,
-            f'{ETL_STAGE_SPATIAL}{ROWS_SUFFIX}': None,
-
-            f'{ETL_STAGE_TRAJECTORY}{DELTA_TIME_SUFFIX}': None,
-            f'{ETL_STAGE_TRAJECTORY}{ROWS_SUFFIX}': None,
-
-            f'{ETL_STAGE_CELL}{DELTA_TIME_SUFFIX}': None,
-            f'{ETL_STAGE_CELL}{ROWS_SUFFIX}': None,
-
-            f'{ETL_STAGE_BULK}{DELTA_TIME_SUFFIX}': None,
-            f'{ETL_STAGE_BULK}{STATS_SUFFIX}': {},
-
-            'total_delta_time': None,
-        }
-
+        self.reset_log()
         self.log_file_rows = True
         self.log_etl_stage_rows = True
 
@@ -202,10 +176,32 @@ class AuditLogger:
 
     def reset_log(self):
         """Reset the log dictionary."""
-        for key in self.log_dict:
-            self.log_dict[key] = None
-        self.log_dict['import_datetime'] = datetime.now()
-        self.log_dict['requirements'] = []
+        self.log_dict = {
+            'import_datetime': datetime.now(),
+            'requirements': [],
+            'etl_version': None,
+
+            'file_name': None,
+            'file_size': None,
+            'file_rows': None,
+
+            f'{ETL_STAGE_CLEAN}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_CLEAN}{ROWS_SUFFIX}': None,
+
+            f'{ETL_STAGE_SPATIAL}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_SPATIAL}{ROWS_SUFFIX}': None,
+
+            f'{ETL_STAGE_TRAJECTORY}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_TRAJECTORY}{ROWS_SUFFIX}': None,
+
+            f'{ETL_STAGE_CELL}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_CELL}{ROWS_SUFFIX}': None,
+
+            f'{ETL_STAGE_BULK}{DELTA_TIME_SUFFIX}': None,
+            f'{ETL_STAGE_BULK}{STATS_SUFFIX}': {},
+
+            'total_delta_time': None,
+        }
 
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
