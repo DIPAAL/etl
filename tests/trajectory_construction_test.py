@@ -235,10 +235,9 @@ def test_point_to_trajectory_correct_length():
     points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
     points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
 
-    expected_length = points_journey.distance(points_journey.shift(1)).sum() / 1000
+    expected_length = 27345
 
-    assert total_length >= expected_length
-    assert total_length <= expected_length + 2
+    assert abs(total_length - expected_length) < 1
 
 
 def create_nan_test_dataframe(float_values: List[float]) -> gpd.GeoDataFrame:
