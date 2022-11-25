@@ -57,7 +57,13 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
                 result = future.result()
                 results.append(result)
 
-    return pd.concat(results)
+    df = pd.concat(results)
+    df.loc[:, T_ROT_COL].mask(df.loc[:, T_ROT_COL].isna(), other=None, inplace=True)
+    df.loc[:, T_HEADING_COL].mask(df.loc[:, T_HEADING_COL].isna(), other=None, inplace=True)
+    df.loc[:, T_DRAUGHT_COL] = df.loc[:, T_DRAUGHT_COL].astype('object').mask(df.loc[:, T_DRAUGHT_COL].isna(),
+                                                                              other=None)
+    df.loc[:, T_DESTINATION_COL].mask(df.loc[:, T_DESTINATION_COL].isna(), other="UNKNOWN DESTINATION", inplace=True)
+    return df
 
 
 def _create_trajectory(grouped_data) -> pd.DataFrame:
@@ -273,6 +279,10 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
     """
     if remove_nan:
         dataframe = dataframe.dropna(axis='index', subset=[float_column])
+
+    if dataframe.empty:
+        return None
+
     tfloat_lst = []
     for _, row in dataframe.iterrows():
 
