@@ -94,7 +94,7 @@ def _is_moving(row):
     Keyword arguments:
         row: a row of AIS data
     """
-    return row[SOG_COL] > STOPPED_KNOTS_THRESHOLD
+    return row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD
 
 
 def _is_beyond_stopped_threshold(df: pd.DataFrame, first_idx: int, last_idx) -> bool:
