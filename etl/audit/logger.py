@@ -203,6 +203,8 @@ class AuditLogger:
             'total_delta_time': None,
         }
 
+        self.log_etl_version()
+
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
