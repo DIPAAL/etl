@@ -97,7 +97,7 @@ def _is_moving(row):
     return row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD
 
 
-def _is_beyond_stopped_threshold(df: pd.DataFrame, first_idx: int, last_idx) -> bool:
+def _is_beyond_stopped_threshold(df: pd.DataFrame, first_idx: int, last_idx: int) -> bool:
     """
     Given a dataframe of AIS data and two indexes, return True if the time delta is larger than stopped threshold.
 
