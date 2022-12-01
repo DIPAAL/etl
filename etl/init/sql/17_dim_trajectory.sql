@@ -9,3 +9,6 @@ CREATE TABLE dim_trajectory
     destination text NOT NULL,
     PRIMARY KEY (date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (date_id);
+
+-- Use gist as it is potentially overlappping.
+CREATE INDEX dim_trajectory_trajectory_idx ON dim_trajectory USING gist (trajectory);
