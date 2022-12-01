@@ -3,7 +3,7 @@ INSERT INTO fact_cell (
     entry_date_id, entry_time_id,
     exit_date_id, exit_time_id,
     direction_id, nav_status_id, trajectory_sub_id,
-    sog, delta_heading, draught, delta_cog, box
+    sog, delta_heading, draught, delta_cog, st_bounding_box
 )
 SELECT
     cell_x,
@@ -26,7 +26,7 @@ SELECT
     ) delta_heading,
     draught,
     delta_cog
-    stbox(cell_geom, period(startTime, endTime)) box
+    stbox(cell_geom, period(startTime, endTime)) st_bounding_box
 FROM (
         SELECT
             -- Select the JSON keys (north, south, east, west) with the lowest distance.

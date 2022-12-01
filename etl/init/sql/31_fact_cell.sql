@@ -12,7 +12,7 @@ CREATE TABLE fact_cell (
     trajectory_sub_id integer NOT NULL,
     PRIMARY KEY (cell_x, cell_y, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
 
-    box stbox NOT NULL,
+    box st_bounding_box NOT NULL,
     sog float NOT NULL,
     delta_heading float,
     draught float,
@@ -31,4 +31,4 @@ CREATE TABLE fact_cell (
 ) PARTITION BY RANGE (entry_date_id);
 
 -- Use SP gist as it is non overlappping.
-CREATE INDEX fact_cell_box_idx ON fact_cell USING spgist (box);
+CREATE INDEX fact_cell_st_bounding_box_idx ON fact_cell USING spgist (st_bounding_box);
