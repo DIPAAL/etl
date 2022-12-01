@@ -12,6 +12,7 @@ CREATE TABLE fact_cell (
     trajectory_sub_id integer NOT NULL,
     PRIMARY KEY (cell_x, cell_y, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
 
+    box st_bounding_box NOT NULL,
     sog float NOT NULL,
     delta_heading float,
     draught float,
@@ -29,7 +30,5 @@ CREATE TABLE fact_cell (
     FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (entry_date_id);
 
--- index over entry date and time
-CREATE INDEX fact_cell_entry_date_time_idx ON fact_cell (entry_date_id, entry_time_id);
--- index over exit date and time
-CREATE INDEX fact_cell_exit_date_time_idx ON fact_cell (exit_date_id, exit_time_id);
+-- Use SP gist as it is non overlappping.
+CREATE INDEX fact_cell_st_bounding_box_idx ON fact_cell USING spgist (st_bounding_box);
