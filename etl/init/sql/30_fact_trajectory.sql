@@ -27,4 +27,4 @@ CREATE TABLE fact_trajectory (
     FOREIGN KEY (start_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (start_date_id);
 
-CREATE INDEX fact_trajectory_start_date_id_trajectory_sub_id_idx ON dim_trajecotry (start_date_id, trajectory_sub_id);
+CREATE INDEX fact_trajectory_start_date_id_trajectory_sub_id_idx ON dim_trajectory (start_date_id, trajectory_sub_id);
