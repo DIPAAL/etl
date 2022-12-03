@@ -12,7 +12,7 @@ CREATE TABLE fact_cell (
     trajectory_sub_id integer NOT NULL,
     PRIMARY KEY (cell_x, cell_y, ship_id, ship_junk_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
 
-    box st_bounding_box NOT NULL,
+    st_bounding_box fact_cell_st_bounding_box_idx NOT NULL,
     sog float NOT NULL,
     delta_heading float,
     draught float,
