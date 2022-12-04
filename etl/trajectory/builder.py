@@ -26,7 +26,7 @@ COMPUTED_VS_SOG_KNOTS_THRESHOLD = 2
 STOPPED_KNOTS_THRESHOLD = 0.5
 STOPPED_TIME_SECONDS_THRESHOLD = 5 * 60  # 5 minutes
 SPLIT_GAP_SECONDS_THRESHOLD = 5 * 60  # 5 minutes
-POINTS_FOR_TRAJECTORY_THRESHOLD = 2  # P
+POINTS_FOR_TRAJECTORY_THRESHOLD = 2  # P=2
 UNKNOWN_STRING_VALUE = 'Unknown'
 UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
@@ -84,65 +84,44 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
     # Reset the index as some rows might have been classified as outliers and removed
     dataframe.reset_index(inplace=True)
 
-    return _construct_trajectory(mmsi, dataframe, 0, False)
+    return _construct_moving_trajectory(mmsi, dataframe, 0)
 
 
-def _is_moving(row):
+def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
-    Given a row of AIS data, return True if the ship is moving, False otherwise.
+    Construct and returns trajectories from the AIS data as a pandas dataframe.
 
     Keyword arguments:
-        row: a row of AIS data
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from
     """
-    return row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD
-
-
-def _is_beyond_stopped_threshold(df: pd.DataFrame, first_idx: int, last_idx: int) -> bool:
-    """
-    Given a dataframe of AIS data and two indexes, return True if the time delta is larger than stopped threshold.
-
-    Keyword arguments:
-        df: a dataframe of AIS data
-        first_idx: the first index
-        last_idx: the last index
-    """
-    prev_date = df.iloc[first_idx][TIMESTAMP_COL]
-    current_date = df.iloc[last_idx][TIMESTAMP_COL]
-    return (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD
-
-
-def _construct_trajectory(mmsi: int, traj_df: gpd.GeoDataFrame, from_idx: int, stopped: bool) \
-        -> pd.DataFrame:
-    """
-    Construct and return trajectories for a single ship identified by MMSI as a pandas dataframe.
-
-    Keyword arguments:
-        mmsi: the MMSI of the ship
-        traj_df: a dataframe of AIS data
-        from_idx: the index to start from
-        stopped: whether the ship is stopped or not
-    """
-    # Used if moving to check whether the first stopped meets the threshold.
     idx_cannot_handle = None
+    for idx in range(from_idx, len(trajectory_dataframe.index)):
+        row = trajectory_dataframe.iloc[idx]
 
-    for idx in range(from_idx, len(traj_df.index)):
-        row = traj_df.iloc[idx]
+        # Has the ship possibly stopped?
+        if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
+            # Have we already detected a possible stop?
+            if idx_cannot_handle is not None:
+                current_date = row[TIMESTAMP_COL]
+                prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+                # How long has the ship been stopped for?
+                if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                    trajectory = _finalize_trajectory(
+                        mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
+                    )
+                    trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
+                    return pd.concat([trajectory, trajectories])
+            else:
+                # We have a possible stop
+                idx_cannot_handle = idx
+        else:
+            # Reset any possible stop because we are currently moving
+            idx_cannot_handle = None
 
-        if stopped and _is_moving(row):
-            return pd.concat([
-                _finalize_trajectory(mmsi, traj_df, from_idx, idx, infer_stopped=True),
-                _construct_trajectory(mmsi, traj_df, idx, False)
-            ])
-
-        if not stopped and not _is_moving(row):
-            idx_cannot_handle = idx if idx_cannot_handle is None else idx_cannot_handle
-            if _is_beyond_stopped_threshold(traj_df, idx_cannot_handle, idx):
-                return pd.concat([
-                    _finalize_trajectory(mmsi, traj_df, from_idx, idx_cannot_handle, infer_stopped=False),
-                    _construct_trajectory(mmsi, traj_df, idx_cannot_handle, True)
-                ])
-
-    return _finalize_trajectory(mmsi, traj_df, from_idx, len(traj_df.index), infer_stopped=stopped)
+    return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
+                                infer_stopped=False)
 
 
 def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int, to_idx: int,
@@ -306,6 +285,7 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
 
     tfloat_lst = []
     for _, row in dataframe.iterrows():
+
         mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
         float_val = str(row[float_column])
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
@@ -335,6 +315,28 @@ def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
     # Extract geometry column as a GeoSeries with CRS for meters
     point_gs = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
     return point_gs.distance(point_gs.shift(1)).sum()
+
+
+def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
+    """
+    Construct and returns trajectories as a pandas dataframe from the AIS data.
+
+    Keyword arguments:
+        mmsi: the maritime mobile mervice identity used to identify a ship
+        trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
+        from_idx: the index to start creating trajectories from
+    """
+    for idx in range(from_idx, len(trajectory_dataframe.index)):
+        row = trajectory_dataframe.iloc[idx]
+
+        if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
+            stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
+            trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
+            return pd.concat([stopped_trajectory, trajectories])
+
+    stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
+                                              infer_stopped=True)
+    return stopped_trajectory
 
 
 def _convert_dataframe_to_trajectory(trajectory_dataframe: pd.DataFrame) -> TGeomPointSeq:
@@ -410,7 +412,7 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
         cur_point: the current AIS point that is checked
         prev_point: the last non-outlier AIS point checked
         speed_threshold: max speed that determine whether an AIS point is an outlier
-        dist_func: distance function used to calculate the distance between cur_point and prev_point
+        dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
     time_delta = cur_point[TIMESTAMP_COL].iloc[0] - prev_point[TIMESTAMP_COL].iloc[0]
     # Previous and current point is in the same timestamp, detect it as an outlier
@@ -446,15 +448,13 @@ def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) ->
     )
 
 
-def _create_trajectory_db_df(dict=None) -> pd.DataFrame:
+def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
     """
     Create trajectory dataframe representing DWH structure.
 
     Keyword arguments:
         dict: a dictionary with initial values for the created dataframe (default {})
     """
-    if dict is None:
-        dict = {}
     return pd.DataFrame({
         # Dimensions
         T_START_DATE_COL: pd.Series(dtype='int64', data=dict[T_START_DATE_COL] if T_START_DATE_COL in dict else []),
