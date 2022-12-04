@@ -25,7 +25,7 @@ SELECT
         ) AS diffs
     ) delta_heading,
     draught,
-    delta_cog
+    delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
 FROM (
         SELECT
