@@ -84,7 +84,7 @@ FROM (
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
-                date_trunc('second', endTimestamp(crossing) + INTERVAL '999999 microseconds') endTime
+                date_trunc('second', endTimestamp(crossing) + INTERVAL '1000000 microseconds') endTime
             FROM (
                 SELECT
                     unnest(sequences(atGeometry(fdt.trajectory, dc.geom))) crossing,
