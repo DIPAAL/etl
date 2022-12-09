@@ -6,7 +6,6 @@ INSERT INTO fact_cell (
     sog, delta_heading, draught, delta_cog, st_bounding_box
 )
 SELECT
-	test,
     cell_x,
     cell_y,
     ship_id,
@@ -19,7 +18,7 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-	calculate_delta(headings) delta_heading,
+    calculate_delta(headings) delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
