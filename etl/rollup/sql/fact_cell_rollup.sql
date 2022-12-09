@@ -1,10 +1,10 @@
--- INSERT INTO fact_cell (
---     cell_x, cell_y, ship_id, ship_junk_id,
---     entry_date_id, entry_time_id,
---     exit_date_id, exit_time_id,
---     direction_id, nav_status_id, trajectory_sub_id,
---     sog, delta_heading, draught, delta_cog, st_bounding_box
--- )
+INSERT INTO fact_cell (
+    cell_x, cell_y, ship_id, ship_junk_id,
+    entry_date_id, entry_time_id,
+    exit_date_id, exit_time_id,
+    direction_id, nav_status_id, trajectory_sub_id,
+    sog, delta_heading, draught, delta_cog, st_bounding_box
+)
 SELECT
 	test,
     cell_x,
@@ -19,27 +19,14 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    -- Calculate the delta between the elements in the headings array
-	calculate_delta(headings),
+	calculate_delta(headings) delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
 FROM (
         SELECT
-            CASE
-                WHEN south_entry < north_entry AND south_entry < east_entry AND south_entry < west_entry AND south_entry < threshold_distance_to_cell_edge THEN 'South'
-WHEN north_entry < south_entry AND north_entry < east_entry AND north_entry < west_entry AND north_entry < threshold_distance_to_cell_edge THEN 'North'
-                WHEN east_entry < south_entry AND east_entry < north_entry AND east_entry < west_entry AND east_entry < threshold_distance_to_cell_edge THEN 'East'
-                WHEN west_entry < south_entry AND west_entry < north_entry AND west_entry < east_entry AND west_entry < threshold_distance_to_cell_edge THEN 'West'
-                ELSE 'Unknown'
-            END AS entry_direction,
-            CASE
-                WHEN south_exit < north_exit AND south_exit < east_exit AND south_exit < west_exit AND south_exit < threshold_distance_to_cell_edge THEN 'South'
-WHEN north_exit < south_exit AND north_exit < east_exit AND north_exit < west_exit AND north_exit < threshold_distance_to_cell_edge THEN 'North'
-                WHEN east_exit < south_exit AND east_exit < north_exit AND east_exit < west_exit AND east_exit < threshold_distance_to_cell_edge THEN 'East'
-                WHEN west_exit < south_exit AND west_exit < north_exit AND west_exit < east_exit AND west_exit < threshold_distance_to_cell_edge THEN 'West'
-                ELSE 'Unknown'
-            END AS exit_direction,
+            get_lowest_json_key(start_edges) entry_direction,
+            get_lowest_json_key(end_edges) exit_direction,
 			(SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(atPeriod(heading, period(startTime, endTime, true, true)))) as head) as headings,
             crossing,
             cell_x,
@@ -57,15 +44,21 @@ WHEN north_exit < south_exit AND north_exit < east_exit AND north_exit < west_ex
             (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
         FROM (
             SELECT
-                ST_Distance(startValue(crossing), south) south_entry,
-                ST_Distance(startValue(crossing), north) north_entry,
-                ST_Distance(startValue(crossing), east) east_entry,
-                ST_Distance(startValue(crossing), west) west_entry,
-                ST_Distance(endValue(crossing), south) south_exit,
-                ST_Distance(endValue(crossing), north) north_exit,
-                ST_Distance(endValue(crossing), east) east_exit,
-                ST_Distance(endValue(crossing), west) west_exit,
-                threshold_distance_to_cell_edge,
+                -- Construct the JSON objects existing of direction key, and distance to the cell edge
+                JSON_BUILD_OBJECT(
+                    'South', ST_Distance(startValue(crossing), south),
+                    'North', ST_Distance(startValue(crossing), north),
+                    'East', ST_Distance(startValue(crossing), east),
+                    'West', ST_Distance(startValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
+                    ) AS start_edges,
+                JSON_BUILD_OBJECT(
+                    'South', ST_Distance(endValue(crossing), south),
+                    'North', ST_Distance(endValue(crossing), north),
+                    'East', ST_Distance(endValue(crossing), east),
+                    'West', ST_Distance(endValue(crossing), west),
+                    'Unknown', threshold_distance_to_cell_edge
+                    ) AS end_edges,
                 crossing,
                 cell_x,
                 cell_y,
@@ -122,9 +115,10 @@ WHEN north_exit < south_exit AND north_exit < east_exit AND north_exit < west_ex
                         dt.draught draught
                     FROM fact_trajectory ft
                     JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
-                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = 20220101 AND ft.trajectory_sub_id = 1798538686
+                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
                 ) fdt
                 JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci
         ) cid
     ) cif
+ON CONFLICT DO NOTHING;
