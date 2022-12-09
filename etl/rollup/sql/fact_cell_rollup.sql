@@ -18,7 +18,7 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    calculate_delta(headings) delta_heading,
+    calculate_delta(SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head) delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
@@ -26,7 +26,7 @@ FROM (
         SELECT
             get_lowest_json_key(start_edges) entry_direction,
             get_lowest_json_key(end_edges) exit_direction,
-			(SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(atPeriod(heading, period(startTime, endTime, true, true)))) as head) as headings,
+			 as headings,
             crossing,
             cell_x,
             cell_y,
