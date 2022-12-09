@@ -24,4 +24,4 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- Test with:
--- SELECT get_lowest_json_key('{"a": 1, "b": 2, "c": 3}'::jsonb);
+-- SELECT get_lowest_json_key('{"a": 1, "b": 2, "c": 3}'::json);
