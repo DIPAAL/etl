@@ -26,7 +26,6 @@ FROM (
         SELECT
             get_lowest_json_key(start_edges) entry_direction,
             get_lowest_json_key(end_edges) exit_direction,
-			 as headings,
             crossing,
             cell_x,
             cell_y,
