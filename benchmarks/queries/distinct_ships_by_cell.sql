@@ -3,7 +3,7 @@
 WITH q_window(box, start_date_id, end_date_id) AS (
     SELECT
     STBox(
-        ST_Transform(ST_MakeEnvelope(10.817894,57.164297, 11.287206, 57.376069, 4326),3034),
+        ST_SetSRID(ST_Transform(ST_MakeEnvelope(10.817894,57.164297, 11.287206, 57.376069, 4326),3034), 0),
         period('2022-01-01 00:10:00+00', '2022-01-31 23:55:00+00')
     ) box,
     20220101 start_date_id,
