@@ -5,7 +5,7 @@ CREATE TABLE audit_log (
     requirements text[],
 
     file_name text,
-    file_size integer,
+    file_size bigint,
     file_rows integer,
 
     -- Delta time is the time each stage took to complete in seconds
