@@ -13,15 +13,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Test with:
--- SELECT calculate_delta(ARRAY[1.0]);
 
--- Create or replace immutable function that returns the json key with the lowest value
-CREATE OR REPLACE FUNCTION get_lowest_json_key(json json) RETURNS text AS $$
-BEGIN
-    RETURN (SELECT key FROM json_each_text(json) ORDER BY value ASC LIMIT 1);
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
-
--- Test with:
--- SELECT get_lowest_json_key('{"a": 1, "b": 2, "c": 3}'::json);

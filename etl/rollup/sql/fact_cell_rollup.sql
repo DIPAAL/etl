@@ -18,7 +18,8 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) delta_heading,
+    -- if delta_heading is null, then set as -1, else use calculate_delta
+    CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) END delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
