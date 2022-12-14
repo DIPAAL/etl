@@ -47,10 +47,10 @@ build:
     - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
   when: manual
 
-init:
-  extends: .kube-job
-  script:
-    - envsubst < jobs/init-job.yml | kubectl apply -f -
+#init:
+#  extends: .kube-job
+#  script:
+#    - envsubst < jobs/init-job.yml | kubectl apply -f -
 
 clean:
   extends: .kube-job
