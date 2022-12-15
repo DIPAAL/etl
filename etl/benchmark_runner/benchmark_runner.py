@@ -21,12 +21,12 @@ class BenchmarkRunner:
             number_garbage_queries_between -- number of garbage queries to run between each benchmark query
             iterations -- number of iterations to run each benchmark query
         """
-        self.config = config
-        self.number_garbage_queries_between = number_garbage_queries_between
-        self.iterations = iterations
-        self.conn = get_connection(config)
-        self.conn.set_session(autocommit=True)
-        self.garbage_queries = self._get_garbage_queries()
+        self._config = config
+        self._number_garbage_queries_between = number_garbage_queries_between
+        self._iterations = iterations
+        self._conn = get_connection(config)
+        self._conn.set_session(autocommit=True)
+        self._garbage_queries = self._get_garbage_queries()
 
     def run_benchmark(self):
         """
@@ -35,12 +35,12 @@ class BenchmarkRunner:
         Run garbage queries inbetween to keep cache lukewarm.
         Configurable iterations and garbage queries between in constructor.
         """
-        test_run_id = self._get_test_run_id(self.conn)
+        test_run_id = self._get_test_run_id(self._conn)
         print(f"Test run id: {test_run_id}")
 
         # Enable explaining all tasks if not already set.
         query = "SET citus.explain_all_tasks = 1;"
-        self.conn.cursor().execute(query)
+        self._conn.cursor().execute(query)
 
         # get queries to benchmark
         queries = self._get_queries_to_benchmark()
@@ -48,13 +48,13 @@ class BenchmarkRunner:
         queries = {k: queries[k] for k in sorted(queries)}
 
         for query_name, query in queries.items():
-            for i in range(self.iterations):
+            for i in range(self._iterations):
                 self._run_random_garbage_queries()
 
                 # prepend the query with "explain analyze timings format json "
                 query = f"explain (analyze, timing, format json, verbose, buffers, settings) \n{query}"
 
-                cursor = self.conn.cursor()
+                cursor = self._conn.cursor()
 
                 start = perf_counter()
                 wrap_with_timings(f"Running query {query_name} iteration {i}", lambda: cursor.execute(query))
@@ -69,13 +69,13 @@ class BenchmarkRunner:
                     INSERT INTO benchmark_results (test_run_id, query_name, iteration, explain, execution_time_ms)
                     VALUES (%s, %s, %s, %s, %s)
                 """
-                self.conn.cursor().execute(query, (test_run_id, query_name, i, result, time_taken_ms))
+                self._conn.cursor().execute(query, (test_run_id, query_name, i, result, time_taken_ms))
 
     def _run_random_garbage_queries(self):
-        for i in range(self.garbage_queries_between):
+        for i in range(self._number_garbage_queries_between):
             # pick random garbage query
-            garbage_query = random.choice(self.garbage_queries)
-            wrap_with_timings(f"Garbage Query {i}", lambda: self.conn.cursor().execute(garbage_query))
+            garbage_query = random.choice(self._garbage_queries)
+            wrap_with_timings(f"Garbage Query {i}", lambda: self._conn.cursor().execute(garbage_query))
 
     def _get_queries_to_benchmark(self):
         folder = 'benchmarks/queries'

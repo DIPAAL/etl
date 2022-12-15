@@ -9,9 +9,7 @@ WITH
                         SELECT '2022-01-01T00:00:00Z'::timestamptz + random() * ('2022-03-31T00:00:00Z'::timestamptz - '2022-01-01T00:00:00Z'::timestamptz) AS start_time
                     ) AS t
                 )
-            ),0) box,
-            20220110 start_date_id,
-            20220110 end_date_id
+            ),0) box
         FROM enc
     )
 SELECT distinct(ds.*)
