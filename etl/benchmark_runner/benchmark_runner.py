@@ -12,17 +12,17 @@ from etl.helper_functions import get_connection, wrap_with_timings
 class BenchmarkRunner:
     """Class to run benchmarks."""
 
-    def __init__(self, config, garbage_queries_between=10, iterations=10):
+    def __init__(self, config, number_garbage_queries_between=10, iterations=10):
         """
         Init a benchmark runner.
 
         Keyword arguments:
             config -- a dict containing the connection parameters
-            garbage_queries_between -- number of garbage queries to run between each benchmark query
+            number_garbage_queries_between -- number of garbage queries to run between each benchmark query
             iterations -- number of iterations to run each benchmark query
         """
         self.config = config
-        self.garbage_queries_between = garbage_queries_between
+        self.number_garbage_queries_between = number_garbage_queries_between
         self.iterations = iterations
         self.conn = get_connection(config)
         self.conn.set_session(autocommit=True)
