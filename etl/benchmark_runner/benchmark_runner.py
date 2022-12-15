@@ -1,12 +1,14 @@
+import json
 import os
 import random
+from time import perf_counter
 
 from typing import List
 
 from etl.helper_functions import get_connection, wrap_with_timings
 
 
-class BenchmarkRunner
+class BenchmarkRunner:
 
     def __init__(self, config, garbage_queries_between = 10, iterations = 10):
         self.config = config
@@ -15,7 +17,8 @@ class BenchmarkRunner
         self.conn = get_connection(config)
         self.conn.set_session(autocommit=True)
         self.garbage_queries = self.get_garbage_queries()
-        self.test_run_id = random.randint(0, 2**31) #random int32
+        self.test_run_id = self.get_test_run_id(self.conn)
+        print(f"Test run id: {self.test_run_id}")
 
     def run_benchmark(self):
         # Enable explaining all tasks if not already set.
@@ -24,24 +27,32 @@ class BenchmarkRunner
 
         # get queries to benchmark
         queries = self.get_queries_to_benchmark()
+        # sort by key ascending
+        queries = {k: queries[k] for k in sorted(queries)}
 
         for query_name, query in queries.items():
             for i in range(self.iterations):
                 self.run_random_garbage_queries()
 
                 # prepend the query with "explain analyze timings format json "
-                query = f"explain (analyze, timings, format json, verbose) \n{query}"
-                wrap_with_timings(f"Running query {query_name} iteration {i}", lambda: self.conn.cursor().execute(query))
+                query = f"explain (analyze, timing, format json, verbose, buffers, settings) \n{query}"
 
-                # get the resulting json
-                result = self.conn.cursor().fetchone()[0]
+                cursor = self.conn.cursor()
 
-                print(result)
+                start = perf_counter()
+                wrap_with_timings(f"Running query {query_name} iteration {i}", lambda: cursor.execute(query))
+                end = perf_counter()
+                time_taken_ms = int((end - start) * 1000)
+
+                result = cursor.fetchone()[0][0]
+                # encode dict to json
+                result = json.dumps(result)
+
                 query = """
-                    INSERT INTO benchmark_results (test_run_id, query_name, iteration, result)
-                    VALUES (%s, %s, %s, %s)                    
+                    INSERT INTO benchmark_results (test_run_id, query_name, iteration, explain, execution_time_ms)
+                    VALUES (%s, %s, %s, %s, %s)                    
                 """
-                self.conn.cursor().execute(query, (self.test_run_id, query_name, i, result))
+                self.conn.cursor().execute(query, (self.test_run_id, query_name, i, result, time_taken_ms))
 
 
 
@@ -65,3 +76,16 @@ class BenchmarkRunner
 
         # return contents as dict filename -> query
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
+
+    def get_test_run_id(self, conn):
+        cursor = conn.cursor()
+        cursor.execute("SELECT nextval('benchmark_results_id_seq');")
+        return cursor.fetchone()[0]
+
+
+if __name__ == '__main__':
+    BenchmarkRunner(
+        None,
+        garbage_queries_between=0,
+        iterations=1
+    ).run_benchmark()

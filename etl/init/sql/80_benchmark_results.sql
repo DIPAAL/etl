@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     explain JSONB NOT NULL,
-    execution_time_ms INTEGER NOT NULL,
+    execution_time_ms INTEGER NOT NULL
 );
