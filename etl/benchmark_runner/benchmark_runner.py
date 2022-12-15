@@ -39,7 +39,7 @@ class BenchmarkRunner:
         print(f'Test run id: {test_run_id}')
 
         # Enable explaining all tasks if not already set.
-        query = "SET citus.explain_all_tasks = 1;"
+        query = 'SET citus.explain_all_tasks = 1;'
         self._conn.cursor().execute(query)
 
         # get queries to benchmark
@@ -51,7 +51,6 @@ class BenchmarkRunner:
             for i in range(self._iterations):
                 self._run_random_garbage_queries()
 
-                # prepend the query with "explain analyze timings format json "
                 query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
 
                 cursor = self._conn.cursor()
@@ -75,7 +74,7 @@ class BenchmarkRunner:
         for i in range(self._number_garbage_queries_between):
             # pick random garbage query
             garbage_query = random.choice(self._garbage_queries)
-            wrap_with_timings(f"Garbage Query {i}", lambda: self._conn.cursor().execute(garbage_query))
+            wrap_with_timings(f'Garbage Query {i}', lambda: self._conn.cursor().execute(garbage_query))
 
     def _get_queries_to_benchmark(self):
         folder = 'benchmarks/queries'
