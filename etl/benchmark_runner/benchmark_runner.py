@@ -1,3 +1,4 @@
+"""Module for running benchmarks for query performance."""
 import json
 import os
 import random
@@ -9,6 +10,7 @@ from etl.helper_functions import get_connection, wrap_with_timings
 
 
 class BenchmarkRunner:
+    """Class to run benchmarks."""
 
     def __init__(self, config, garbage_queries_between=10, iterations=10):
         """
