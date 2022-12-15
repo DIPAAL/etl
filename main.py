@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
+from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings
 from etl.init_database import init_database
@@ -39,6 +40,7 @@ def main(argv):
     parser.add_argument("--init", help="Initialize database", action="store_true")
     parser.add_argument("--load", help="Perform loading of the dates", action="store_true")
     parser.add_argument("--clean", help="Clean the given AIS data file", action="store_true")
+    parser.add_argument("--querybenchmark", help="Perform query benchmark", action="store_true")
     parser.add_argument("--from_date",
                         help="The date to load from, in the format YYYY-MM-DD, for example 2022-12-31", type=str)
     parser.add_argument("--to_date",
@@ -54,6 +56,9 @@ def main(argv):
 
     if args.clean:
         clean_range(date_from, date_to, config)
+
+    if args.querybenchmark:
+        BenchmarkRunner(config).run_benchmark()
 
 
 def clean_range(date_from: datetime, date_to: datetime, config):
