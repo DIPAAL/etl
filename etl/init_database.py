@@ -1,6 +1,7 @@
 """Module for initializing the database."""
 from etl.helper_functions import wrap_with_timings, get_connection
-from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_timings
+from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_timings, \
+    run_single_statement_sql_files_in_folder
 
 
 def setup_citus_instance(host, config):
@@ -95,4 +96,5 @@ def init_database(config):
     setup_citus_instances(config)
     setup_master(config)
     run_sql_folder_with_timings('etl/init/sql', config)
+    run_single_statement_sql_files_in_folder('etl/init/single_statement_sql', config)
     wrap_with_timings("Creating fact partitions", lambda: create_fact_partitions(config))

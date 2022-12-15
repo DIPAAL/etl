@@ -18,26 +18,15 @@ SELECT
     nav_status_id,
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    (
-        SELECT COALESCE(SUM(ABS(diff)),-1) FROM 
-        (
-            SELECT LOWER(deltas) - LEAD(LOWER(deltas), 1, LOWER(deltas)) over (ORDER BY deltas) AS diff FROM UNNEST(GETVALUES(heading)) AS deltas
-        ) AS diffs
-    ) delta_heading,
+    -- if delta_heading is null, then set as -1, else use calculate_delta
+    CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) END delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
 FROM (
         SELECT
-            -- Select the JSON keys (north, south, east, west) with the lowest distance.
-            (
-              SELECT key FROM json_each_text(start_edges)
-              ORDER BY value::float ASC LIMIT 1
-            ) as entry_direction,
-            (
-              SELECT key FROM json_each_text(end_edges)
-              ORDER BY value::float ASC LIMIT 1
-            ) as exit_direction,
+            get_lowest_json_key(start_edges) entry_direction,
+            get_lowest_json_key(end_edges) exit_direction,
             crossing,
             cell_x,
             cell_y,
