@@ -10,7 +10,13 @@ from etl.helper_functions import get_connection, wrap_with_timings
 
 
 class BenchmarkRunner:
-    """Class to run benchmarks."""
+    """
+    Class to run benchmarks.
+
+    Methods
+    -------
+    run_benchmark(): run a benchmark on all sql queries defined in the benchmarks/queries folder
+    """
 
     def __init__(self, config, number_garbage_queries_between=10, iterations=10):
         """
