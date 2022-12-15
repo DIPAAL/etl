@@ -36,7 +36,7 @@ class BenchmarkRunner:
         Configurable iterations and garbage queries between in constructor.
         """
         test_run_id = self._get_test_run_id(self._conn)
-        print(f"Test run id: {test_run_id}")
+        print(f'Test run id: {test_run_id}')
 
         # Enable explaining all tasks if not already set.
         query = "SET citus.explain_all_tasks = 1;"
@@ -52,12 +52,12 @@ class BenchmarkRunner:
                 self._run_random_garbage_queries()
 
                 # prepend the query with "explain analyze timings format json "
-                query = f"explain (analyze, timing, format json, verbose, buffers, settings) \n{query}"
+                query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
 
                 cursor = self._conn.cursor()
 
                 start = perf_counter()
-                wrap_with_timings(f"Running query {query_name} iteration {i}", lambda: cursor.execute(query))
+                wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: cursor.execute(query))
                 end = perf_counter()
                 time_taken_ms = int((end - start) * 1000)
 
