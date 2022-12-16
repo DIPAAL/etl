@@ -57,6 +57,11 @@ clean:
   script:
     - envsubst < jobs/clean-job.yml | kubectl apply -f -
 
+benchmark:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/query-benchmark-job.yml | kubectl apply -f -
+
 pytest:
   stage: test
   image: docker:latest
