@@ -14,7 +14,7 @@ WITH
     )
 SELECT DISTINCT(ds.*)
 FROM q_window
-INNER JOIN dim_trajectory dt ON atStBox(dt.trajectory, q_window.box) IS NOT NULL
+INNER JOIN dim_trajectory dt ON atStBox(dt.trajectory, SetSRID(q_window.box,4326)) IS NOT NULL
 INNER JOIN fact_trajectory ft ON dt.date_id = ft.start_date_id AND dt.trajectory_sub_id = ft.trajectory_sub_id
 INNER JOIN dim_ship ds ON ds.ship_id = ft.ship_id
 INNER JOIN dim_ship_junk dsj ON dsj.ship_junk_id = ft.ship_junk_id
