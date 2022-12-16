@@ -70,11 +70,10 @@ class BenchmarkRunner:
                 # encode dict to json
                 result = json.dumps(result)
 
-                query = """
+                self._conn.cursor().execute("""
                     INSERT INTO benchmark_results (test_run_id, query_name, iteration, explain, execution_time_ms)
                     VALUES (%s, %s, %s, %s, %s)
-                """
-                self._conn.cursor().execute(query, (test_run_id, query_name, i, result, time_taken_ms))
+                """, (test_run_id, query_name, i, result, time_taken_ms))
 
     def _run_random_garbage_queries(self):
         for i in range(self._number_garbage_queries_between):
