@@ -1,6 +1,6 @@
 WITH
     enc(geom) AS (SELECT geom, geom_geodetic FROM enc_cells ORDER BY random() LIMIT 1),
-    q_window(box, start_date_id, end_date_id) AS (
+    q_window(box) AS (
         SELECT
             STBox(
                 enc.geom_geodetic,
