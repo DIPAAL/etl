@@ -11,7 +11,7 @@ spec:
       containers:
       - name: query-benchmark-${JOB_ID}
         image: ${IMAGE_NAME}
-        command: ["python", "-u", "main.py", "--querybenchmark""]
+        command: ["python", "-u", "main.py", "--querybenchmark"]
       restartPolicy: Never
       affinity:
         nodeAffinity:
