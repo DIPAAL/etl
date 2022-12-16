@@ -54,10 +54,9 @@ class BenchmarkRunner:
         queries = {k: queries[k] for k in sorted(queries)}
 
         for query_name, query in queries.items():
+            query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
             for i in range(self._iterations):
                 self._run_random_garbage_queries()
-
-                query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
 
                 cursor = self._conn.cursor()
 
