@@ -76,9 +76,15 @@ class BenchmarkRunner:
 
     def _run_random_garbage_queries(self):
         for i in range(self._number_garbage_queries_between):
-            # pick random garbage query
-            garbage_query = random.choice(self._garbage_queries)
-            wrap_with_timings(f'Garbage Query {i}', lambda: self._conn.cursor().execute(garbage_query))
+            # try to execute garbage query, if exception is thrown, try again
+            while True:
+                try:
+                    # pick random garbage query
+                    garbage_query = random.choice(self._garbage_queries)
+                    wrap_with_timings(f'Garbage Query {i}', lambda: self._conn.cursor().execute(garbage_query))
+                    break
+                except Exception as e:
+                    print(f'Exception thrown while running garbage query, trying again: {e}')
 
     def _get_queries_to_benchmark(self):
         folder = 'benchmarks/queries'
