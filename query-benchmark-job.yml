@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: query-benchmark-11
+spec:
+  ttlSecondsAfterFinished: 253800
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: query-benchmark-11
+        image: registry.gitlab.com/shipquerymasters/mvetl:dev-724677555
+        command: ["python", "-u", "main.py", "--querybenchmark"]
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ais-etl-worker
+  backoffLimit: 0
