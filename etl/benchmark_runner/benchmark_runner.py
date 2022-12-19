@@ -55,32 +55,33 @@ class BenchmarkRunner:
 
         for query_name, query in queries.items():
             query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
+            self._run_query(query_name, query, test_run_id)
 
-            while True:
-                try:
-                    for i in range(self._iterations):
-                        self._run_random_garbage_queries()
+    def _run_query(self, query_name, query, test_run_id):
+        while True:
+            try:
+                for i in range(self._iterations):
+                    self._run_random_garbage_queries()
 
-                        cursor = self._conn.cursor()
+                    cursor = self._conn.cursor()
 
-                        start = perf_counter()
-                        wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: cursor.execute(query))
-                        end = perf_counter()
-                        time_taken_ms = int((end - start) * 1000)
+                    start = perf_counter()
+                    wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: cursor.execute(query))
+                    end = perf_counter()
+                    time_taken_ms = int((end - start) * 1000)
 
+                    result = cursor.fetchone()[0][0]
+                    # encode dict to json
+                    result = json.dumps(result)
 
-                        result = cursor.fetchone()[0][0]
-                        # encode dict to json
-                        result = json.dumps(result)
-
-
-                        self._conn.cursor().execute("""
-                            INSERT INTO benchmark_results (test_run_id, query_name, iteration, explain, execution_time_ms)
+                    self._conn.cursor().execute("""
+                            INSERT INTO benchmark_results
+                            (test_run_id, query_name, iteration, explain, execution_time_ms)
                             VALUES (%s, %s, %s, %s, %s)
                         """, (test_run_id, query_name, i, result, time_taken_ms))
-                    break
-                except Exception as e:
-                    print(f'Exception thrown while running query, trying again: {e}')
+                break
+            except Exception as e:
+                print(f'Exception thrown while running query, trying again: {e}')
 
     def _run_random_garbage_queries(self):
         for i in range(self._number_garbage_queries_between):
