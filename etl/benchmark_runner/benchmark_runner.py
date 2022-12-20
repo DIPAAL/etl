@@ -1,7 +1,6 @@
 """Module for running benchmarks for query performance."""
 import json
 import os
-import random
 from time import perf_counter
 import time
 
@@ -41,7 +40,6 @@ class BenchmarkRunner:
         Run garbage queries inbetween to keep cache lukewarm.
         Configurable iterations and garbage queries between in constructor.
         """
-
         conn = get_connection(self._config)
         conn.set_session(autocommit=True)
 
@@ -61,11 +59,10 @@ class BenchmarkRunner:
             query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
             self._run_query(query_name, query, test_run_id)
 
-    def _run_query(self, query_name, query, test_run_id):
+    def _run_query(self, query_name, query, test_run_id):  # noqa: C901
         while True:
             try:
                 for i in range(self._iterations):
-                    # self._run_random_garbage_queries()
                     # Clear the cache by running clear_cache.sh
                     exit_code = os.system('bash benchmarks/clear_cache.sh')
                     if exit_code != 0:
