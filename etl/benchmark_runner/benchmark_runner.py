@@ -61,7 +61,9 @@ class BenchmarkRunner:
         while True:
             try:
                 for i in range(self._iterations):
-                    self._run_random_garbage_queries()
+                    # self._run_random_garbage_queries()
+                    # Clear the cache by running clear_cache.sh
+                    os.system('bash benchmarks/clear_cache.sh')
 
                     cursor = self._conn.cursor()
 
