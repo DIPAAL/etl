@@ -57,36 +57,36 @@ class BenchmarkRunner:
 
         for query_name, query in queries.items():
             query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
-            self._run_query(query_name, query, test_run_id)
+            for i in range(self._iterations):
+                self._run_query(query_name, query, test_run_id, i)
 
-    def _run_query(self, query_name, query, test_run_id):  # noqa: C901
+    def _run_query(self, query_name, query, test_run_id, iteration):  # noqa: C901
         while True:
             try:
-                for i in range(self._iterations):
-                    # Clear the cache by running clear_cache.sh
-                    exit_code = os.system('bash benchmarks/clear_cache.sh')
-                    if exit_code != 0:
-                        raise Exception('Clearing cache failed')
+                # Clear the cache by running clear_cache.sh
+                exit_code = os.system('bash benchmarks/clear_cache.sh')
+                if exit_code != 0:
+                    raise Exception('Clearing cache failed')
 
-                    # Try to connect to the database, if it fails, try again in 5 seconds
-                    conn = self._retry_get_connection()
+                # Try to connect to the database, if it fails, try again in 5 seconds
+                conn = self._retry_get_connection()
 
-                    cursor = conn.cursor()
+                cursor = conn.cursor()
 
-                    start = perf_counter()
-                    wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: cursor.execute(query))
-                    end = perf_counter()
-                    time_taken_ms = int((end - start) * 1000)
+                start = perf_counter()
+                wrap_with_timings(f'Running query {query_name} iteration {iteration}', lambda: cursor.execute(query))
+                end = perf_counter()
+                time_taken_ms = int((end - start) * 1000)
 
-                    result = cursor.fetchone()[0][0]
-                    # encode dict to json
-                    result = json.dumps(result)
+                result = cursor.fetchone()[0][0]
+                # encode dict to json
+                result = json.dumps(result)
 
-                    conn.cursor().execute("""
-                            INSERT INTO benchmark_results
-                            (test_run_id, query_name, iteration, explain, execution_time_ms)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """, (test_run_id, query_name, i, result, time_taken_ms))
+                conn.cursor().execute("""
+                        INSERT INTO benchmark_results
+                        (test_run_id, query_name, iteration, explain, execution_time_ms)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (test_run_id, query_name, iteration, result, time_taken_ms))
                 break
             except Exception as e:
                 print(f'Exception thrown while running query, trying again: {e}')
