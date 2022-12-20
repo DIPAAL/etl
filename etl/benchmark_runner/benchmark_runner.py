@@ -55,9 +55,8 @@ class BenchmarkRunner:
         # sort by key ascending
         queries = {k: queries[k] for k in sorted(queries)}
 
-        for query_name, query in queries.items():
-            query = f'explain (analyze, timing, format json, verbose, buffers, settings) \n{query}'
-            for i in range(self._iterations):
+        for i in range(self._iterations):
+            for query_name, query in queries.items():
                 self._run_query(query_name, query, test_run_id, i)
 
     def _run_query(self, query_name, query, test_run_id, iteration):  # noqa: C901
@@ -103,7 +102,7 @@ class BenchmarkRunner:
         files = [f for f in os.listdir(folder) if f.endswith('.sql')]
 
         # return contents as dict filename -> query
-        return {f: open(os.path.join(folder, f), 'r').read() for f in files}
+        return {f: f"explain (analyze, timing, format json, verbose, buffers, settings) {open(os.path.join(folder, f), 'r').read()}" for f in files}
 
     def _get_test_run_id(self, conn):
         cursor = conn.cursor()
