@@ -28,7 +28,7 @@ ssh -o "StrictHostKeyChecking=no" ubuntu@130.225.39.249 'sudo bash -c "sync; ech
 #ais-citus-worker-3
 #ais-citus-worker-4
 
-ssh -o "StrictHostKeyChecking=no" ubuntu@130.225.39.200 microk8s kubectl rollout restart statefulset ais-citus-master ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4
+ssh -o "StrictHostKeyChecking=no" ubuntu@130.225.39.200 'microk8s kubectl rollout restart statefulset ais-citus-master ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4 && microk8s kubectl rollout status statefulset ais-citus-master ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4'
 # wait for all pods to be ready
 ssh -o "StrictHostKeyChecking=no" ubuntu@130.225.39.200 microk8s kubectl wait --for=condition=ready pod ais-citus-master-0 ais-citus-worker-1-0 ais-citus-worker-2-0 ais-citus-worker-3-0 ais-citus-worker-4-0
 # sleep 5 seconds to let it settle a bit.
