@@ -5,6 +5,7 @@
 set -e
 
 # copy sshkey and set permissions
+mkdir -p ~/.ssh
 cp /ssh/sshkey ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 
