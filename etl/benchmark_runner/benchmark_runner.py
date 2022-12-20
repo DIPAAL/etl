@@ -3,6 +3,7 @@ import json
 import os
 import random
 from time import perf_counter
+import time
 
 from typing import List
 
@@ -30,8 +31,7 @@ class BenchmarkRunner:
         self._config = config
         self._number_garbage_queries_between = number_garbage_queries_between
         self._iterations = iterations
-        self._conn = get_connection(config)
-        self._conn.set_session(autocommit=True)
+        self._config = config
         self._garbage_queries = self._get_garbage_queries()
 
     def run_benchmark(self):
@@ -41,12 +41,16 @@ class BenchmarkRunner:
         Run garbage queries inbetween to keep cache lukewarm.
         Configurable iterations and garbage queries between in constructor.
         """
-        test_run_id = self._get_test_run_id(self._conn)
+
+        conn = get_connection(self._config)
+        conn.set_session(autocommit=True)
+
+        test_run_id = self._get_test_run_id(conn)
         print(f'Test run id: {test_run_id}')
 
         # Enable explaining all tasks if not already set.
         query = 'SET citus.explain_all_tasks = 1;'
-        self._conn.cursor().execute(query)
+        conn.cursor().execute(query)
 
         # get queries to benchmark
         queries = self._get_queries_to_benchmark()
@@ -67,7 +71,10 @@ class BenchmarkRunner:
                     if exit_code != 0:
                         raise Exception('Clearing cache failed')
 
-                    cursor = self._conn.cursor()
+                    # Try to connect to the database, if it fails, try again in 5 seconds
+                    conn = self._retry_get_connection()
+
+                    cursor = conn.cursor()
 
                     start = perf_counter()
                     wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: cursor.execute(query))
@@ -78,7 +85,7 @@ class BenchmarkRunner:
                     # encode dict to json
                     result = json.dumps(result)
 
-                    self._conn.cursor().execute("""
+                    conn.cursor().execute("""
                             INSERT INTO benchmark_results
                             (test_run_id, query_name, iteration, explain, execution_time_ms)
                             VALUES (%s, %s, %s, %s, %s)
@@ -86,18 +93,6 @@ class BenchmarkRunner:
                 break
             except Exception as e:
                 print(f'Exception thrown while running query, trying again: {e}')
-
-    def _run_random_garbage_queries(self):
-        for i in range(self._number_garbage_queries_between):
-            # try to execute garbage query, if exception is thrown, try again
-            while True:
-                try:
-                    # pick random garbage query
-                    garbage_query = random.choice(self._garbage_queries)
-                    wrap_with_timings(f'Garbage Query {i}', lambda: self._conn.cursor().execute(garbage_query))
-                    break
-                except Exception as e:
-                    print(f'Exception thrown while running garbage query, trying again: {e}')
 
     def _get_queries_to_benchmark(self):
         folder = 'benchmarks/queries'
@@ -117,3 +112,14 @@ class BenchmarkRunner:
         cursor = conn.cursor()
         cursor.execute("SELECT nextval('benchmark_results_id_seq');")
         return cursor.fetchone()[0]
+
+    def _retry_get_connection(self):
+        while True:
+            try:
+                conn = get_connection(self._config)
+                conn.set_session(autocommit=True)
+                return conn
+            except Exception as e:
+                print(f'Exception thrown while connecting to database, trying again in 5 seconds: {e}')
+                time.sleep(5)
+                continue
