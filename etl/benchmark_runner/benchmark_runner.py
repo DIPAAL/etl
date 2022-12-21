@@ -46,10 +46,6 @@ class BenchmarkRunner:
         test_run_id = self._get_test_run_id(conn)
         print(f'Test run id: {test_run_id}')
 
-        # Enable explaining all tasks if not already set.
-        query = 'SET citus.explain_all_tasks = 1;'
-        conn.cursor().execute(query)
-
         # get queries to benchmark
         queries = self._get_queries_to_benchmark()
         # sort by key ascending
@@ -69,6 +65,10 @@ class BenchmarkRunner:
 
                 # Try to connect to the database, if it fails, try again in 5 seconds
                 conn = self._retry_get_connection()
+
+                # Enable explaining all tasks if not already set.
+                query = 'SET citus.explain_all_tasks = 1;'
+                conn.cursor().execute(query)
 
                 cursor = conn.cursor()
 
