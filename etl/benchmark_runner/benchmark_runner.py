@@ -30,8 +30,7 @@ class BenchmarkRunner:
         self._config = config
         self._number_garbage_queries_between = number_garbage_queries_between
         self._iterations = iterations
-        self._config = config
-        self._garbage_queries = self._get_garbage_queries()
+        self._queries = self._get_queries_to_benchmark()
 
     def run_benchmark(self):
         """
@@ -46,13 +45,8 @@ class BenchmarkRunner:
         test_run_id = self._get_test_run_id(conn)
         print(f'Test run id: {test_run_id}')
 
-        # get queries to benchmark
-        queries = self._get_queries_to_benchmark()
-        # sort by key ascending
-        queries = {k: queries[k] for k in sorted(queries)}
-
         for i in range(self._iterations):
-            for query_name, query in queries.items():
+            for query_name, query in self._queries.items():
                 self._run_query(query_name, query, test_run_id, i)
 
     def _run_query(self, query_name, query, test_run_id, iteration):  # noqa: C901
@@ -67,8 +61,7 @@ class BenchmarkRunner:
                 conn = self._retry_get_connection()
 
                 # Enable explaining all tasks if not already set.
-                query = 'SET citus.explain_all_tasks = 1;'
-                conn.cursor().execute(query)
+                conn.cursor().execute('SET citus.explain_all_tasks = 1;')
 
                 cursor = conn.cursor()
 
@@ -106,6 +99,7 @@ class BenchmarkRunner:
         # prepend all with
         prepend = "explain (analyze, timing, format json, verbose, buffers, settings)"
         queries = {k: f'{prepend} {queries[k]}' for k in queries}
+        queries = {k: queries[k] for k in sorted(queries)}
         return queries
 
     def _get_test_run_id(self, conn):
