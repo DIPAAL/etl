@@ -101,8 +101,12 @@ class BenchmarkRunner:
     def _get_queries_in_folder(self, folder):
         files = [f for f in os.listdir(folder) if f.endswith('.sql')]
 
-        # return contents as dict filename -> query
-        return {f: f"explain (analyze, timing, format json, verbose, buffers, settings) {open(os.path.join(folder, f), 'r').read()}" for f in files}
+        queries = {f: open(os.path.join(folder, f), 'r').read() for f in files}
+
+        # prepend all with
+        prepend = "explain (analyze, timing, format json, verbose, buffers, settings)"
+        queries = {k: f'{prepend} {queries[k]}' for k in queries}
+        return queries
 
     def _get_test_run_id(self, conn):
         cursor = conn.cursor()
