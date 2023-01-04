@@ -5,8 +5,6 @@ import configparser
 import os
 from datetime import datetime, timedelta
 
-import pandas as pd
-
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings
