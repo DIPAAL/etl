@@ -148,11 +148,10 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     end_datetime = trajectory_dataframe.iloc[to_idx][TIMESTAMP_COL]
 
     # Groupby: eta, nav_status, draught, destination
-    column_subset = [ETA_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, DESTINATION_COL]
+    column_subset = [ETA_COL, NAVIGATIONAL_STATUS_COL, DESTINATION_COL]
     sorted_series_by_frequency = _find_most_recurring(working_dataframe, column_subset=column_subset, drop_na=False)
     eta = sorted_series_by_frequency[ETA_COL][0]
     nav_status = sorted_series_by_frequency[NAVIGATIONAL_STATUS_COL][0]
-    draught = sorted_series_by_frequency[DRAUGHT_COL][0]
     destination = sorted_series_by_frequency[DESTINATION_COL][0]
 
     # Split eta, start_datetime, and end_datetime and create their smart keys
@@ -166,6 +165,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     duration = end_datetime - start_datetime
     rot = _tfloat_from_dataframe(working_dataframe, ROT_COL)
     heading = _tfloat_from_dataframe(working_dataframe, HEADING_COL)
+    draught = _tfloat_from_dataframe(working_dataframe, DRAUGHT_COL)
 
     # Ship information
     # Change 'Unknown' and 'Undefined' to NaN values, so they can be disregarded
@@ -473,7 +473,7 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_DESTINATION_COL: pd.Series(dtype='object', data=dict[T_DESTINATION_COL] if T_DESTINATION_COL in dict else []),
         T_ROT_COL: pd.Series(dtype='object', data=dict[T_ROT_COL] if T_ROT_COL in dict else []),
         T_HEADING_COL: pd.Series(dtype='object', data=dict[T_HEADING_COL] if T_HEADING_COL in dict else []),
-        T_DRAUGHT_COL: pd.Series(dtype='float64', data=dict[T_DRAUGHT_COL] if T_DRAUGHT_COL in dict else []),
+        T_DRAUGHT_COL: pd.Series(dtype='object', data=dict[T_DRAUGHT_COL] if T_DRAUGHT_COL in dict else []),
         # Ship
         T_IMO_COL: pd.Series(dtype='int64', data=dict[T_IMO_COL] if T_IMO_COL in dict else []),
         T_MMSI_COL: pd.Series(dtype='int64', data=dict[T_MMSI_COL] if T_MMSI_COL in dict else []),

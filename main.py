@@ -5,8 +5,6 @@ import configparser
 import os
 from datetime import datetime, timedelta
 
-import pandas as pd
-
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings
@@ -98,19 +96,13 @@ def clean_date(date: datetime, config):
         lambda: ensure_file_for_date(date, config),
     )
     gal.log_file(file_path)  # logs the name, rows and size of the file
-    pickle_path = file_path.replace('.csv', '.pkl')
 
-    if os.path.isfile(pickle_path):
-        print("Cached pickled data found..")
-        trajectories = pd.read_pickle(pickle_path)
-    else:
-        clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
-                                             audit_etl_stage=ETL_STAGE_CLEAN)
-        gal.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
-        trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
-                                         audit_etl_stage=ETL_STAGE_TRAJECTORY)
-        gal.log_etl_stage_rows_df("trajectory", trajectories)
-        trajectories.to_pickle(pickle_path)
+    clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
+                                         audit_etl_stage=ETL_STAGE_CLEAN)
+    gal.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
+    trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
+                                     audit_etl_stage=ETL_STAGE_TRAJECTORY)
+    gal.log_etl_stage_rows_df("trajectory", trajectories)
 
     conn = wrap_with_timings("Inserting trajectories",
                              lambda: TrajectoryInserter("fact_trajectory").persist(trajectories, config),

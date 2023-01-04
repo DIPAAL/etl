@@ -5,7 +5,7 @@ CREATE TABLE dim_trajectory
     trajectory tgeompoint NOT NULL,
     heading tfloat,
     rot tfloat,
-    draught float,
+    draught tfloat,
     destination text NOT NULL,
     PRIMARY KEY (date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (date_id);
