@@ -35,7 +35,7 @@ FROM (
             ship_junk_id,
             nav_status_id,
             trajectory_sub_id,
-            draught,
+            startValue(atPeriod(draught, period(startTime, endTime, true, true))) draught,
             atPeriod(heading, period(startTime, endTime, true, true)) heading,
             startTime,
             endTime,
@@ -108,7 +108,7 @@ FROM (
                     SELECT
                         ft.*,
                         -- Split the trajectory into cells of 2500m x 2500m. This makes it much faster to join to cell dimension.
-                        (spaceSplit(transform(setSRID(dt.trajectory,4326),3034),2500)).tpoint point,
+                        (spaceSplit(transform(setSRID(dt.trajectory,4326),3034),5000)).tpoint point,
                         transform(dt.trajectory, 3034) trajectory,
                         dt.heading heading,
                         dt.draught draught
