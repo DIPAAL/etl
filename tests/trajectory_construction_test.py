@@ -41,8 +41,8 @@ def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
     columns_dtype_int64 = [T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL,
                            T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL]
-    columns_dtype_float64 = [T_DRAUGHT_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_LENGTH_COL]
-    columns_dtype_object = [T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL,
+    columns_dtype_float64 = [T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_LENGTH_COL]
+    columns_dtype_object = [T_DRAUGHT_COL, T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL, T_HEADING_COL,
                             T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL]
     columns_dtype_timedelta = [T_DURATION_COL]
     columns_dtype_bool = [T_INFER_STOPPED_COL]
