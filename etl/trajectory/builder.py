@@ -1,6 +1,7 @@
 """Module handling trajectory construction and outlier detection."""
 from concurrent.futures import ProcessPoolExecutor
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import math
 from datetime import datetime
@@ -423,6 +424,11 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
                          prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].x, prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].y)
     computed_speed = distance / time_delta.seconds  # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
+
+    # if SOG is nan, replace it with calculated speed.
+    if np.isnan(cur_point[SOG_COL].iloc[0]):
+        cur_point[SOG_COL] = speed
+
 
     # The other group uses SOG if the absolute difference is above a threshold
     if abs((cur_point[SOG_COL].iloc[0] - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
