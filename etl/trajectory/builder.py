@@ -429,7 +429,6 @@ def _check_outlier(cur_point: gpd.GeoDataFrame, prev_point: gpd.GeoDataFrame, sp
     if np.isnan(cur_point[SOG_COL].iloc[0]):
         cur_point[SOG_COL] = speed
 
-
     # The other group uses SOG if the absolute difference is above a threshold
     if abs((cur_point[SOG_COL].iloc[0] - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
         speed = cur_point[SOG_COL].iloc[0]
