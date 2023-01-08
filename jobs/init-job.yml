@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-etl-${JOB_ID}
+spec:
+  ttlSecondsAfterFinished: 253800
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: init-etl-${JOB_ID}
+        image: ${IMAGE_NAME}
+        command: ["python", "-u", "main.py", "--init"]
+        resources:
+          limits:
+            memory: "25G"
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ais-etl-worker
+  backoffLimit: 0

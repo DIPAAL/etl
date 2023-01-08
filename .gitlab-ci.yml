@@ -1,0 +1,97 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH
+  DOCKER_BUILD_ENVFILE: .tmp/${CI_JOB_NAME}-build.env
+
+.build:
+  stage: build
+  variables:
+    PUSH: "true"
+  script:
+    - mkdir -p .tmp
+    - export TAG=${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
+    - export CI_REGISTRY_IMAGE=$(echo $CI_REGISTRY_IMAGE | tr '[:upper:]' '[:lower:]')
+    - export FULL_TAG=$CI_REGISTRY_IMAGE:$TAG
+    - if [ "$PUSH" = "true" ]; then docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY; fi
+    - docker build -t $FULL_TAG . --build-arg tag=$TAG
+    - if [ "$PUSH" = "true" ]; then docker push $FULL_TAG; fi
+    - echo "FULL_TAG=${FULL_TAG}" > ${DOCKER_BUILD_ENVFILE}
+  artifacts:
+    reports:
+      dotenv: ${DOCKER_BUILD_ENVFILE}
+
+build-push:
+  extends: .build
+  image: docker:latest
+
+build:
+  extends: .build
+  variables:
+    PUSH: "false"
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+
+.kube-job:
+  stage: deploy
+  needs: [build-push]
+  image:
+    name: registry.gitlab.com/shipquerymasters/utils:0.0.3
+    entrypoint: ['']
+  before_script:
+    - export JOB_ID=$(date +%F-%H-%M-%S)
+    - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
+    - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
+  when: manual
+
+#init:
+#  extends: .kube-job
+#  script:
+#    - envsubst < jobs/init-job.yml | kubectl apply -f -
+
+clean:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/clean-job.yml | kubectl apply -f -
+
+benchmark:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/query-benchmark-job.yml | kubectl apply -f -
+
+pytest:
+  stage: test
+  image: docker:latest
+  needs: [build-push]
+  services:
+    - docker:dind
+  script:
+    - echo ${FULL_TAG}
+    - docker run --name test_runner-${CI_PIPELINE_ID} ${FULL_TAG} pytest --cov=. --cov-report=term-missing --cov-report=xml:p_coverage.xml --junit-xml=p_result.xml
+    - docker cp test_runner-${CI_PIPELINE_ID}:/python/p_result.xml ./
+    - docker cp test_runner-${CI_PIPELINE_ID}:/python/p_coverage.xml ./
+    - docker rm test_runner-${CI_PIPELINE_ID}
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    when: always
+    paths:
+      - p_result.xml
+      - p_coverage.xml
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: p_coverage.xml
+      junit: p_result.xml
+    expire_in: "1 week"
+
+flake8:
+  stage: test
+  image: docker:latest
+  needs: [build-push]
+  services:
+    - docker:dind
+  script:
+    - docker run --rm --name flake8-${CI_PIPELINE_ID} ${FULL_TAG} flake8
