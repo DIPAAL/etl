@@ -107,8 +107,8 @@ FROM (
                 FROM (
                     SELECT
                         ft.*,
-                        -- Split the trajectory into cells of 2500m x 2500m. This makes it much faster to join to cell dimension.
-                        (spaceSplit(transform(setSRID(dt.trajectory,4326),3034),5000)).tpoint point,
+                        -- Split the trajectory into cells of 5000m x 5000m. This makes it much faster to join to cell dimension.
+                        (spaceSplit(transform(setSRID(dt.trajectory,4326),3034), 5000)).tpoint point,
                         transform(dt.trajectory, 3034) trajectory,
                         dt.heading heading,
                         dt.draught draught
