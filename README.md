@@ -10,7 +10,7 @@ To init the DWL:
 
 To load 2022 data:
 
-```docker run -v ./data:/data dipaal-etl python3 main.py --clean --from_date 2022-01-01 --to_date 2022-12-31```
+```docker run -v data:/data dipaal-etl python3 main.py --clean --from_date 2022-01-01 --to_date 2022-12-31```
 
 ### Running locally
 Please copy ```config-local-template.properties``` to ```config-local.properties``` and change the desired values.
