@@ -4,7 +4,8 @@
 ### Running with Docker
 ```docker build . -t dipaal-etl```
 
-To init the DW
+To init the DWL:
+
 ```docker run dipaal-etl python3 main.py --init```
 
 To load 2022 data:
