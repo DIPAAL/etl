@@ -15,6 +15,8 @@ def apply_rollups(conn, date: datetime) -> None:
         date: The date to apply the rollups for
     """
     wrap_with_timings("Applying simplify rollup", lambda: apply_simplify_query(conn, date))
+    # commit for testing
+    conn.commit()
     wrap_with_timings("Applying cell fact rollup", lambda: apply_cell_fact_rollup(conn, date))
 
 
