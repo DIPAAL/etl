@@ -6,11 +6,10 @@ import numpy as np
 
 from typing import List
 from datetime import datetime
-from shapely.geometry import Point
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, COORDINATE_REFERENCE_SYSTEM_METERS, _tfloat_from_dataframe
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
@@ -69,21 +68,21 @@ def to_minimal_outlier_detection_frame(long: float, lat: float, timestamp: str, 
 
 
 test_data_is_outlier = [
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5),
+    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
      to_minimal_outlier_detection_frame(55.8079, 10.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
     # Same timestammp
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5),
+    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
      to_minimal_outlier_detection_frame(57.8079, 12.7168, '07/09/2021 00:06:02', 2.5), 1, _euclidian_dist, True),
     # SOG is above threshold
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5),
+    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
      to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
     # All is well
 ]
 
 
-@pytest.mark.parametrize('prev_point, curr_point, speed_threshold, distance_func, expected', test_data_is_outlier)
-def test_check_outlier(prev_point, curr_point, speed_threshold, distance_func, expected):
-    assert _check_outlier(prev_point, curr_point, speed_threshold, distance_func) == expected
+@pytest.mark.parametrize('dataframe, curr_point, prev_point, speed_threshold, distance_func, expected', test_data_is_outlier)  # noqa: E501
+def test_check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func, expected):
+    assert _check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func) == expected
 
 
 test_data_date_smart_key_extraction = [
@@ -227,13 +226,6 @@ def test_point_to_trajectory_correct_length():
     ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
     result_dataframe = build_from_geopandas(ferry_dataframe)
     total_length = result_dataframe[T_LENGTH_COL].sum()
-
-    # Point for each of the 2 harbours between which the ferry sails, should be around 27,19 km between them.
-    point_harbor1 = Point(10.547164, 57.434897)  # (x, y) AKA (lon, lat)
-    point_harbor2 = Point(10.921814, 57.298418)
-
-    points_journey = gpd.GeoSeries([point_harbor1, point_harbor2], crs=COORDINATE_REFERENCE_SYSTEM)
-    points_journey = points_journey.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
 
     expected_length = 27345
 
