@@ -58,6 +58,9 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
                 result = future.result()
                 results.append(result)
 
+    # results = [_create_trajectory(group) for group in grouped_data]
+
+
     df = pd.concat(results)
     df.loc[:, T_ROT_COL].mask(df.loc[:, T_ROT_COL].isna(), other=None, inplace=True)
     df.loc[:, T_HEADING_COL].mask(df.loc[:, T_HEADING_COL].isna(), other=None, inplace=True)
@@ -102,7 +105,7 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         row = trajectory_dataframe.iloc[idx]
 
         # Has the ship possibly stopped?
-        if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
+        if row['assumed_speed'] < STOPPED_KNOTS_THRESHOLD:
             # Have we already detected a possible stop?
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
@@ -330,7 +333,7 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
-        if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
+        if row['assumed_speed'] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([stopped_trajectory, trajectories])
@@ -379,27 +382,28 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Keyword arguements:
         dataframe: dataframe containing sorted AIS data points
     """
-    prev_row: Optional[pd.Series] = None
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
-    dataframe['is_outlier'] = False
 
-    for idx in range(0, len(dataframe.index)):
-        row = dataframe.iloc[[idx]]
+    # Calculate the diff between points in meters
+    dataframe.loc[:, 'diff'] = dataframe.geometry.distance(dataframe.geometry.shift(1))
 
-        if prev_row is None:  # this is the first point
-            prev_row = row
-            continue
+    # Calculate the time diff between points in seconds
+    dataframe.loc[:, 'time_diff'] = dataframe[TIMESTAMP_COL].diff().dt.total_seconds()
 
-        if not _check_outlier(dataframe, cur_point=idx, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS,
-                              dist_func=_euclidian_dist):
-            prev_row = row
-            continue
-        # set as outlier in df
-        dataframe.at[row.index[0], 'is_outlier'] = True
+    # Calculate the speed between points in knots
+    dataframe.loc[:, 'calc_speed'] = dataframe['diff'] / dataframe['time_diff'] * KNOTS_PER_METER_SECONDS
 
-    # remove outliers
-    dataframe = dataframe[dataframe['is_outlier'] == False]  # noqa: E712
-    dataframe.drop(labels='is_outlier', axis='columns', inplace=True)
+    # Make a column 'assumed_speed' which is calc_speed if sog is nan, otherwise sog
+    dataframe.loc[:, 'assumed_speed'] = dataframe.apply(
+        lambda row: row[SOG_COL] if not math.isnan(row[SOG_COL]) else row['calc_speed'], axis=1)
+
+    # Make a column 'it_outlier' that is true if time_diff is 0 or if the difference between assumed_speed and SOG is greater than COMPUTED_VS_SOG_KNOTS_THRESHOLD, or assumed_speed is greater than SPEED_THRESHOLD_KNOTS
+    dataframe.loc[:, 'it_outlier'] = dataframe.apply(lambda row: row['time_diff'] == 0 or (
+                abs(row['assumed_speed'] - row[SOG_COL]) > COMPUTED_VS_SOG_KNOTS_THRESHOLD and not math.isnan(
+            row[SOG_COL])) or row['assumed_speed'] > SPEED_THRESHOLD_KNOTS, axis=1)
+
+    # Remove outliers
+    dataframe = dataframe[dataframe['it_outlier'] == False]
 
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
