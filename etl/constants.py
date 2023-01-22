@@ -69,6 +69,13 @@ T_LENGTH_COL = 'length'
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
 
+# Computed dataframe columns
+IS_OUTLIER_COL = 'is_outlier'
+SPATIAL_DISTANCE_COL = 'spatial_distance'
+TEMPORAL_DISTANCE_COL = 'temporal_distance'
+CALCULATED_SPEED_COL = 'calculated_speed'
+ASSUMED_SPEED_COL = 'assumed_speed'
+
 # Audit log constants - Valid ETL stage names
 ETL_STAGE_CLEAN = 'cleaning'
 ETL_STAGE_SPATIAL = 'spatial_join'

@@ -6,12 +6,13 @@ import pandas as pd
 import math
 from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, Optional, List
+from typing import Callable, List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
     MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, \
-    TRAJECTORY_SRID
+    TRAJECTORY_SRID, ASSUMED_SPEED_COL, CALCULATED_SPEED_COL, TEMPORAL_DISTANCE_COL, SPATIAL_DISTANCE_COL, \
+    IS_OUTLIER_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -58,9 +59,6 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
                 result = future.result()
                 results.append(result)
 
-    # results = [_create_trajectory(group) for group in grouped_data]
-
-
     df = pd.concat(results)
     df.loc[:, T_ROT_COL].mask(df.loc[:, T_ROT_COL].isna(), other=None, inplace=True)
     df.loc[:, T_HEADING_COL].mask(df.loc[:, T_HEADING_COL].isna(), other=None, inplace=True)
@@ -105,7 +103,7 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         row = trajectory_dataframe.iloc[idx]
 
         # Has the ship possibly stopped?
-        if row['assumed_speed'] < STOPPED_KNOTS_THRESHOLD:
+        if row[ASSUMED_SPEED_COL] < STOPPED_KNOTS_THRESHOLD:
             # Have we already detected a possible stop?
             if idx_cannot_handle is not None:
                 current_date = row[TIMESTAMP_COL]
@@ -289,7 +287,6 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
 
     tfloat_lst = []
     for _, row in dataframe.iterrows():
-
         mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
         float_val = str(row[float_column])
         tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
@@ -333,7 +330,7 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
-        if row['assumed_speed'] >= STOPPED_KNOTS_THRESHOLD:
+        if row[ASSUMED_SPEED_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([stopped_trajectory, trajectories])
@@ -385,25 +382,33 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
 
     # Calculate the diff between points in meters
-    dataframe.loc[:, 'diff'] = dataframe.geometry.distance(dataframe.geometry.shift(1))
+    dataframe.loc[:, SPATIAL_DISTANCE_COL] = dataframe.geometry.distance(dataframe.geometry.shift(1))
 
     # Calculate the time diff between points in seconds
-    dataframe.loc[:, 'time_diff'] = dataframe[TIMESTAMP_COL].diff().dt.total_seconds()
+    dataframe.loc[:, TEMPORAL_DISTANCE_COL] = dataframe[TIMESTAMP_COL].diff().dt.total_seconds()
 
     # Calculate the speed between points in knots
-    dataframe.loc[:, 'calc_speed'] = dataframe['diff'] / dataframe['time_diff'] * KNOTS_PER_METER_SECONDS
+    dataframe.loc[:, CALCULATED_SPEED_COL] = dataframe[SPATIAL_DISTANCE_COL] / dataframe[
+        TEMPORAL_DISTANCE_COL] * KNOTS_PER_METER_SECONDS
 
     # Make a column 'assumed_speed' which is calc_speed if sog is nan, otherwise sog
-    dataframe.loc[:, 'assumed_speed'] = dataframe.apply(
-        lambda row: row[SOG_COL] if not math.isnan(row[SOG_COL]) else row['calc_speed'], axis=1)
+    dataframe.loc[:, ASSUMED_SPEED_COL] = dataframe.apply(
+        lambda row: row[SOG_COL] if not math.isnan(row[SOG_COL]) else row[CALCULATED_SPEED_COL], axis=1)
 
-    # Make a column 'it_outlier' that is true if time_diff is 0 or if the difference between assumed_speed and SOG is greater than COMPUTED_VS_SOG_KNOTS_THRESHOLD, or assumed_speed is greater than SPEED_THRESHOLD_KNOTS
-    dataframe.loc[:, 'it_outlier'] = dataframe.apply(lambda row: row['time_diff'] == 0 or (
-                abs(row['assumed_speed'] - row[SOG_COL]) > COMPUTED_VS_SOG_KNOTS_THRESHOLD and not math.isnan(
-            row[SOG_COL])) or row['assumed_speed'] > SPEED_THRESHOLD_KNOTS, axis=1)
+    # Make a column 'is_outlier' that is true if
+    # 1. Time_diff is 0 or
+    # 2. If the difference between assumed speed and SOG is greater than threshold or
+    # 3. assumed speed is greater than speed threshold.
+    dataframe.loc[:, IS_OUTLIER_COL] = dataframe.apply(
+        lambda row:
+        row[TEMPORAL_DISTANCE_COL] == 0 or
+        abs(row[ASSUMED_SPEED_COL] - row[SOG_COL]) > COMPUTED_VS_SOG_KNOTS_THRESHOLD or
+        row[ASSUMED_SPEED_COL] > SPEED_THRESHOLD_KNOTS,
+        axis=1
+    )
 
     # Remove outliers
-    dataframe = dataframe[dataframe['it_outlier'] == False]
+    dataframe = dataframe[dataframe[IS_OUTLIER_COL] == False]  # noqa: E712
 
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
@@ -497,9 +502,7 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_SHIP_CALLSIGN_COL: pd.Series(dtype='object',
                                        data=dict[T_SHIP_CALLSIGN_COL] if T_SHIP_CALLSIGN_COL in dict else []),
         T_LOCATION_SYSTEM_TYPE_COL: pd.Series(
-            dtype='object', data=dict[T_LOCATION_SYSTEM_TYPE_COL] \
-            if T_LOCATION_SYSTEM_TYPE_COL in dict else []
-        ),
+            dtype='object', data=dict[T_LOCATION_SYSTEM_TYPE_COL] if T_LOCATION_SYSTEM_TYPE_COL in dict else []),
         T_A_COL: pd.Series(dtype='float64', data=dict[T_A_COL] if T_A_COL in dict else []),
         T_B_COL: pd.Series(dtype='float64', data=dict[T_B_COL] if T_B_COL in dict else []),
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
