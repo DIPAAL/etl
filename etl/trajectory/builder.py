@@ -12,7 +12,7 @@ from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_C
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
     MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, \
     TRAJECTORY_SRID, ASSUMED_SPEED_COL, CALCULATED_SPEED_COL, TEMPORAL_DISTANCE_COL, SPATIAL_DISTANCE_COL, \
-    IS_OUTLIER_COL
+    IS_OUTLIER_COL, INTERLACED_SPEED_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -391,18 +391,24 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     dataframe.loc[:, CALCULATED_SPEED_COL] = dataframe[SPATIAL_DISTANCE_COL] / dataframe[
         TEMPORAL_DISTANCE_COL] * KNOTS_PER_METER_SECONDS
 
-    # Make a column 'assumed_speed' which is calc_speed if sog is nan, otherwise sog
-    dataframe.loc[:, ASSUMED_SPEED_COL] = dataframe.apply(
+    # Make a column 'interlaced_speed' which is calc_speed if sog is nan, otherwise sog
+    dataframe.loc[:, INTERLACED_SPEED_COL] = dataframe.apply(
         lambda row: row[SOG_COL] if not math.isnan(row[SOG_COL]) else row[CALCULATED_SPEED_COL], axis=1)
+
+    # Make a column 'assumed_speed' which is calc_speed if the difference between calc_speed,
+    # and interlaced_speed is less than COMPUTED_VS_SOG_KNOTS_THRESHOLD, otherwise interlaced_speed
+    dataframe.loc[:, ASSUMED_SPEED_COL] = dataframe.apply(
+        lambda row: row[CALCULATED_SPEED_COL] if abs(row[CALCULATED_SPEED_COL] - row[INTERLACED_SPEED_COL])
+            <= COMPUTED_VS_SOG_KNOTS_THRESHOLD else row[INTERLACED_SPEED_COL],  # noqa: E131
+        axis=1
+    )
 
     # Make a column 'is_outlier' that is true if
     # 1. Time_diff is 0 or
-    # 2. If the difference between assumed speed and SOG is greater than threshold or
     # 3. assumed speed is greater than speed threshold.
     dataframe.loc[:, IS_OUTLIER_COL] = dataframe.apply(
         lambda row:
         row[TEMPORAL_DISTANCE_COL] == 0 or
-        abs(row[ASSUMED_SPEED_COL] - row[SOG_COL]) > COMPUTED_VS_SOG_KNOTS_THRESHOLD or
         row[ASSUMED_SPEED_COL] > SPEED_THRESHOLD_KNOTS,
         axis=1
     )
