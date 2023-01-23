@@ -8,7 +8,7 @@ from typing import List
 from datetime import datetime
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
-    _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
+    _create_trajectory_db_df, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL, T_LENGTH_COL
@@ -65,24 +65,6 @@ def to_minimal_outlier_detection_frame(long: float, lat: float, timestamp: str, 
                                                                                    crs=COORDINATE_REFERENCE_SYSTEM))
 
     return geo_test_frame.iloc[[0]]
-
-
-test_data_is_outlier = [
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(55.8079, 10.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
-    # Same timestammp
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(57.8079, 12.7168, '07/09/2021 00:06:02', 2.5), 1, _euclidian_dist, True),
-    # SOG is above threshold
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
-    # All is well
-]
-
-
-@pytest.mark.parametrize('dataframe, curr_point, prev_point, speed_threshold, distance_func, expected', test_data_is_outlier)  # noqa: E501
-def test_check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func, expected):
-    assert _check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func) == expected
 
 
 test_data_date_smart_key_extraction = [

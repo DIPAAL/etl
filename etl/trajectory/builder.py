@@ -1,12 +1,11 @@
 """Module handling trajectory construction and outlier detection."""
 from concurrent.futures import ProcessPoolExecutor
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 import math
 from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, List
+from typing import List
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
@@ -417,45 +416,6 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     dataframe = dataframe[dataframe[IS_OUTLIER_COL] == False]  # noqa: E712
 
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
-
-
-def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: int, prev_point: gpd.GeoDataFrame, speed_threshold: float,
-                   dist_func: Callable[[float, float, float, float], float]) -> bool:
-    """
-    Check whether the current point is an outlier.
-
-    Keyword arguments:
-        dataframe: the dataframe containing curr AIS point that is checked.
-        cur_point: the index of the current AIS point in the dataframe.
-        prev_point: the last non-outlier AIS point checked
-        speed_threshold: max speed that determine whether an AIS point is an outlier
-        dist_function: distance function used to calculate the distance between cur_point and prev_point
-    """
-    cur_timestamp = dataframe.iloc[[cur_point]][TIMESTAMP_COL].values[0]
-    time_delta = cur_timestamp - prev_point[TIMESTAMP_COL].iloc[0]
-    # Previous and current point is in the same timestamp, detect it as an outlier
-    if time_delta.seconds == 0:
-        return True
-
-    cur_geom = dataframe.iloc[[cur_point]][GEO_PANDAS_GEOMETRY_COL].values[0]
-
-    distance = dist_func(cur_geom.x, cur_geom.y,
-                         prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].x, prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].y)
-    computed_speed = distance / time_delta.seconds  # m/s
-    speed = computed_speed * KNOTS_PER_METER_SECONDS
-
-    # if SOG is nan, replace it with calculated speed.
-    if np.isnan(dataframe.iloc[[cur_point]][SOG_COL].values[0]):
-        dataframe.at[cur_point, SOG_COL] = speed
-
-    # The other group uses SOG if the absolute difference is above a threshold
-    cur_sog = dataframe.iloc[[cur_point]][SOG_COL].values[0]
-    if abs((cur_sog - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
-        speed = cur_sog
-
-    if speed > speed_threshold:
-        return True
-    return False
 
 
 def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) -> float:
