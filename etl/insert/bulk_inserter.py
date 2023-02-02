@@ -55,7 +55,6 @@ class BulkInserter:
             select_query: the query used to select from the database
         """
         # First use the select query to get the ids of the existing entries.
-        cursor = conn.cursor()
         # Convert to array string notation [[1,2,3],[4,5,6]].
         column_count = batch.shape[1]
         prepared_row = f"({','.join(['%s'] * column_count)})"
@@ -63,7 +62,6 @@ class BulkInserter:
         select_query = select_query.format(placeholders)
 
         result = pd.read_sql_query(select_query, conn, params=batch.values.flatten())
-        cursor.execute(select_query, batch.values.flatten())
 
         # Use the result dataframe to figure out which rows need to be inserted.
         # Merge by the columns in the batch dataframe.
