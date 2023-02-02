@@ -34,14 +34,16 @@ class ShipDimensionInserter (BulkInserter):
         ships = df[unique_columns].drop_duplicates()
 
         insert_query = """
-            INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type)
+            INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d, 
+            location_system_type, mobile_type, ship_type)
             VALUES {}
             RETURNING ship_id
         """
 
         select_query = """
             SELECT
-                ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d, location_system_type, mobile_type, ship_type
+                ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d, 
+                location_system_type, mobile_type, ship_type
             FROM dim_ship
             WHERE (mmsi, imo, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type) IN {}
             """
