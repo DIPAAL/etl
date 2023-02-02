@@ -22,7 +22,7 @@ SELECT
     CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) END delta_heading,
     draught,
     delta_cog,
-    stbox(cell_geom, period(startTime, endTime)) st_bounding_box
+    stbox(cell_geom, period(startTime, endTime, true, true)) st_bounding_box
 FROM (
         SELECT
             get_lowest_json_key(start_edges) entry_direction,
@@ -73,7 +73,7 @@ FROM (
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
-                date_trunc('second', endTimestamp(crossing) + INTERVAL '1000000 microseconds') endTime
+                date_trunc('second', endTimestamp(crossing)) endTime
             FROM (
                 SELECT
                     unnest(sequences(atGeometry(fdt.trajectory, dc.geom))) crossing,
