@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: clean-etl-${JOB_ID}
+  name: load-etl-${JOB_ID}
 spec:
   ttlSecondsAfterFinished: 253800
   template:
@@ -9,12 +9,12 @@ spec:
       imagePullSecrets:
         - name: regcred
       containers:
-      - name: clean-etl-${JOB_ID}
+      - name: load-etl-${JOB_ID}
         image: ${IMAGE_NAME}
         volumeMounts:
           - name: ais-raw
             mountPath: /data
-        command: ["python", "-u", "main.py", "--clean", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
+        command: ["python", "-u", "main.py", "--load", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
       restartPolicy: Never
       volumes:
         - name: ais-raw

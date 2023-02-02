@@ -35,9 +35,8 @@ def main(argv):
     config = get_config()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--init", help="Initialize database", action="store_true")
-    parser.add_argument("--load", help="Perform loading of the dates", action="store_true")
-    parser.add_argument("--clean", help="Clean the given AIS data file", action="store_true")
+    parser.add_argument("--init", help="Initialize data warehouse and setup cluster", action="store_true")
+    parser.add_argument("--load", help="Load AIS data from given dates", action="store_true")
     parser.add_argument("--querybenchmark", help="Perform query benchmark", action="store_true")
     parser.add_argument("--from_date",
                         help="The date to load from, in the format YYYY-MM-DD, for example 2022-12-31", type=str)
@@ -52,16 +51,16 @@ def main(argv):
     if args.init:
         wrap_with_timings("Database init", lambda: init_database(config))
 
-    if args.clean:
-        clean_range(date_from, date_to, config)
+    if args.load:
+        load_range(date_from, date_to, config)
 
     if args.querybenchmark:
         BenchmarkRunner(config).run_benchmark()
 
 
-def clean_range(date_from: datetime, date_to: datetime, config):
+def load_range(date_from: datetime, date_to: datetime, config):
     """
-    Apply cleaning for all dates in the given range.
+    Load data for all dates in the given range.
 
     Date from must be before or equal to date to.
 
@@ -71,11 +70,11 @@ def clean_range(date_from: datetime, date_to: datetime, config):
     """
     # ensure date_from and date_to is set
     if not date_from or not date_to:
-        raise ValueError("Please provide both from_date and to_date when cleaning data")
+        raise ValueError('Please provide both "from_date" and "to_date" when loading data')
 
     # ensure date_from is before or equal to date_to
     if date_from > date_to:
-        raise ValueError("from_date must be before or equal to to_date")
+        raise ValueError('"from_date" must be before or equal to "to_date"')
 
     # loop through all dates and clean them
     while date_from <= date_to:

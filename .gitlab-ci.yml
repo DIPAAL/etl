@@ -52,10 +52,10 @@ build:
 #  script:
 #    - envsubst < jobs/init-job.yml | kubectl apply -f -
 
-clean:
+load:
   extends: .kube-job
   script:
-    - envsubst < jobs/clean-job.yml | kubectl apply -f -
+    - envsubst < jobs/load-job.yml | kubectl apply -f -
 
 benchmark:
   extends: .kube-job
