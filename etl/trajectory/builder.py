@@ -371,6 +371,72 @@ def rebuild_to_geodataframe(pandas_dataframe: pd.DataFrame) -> gpd.GeoDataFrame:
                                                                                crs=COORDINATE_REFERENCE_SYSTEM))
 
 
+def recalculate_point(dataframe, current_index, previous_index):
+    previous_row = dataframe.iloc[previous_index]
+    current_row = dataframe.iloc[current_index]
+
+    dataframe.loc[current_index, SPATIAL_DISTANCE_COL] = previous_row.geometry.distance(current_row.geometry)
+    dataframe.loc[current_index, TEMPORAL_DISTANCE_COL] = (
+                current_row[TIMESTAMP_COL] - previous_row[TIMESTAMP_COL]).total_seconds()
+    # if temporal distance is 0, then set outlier to true and return
+    if dataframe.loc[current_index, TEMPORAL_DISTANCE_COL] == 0:
+        dataframe.loc[current_index, IS_OUTLIER_COL] = True
+        return
+    dataframe.loc[current_index, CALCULATED_SPEED_COL] = dataframe.loc[current_index, SPATIAL_DISTANCE_COL] / \
+                                                             dataframe.loc[
+                                                                 current_index, TEMPORAL_DISTANCE_COL] * KNOTS_PER_METER_SECONDS
+    dataframe.loc[current_index, INTERLACED_SPEED_COL] = current_row[SOG_COL] if not math.isnan(current_row[SOG_COL]) else \
+    dataframe.loc[current_index, CALCULATED_SPEED_COL]
+    dataframe.loc[current_index, ASSUMED_SPEED_COL] = \
+        dataframe.loc[current_index, INTERLACED_SPEED_COL] \
+            if abs(
+            dataframe.loc[current_index, CALCULATED_SPEED_COL] -
+            dataframe.loc[current_index, INTERLACED_SPEED_COL]
+        ) <= COMPUTED_VS_SOG_KNOTS_THRESHOLD else dataframe.loc[current_index, CALCULATED_SPEED_COL]
+
+    is_outlier = dataframe.loc[current_index, ASSUMED_SPEED_COL] > SPEED_THRESHOLD_KNOTS
+    dataframe.loc[current_index, IS_OUTLIER_COL] = is_outlier
+    return is_outlier
+
+def _remove_detected_outliers(dataframe):
+    """
+    The dataframe input has determined if it contains outlier. Now we need to visit each outlier and remove it.
+
+    Keyword arguments:
+        dataframe: dataframe containing sorted AIS data points with outlier column.
+    """
+
+    while dataframe[IS_OUTLIER_COL].any():
+        # Find the first outlier, which is always a true outlier.
+        outlier_index = dataframe[dataframe[IS_OUTLIER_COL]].index[0]
+
+        # Verify if it is still an outlier
+        if not recalculate_point(dataframe, outlier_index, outlier_index-1):
+            continue
+
+        # Recalculate the next point based on the previous point, as this point is an outlier.
+        _recalculate_next_point(dataframe, outlier_index)
+        # Remove the outlier
+        dataframe.drop(outlier_index, inplace=True)
+
+
+def _recalculate_next_point(dataframe, outlier_index):
+    # determine if next point exists
+    if outlier_index + 1 >= len(dataframe.index):
+        return
+
+    next_row = dataframe.iloc[outlier_index + 1]
+
+    # determine if previous point is an outlier
+    if outlier_index == 0:
+        # Recalculate based on calc_speed being nan, i.e. use sog
+        speed = next_row[SOG_COL]
+        dataframe.loc[outlier_index+1, IS_OUTLIER_COL] = speed > SPEED_THRESHOLD_KNOTS
+    else:
+        # recalculate spatial diff, temporal diff, calculated speed, interlaced speed and assumed_speed and detect if outlier.
+
+        recalculate_point(dataframe, outlier_index+1, outlier_index-1)
+
 def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Detect and remove outliers from geopandas geodataframe.
@@ -380,6 +446,27 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
 
+    dataframe = _assign_speed_to_df(dataframe)
+
+    # Make a column 'is_outlier' that is true if
+    # 1. Time_diff is 0 or
+    # 3. assumed speed is greater than speed threshold.
+    dataframe.loc[:, IS_OUTLIER_COL] = dataframe.apply(
+        lambda row:
+        row[TEMPORAL_DISTANCE_COL] == 0 or
+        row[ASSUMED_SPEED_COL] > SPEED_THRESHOLD_KNOTS,
+        axis=1
+    )
+
+    # Remove outliers
+    _remove_detected_outliers(dataframe)
+
+    # As some of the calculated speeds are outliers, we need to recalculate the speeds
+    dataframe = _assign_speed_to_df(dataframe)
+
+    return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
+
+def _assign_speed_to_df(dataframe):
     # Calculate the diff between points in meters
     dataframe.loc[:, SPATIAL_DISTANCE_COL] = dataframe.geometry.distance(dataframe.geometry.shift(1))
 
@@ -397,25 +484,12 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     # Make a column 'assumed_speed' which is calc_speed if the difference between calc_speed,
     # and interlaced_speed is less than COMPUTED_VS_SOG_KNOTS_THRESHOLD, otherwise interlaced_speed
     dataframe.loc[:, ASSUMED_SPEED_COL] = dataframe.apply(
-        lambda row: row[CALCULATED_SPEED_COL] if abs(row[CALCULATED_SPEED_COL] - row[INTERLACED_SPEED_COL])
-            <= COMPUTED_VS_SOG_KNOTS_THRESHOLD else row[INTERLACED_SPEED_COL],  # noqa: E131
+        lambda row: row[INTERLACED_SPEED_COL] if abs(row[CALCULATED_SPEED_COL] - row[INTERLACED_SPEED_COL])
+            <= COMPUTED_VS_SOG_KNOTS_THRESHOLD else row[CALCULATED_SPEED_COL],  # noqa: E131
         axis=1
     )
 
-    # Make a column 'is_outlier' that is true if
-    # 1. Time_diff is 0 or
-    # 3. assumed speed is greater than speed threshold.
-    dataframe.loc[:, IS_OUTLIER_COL] = dataframe.apply(
-        lambda row:
-        row[TEMPORAL_DISTANCE_COL] == 0 or
-        row[ASSUMED_SPEED_COL] > SPEED_THRESHOLD_KNOTS,
-        axis=1
-    )
-
-    # Remove outliers
-    dataframe = dataframe[dataframe[IS_OUTLIER_COL] == False]  # noqa: E712
-
-    return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
+    return dataframe
 
 
 def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) -> float:

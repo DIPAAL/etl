@@ -5,11 +5,12 @@ import pandas.api.types as ptypes
 import numpy as np
 
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, _remove_outliers, \
+    COORDINATE_REFERENCE_SYSTEM_METERS
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
     TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
@@ -53,19 +54,17 @@ def test_create_trajectory_db_df():
     assert all([ptypes.is_bool_dtype(test_df[col]) for col in columns_dtype_bool])
 
 
-def to_minimal_outlier_detection_frame(long: float, lat: float, timestamp: str, sog: float):
+def to_minimal_outlier_detection_frame(long: List[float], lat: List[float], timestamp: List[int], sog: List[float]):
     test_frame = pd.DataFrame(data={
         LONGITUDE_COL: pd.Series(data=long, dtype='float64'),
         LATITUDE_COL: pd.Series(data=lat, dtype='float64'),
-        TIMESTAMP_COL: pd.Series(data=datetime.strptime(timestamp, CVS_TIMESTAMP_FORMAT), dtype='object'),
+        # Timestamp col is 2022-01-01 00:00:00 + the value from timestamp list in seconds
+        TIMESTAMP_COL: pd.Series(data=[datetime(2022, 1, 1, 0, 0, 0) + timedelta(seconds=ts) for ts in timestamp]),
         SOG_COL: pd.Series(data=sog, dtype='float64')
     })
-    geo_test_frame = gpd.GeoDataFrame(data=test_frame, geometry=gpd.points_from_xy(x=test_frame[LONGITUDE_COL],
-                                                                                   y=test_frame[LONGITUDE_COL],
-                                                                                   crs=COORDINATE_REFERENCE_SYSTEM))
-
-    return geo_test_frame.iloc[[0]]
-
+    return gpd.GeoDataFrame(data=test_frame, geometry=gpd.points_from_xy(x=test_frame[LONGITUDE_COL],
+                                                                                   y=test_frame[LATITUDE_COL],
+                                                                                   crs=COORDINATE_REFERENCE_SYSTEM_METERS))
 
 test_data_date_smart_key_extraction = [
     (datetime.strptime('01/01/2022 00:00:00', CVS_TIMESTAMP_FORMAT), 20220101),
@@ -248,3 +247,40 @@ def test_nan_values_removed(test_frame, defaulted, remove, expected_number_of_va
 
     assert expected_number_of_values == actual.numInstants
     assert original_num_values == len(test_frame)  # Test original frame has not been changed
+
+
+test_outlier_removal_data = [
+    # Test case 1: No outliers
+    # (to_minimal_outlier_detection_frame(
+    #     [0, 0, 0, 0], [0, 10, 20, 30], [0, 1, 2, 3], [np.nan, np.nan, np.nan, np.nan]
+    # ), 4),
+
+    # Test case 2: One outlier in the middle, where the following point is not an outlier
+    # (to_minimal_outlier_detection_frame(
+    #     [0, 30401303, 0, 0], [0, 10, 20, 30], [0, 1, 2, 3], [np.nan, np.nan, np.nan, np.nan]
+    # ), 3),
+
+    # Test case 3: Two outliers due to delta time is 0
+    # (to_minimal_outlier_detection_frame(
+    #     [0, 0, 0, 0], [0, 10, 20, 30], [1, 1, 1, 3], [np.nan, np.nan, np.nan, np.nan]
+    # ), 2),
+
+    # Test case 4: One outlier, because SOG should not be trusted
+    # (to_minimal_outlier_detection_frame(
+    #     [0,0,0,0], [0, 20000, 20, 30], [0, 1, 2, 3], [np.nan,np.nan,np.nan,np.nan]
+    # ), 3),
+
+    # Test case 5: Two outliers in a row
+    (to_minimal_outlier_detection_frame(
+        [0,0,0,0], [0, 20000, 20000, 30], [0, 1, 2, 3], [np.nan,np.nan,np.nan,np.nan]
+    ), 2),
+
+]
+
+
+@pytest.mark.parametrize('dataframe, expected_number_of_values', test_outlier_removal_data)
+def test_outliers_is_removed_correctly(dataframe, expected_number_of_values):
+    actual = _remove_outliers(dataframe)
+    # number of items in result
+
+    assert expected_number_of_values == actual.shape[0]
