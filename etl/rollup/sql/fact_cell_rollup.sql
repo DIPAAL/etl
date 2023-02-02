@@ -70,7 +70,7 @@ FROM (
                 draught,
                 heading,
                 ( -- Calculate the Delta COG
-                    calculate_delta_upperbounded((SELECT LOWER(delta) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing))) AS delta)), 360)
+                    calculate_delta_upperbounded((SELECT ARRAY_AGG(LOWER(delta)) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing))) AS delta)), 360)
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
