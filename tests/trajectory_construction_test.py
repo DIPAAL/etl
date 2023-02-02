@@ -64,7 +64,7 @@ def to_minimal_outlier_detection_frame(long: List[float], lat: List[float], time
         data=test_frame,
         geometry=gpd.points_from_xy(
             x=test_frame[LONGITUDE_COL],
-            y=test_frame[LONGITUDE_COL],
+            y=test_frame[LATITUDE_COL],
             crs=COORDINATE_REFERENCE_SYSTEM_METERS
         )
     )
