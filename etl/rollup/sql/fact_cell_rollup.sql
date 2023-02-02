@@ -19,7 +19,8 @@ SELECT
     trajectory_sub_id,
     length(crossing) / GREATEST(durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     -- if delta_heading is null, then set as -1, else use calculate_delta
-    CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) END delta_heading,
+    -- upper_bound=360, as heading goes from 0 -> 359
+    CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta_upperbounded((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) AS head), 360) END delta_heading,
     draught,
     delta_cog,
     stbox(cell_geom, period(startTime, endTime)) st_bounding_box
@@ -69,7 +70,7 @@ FROM (
                 draught,
                 heading,
                 ( -- Calculate the Delta COG
-                    SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                    calculate_delta_upperbounded((SELECT LOWER(delta) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing))) AS delta)), 360)
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
                 date_trunc('second', startTimestamp(crossing)) startTime,
