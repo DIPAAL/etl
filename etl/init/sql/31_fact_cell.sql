@@ -18,7 +18,6 @@ CREATE TABLE fact_cell (
     draught float,
     delta_cog float,
 
-    FOREIGN KEY (cell_x, cell_y) REFERENCES dim_cell_50m(x,y),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (ship_junk_id) REFERENCES dim_ship_junk(ship_junk_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),

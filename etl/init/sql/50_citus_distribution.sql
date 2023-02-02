@@ -3,7 +3,6 @@ SELECT create_reference_table('dim_date');
 SELECT create_reference_table('dim_time');
 SELECT create_reference_table('dim_direction');
 SELECT create_reference_table('dim_nav_status');
-SELECT create_reference_table('dim_cell_50m');
 SELECT create_reference_table('dim_ship_junk');
 SELECT create_reference_table('dim_ship');
 

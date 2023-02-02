@@ -76,28 +76,28 @@ FROM (
                 date_trunc('second', endTimestamp(crossing) + INTERVAL '1000000 microseconds') endTime
             FROM (
                 SELECT
-                    unnest(sequences(atGeometry(fdt.trajectory, dc.geom))) crossing,
+                    unnest(sequences(atGeometry(fdt.trajectory, fdt.cell_geom))) crossing,
                     -- Create the 4 lines representing the cell edges
                     ST_SetSRID(ST_MakeLine(
-                        ST_MakePoint(ST_XMin(dc.geom), ST_YMin(dc.geom)),
-                        ST_MakePoint(ST_XMax(dc.geom), ST_YMin(dc.geom))
+                        ST_MakePoint(ST_XMin(fdt.cell_geom), ST_YMin(fdt.cell_geom)),
+                        ST_MakePoint(ST_XMax(fdt.cell_geom), ST_YMin(fdt.cell_geom))
                     ), 3034) south,
                     ST_SetSRID(ST_MakeLine(
-                        ST_MakePoint(ST_XMin(dc.geom), ST_YMin(dc.geom)),
-                        ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
+                        ST_MakePoint(ST_XMin(fdt.cell_geom), ST_YMin(fdt.cell_geom)),
+                        ST_MakePoint(ST_XMin(fdt.cell_geom), ST_YMax(fdt.cell_geom))
                     ), 3034) west,
                     ST_SetSRID(ST_MakeLine(
-                        ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
-                        ST_MakePoint(ST_XMax(dc.geom), ST_YMin(dc.geom))
+                        ST_MakePoint(ST_XMax(fdt.cell_geom), ST_YMax(fdt.cell_geom)),
+                        ST_MakePoint(ST_XMax(fdt.cell_geom), ST_YMin(fdt.cell_geom))
                     ), 3034) east,
                     ST_SetSRID(ST_MakeLine(
-                        ST_MakePoint(ST_XMax(dc.geom), ST_YMax(dc.geom)),
-                        ST_MakePoint(ST_XMin(dc.geom), ST_YMax(dc.geom))
+                        ST_MakePoint(ST_XMax(fdt.cell_geom), ST_YMax(fdt.cell_geom)),
+                        ST_MakePoint(ST_XMin(fdt.cell_geom), ST_YMax(fdt.cell_geom))
                     ), 3034) north,
                     0.2 threshold_distance_to_cell_edge,
-                    dc.x cell_x,
-                    dc.y cell_y,
-                    dc.geom cell_geom,
+                    fdt.cell_x cell_x,
+                    fdt.cell_y cell_y,
+                    fdt.cell_geom cell_geom,
                     fdt.ship_id ship_id,
                     fdt.ship_junk_id ship_junk_id,
                     fdt.nav_status_id nav_status_id,
@@ -106,17 +106,29 @@ FROM (
                     fdt.heading heading
                 FROM (
                     SELECT
-                        ft.*,
-                        -- Split the trajectory into cells of 5000m x 5000m. This makes it much faster to join to cell dimension.
-                        (spaceSplit(transform(setSRID(dt.trajectory,4326),3034), 5000)).tpoint point,
-                        transform(dt.trajectory, 3034) trajectory,
-                        dt.heading heading,
-                        dt.draught draught
-                    FROM fact_trajectory ft
-                    JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
-                    WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
+                        ST_X ((point).point) cell_x,
+                        ST_Y ((point).point) cell_y,
+                        ST_MakeEnvelope(ST_X((point).point), ST_Y((point).point), ST_X((point).point) + 50, ST_Y((point).point) + 50, 3034) cell_geom,
+                        st.ship_id ship_id,
+						st.trajectory trajectory,
+                        st.ship_junk_id ship_junk_id,
+                        st.nav_status_id nav_status_id,
+                        st.trajectory_sub_id trajectory_sub_id,
+                        st.draught draught,
+                        st.heading heading
+                    FROM
+                        ( SELECT
+                            ft.*,
+                            spaceSplit(transform(setSRID(dt.trajectory,4326),3034), 50) point,
+                            transform(setSRID(dt.trajectory, 4326), 3034) trajectory,
+                            setSrid(dt.trajectory,4326)::geometry tg,
+                            dt.heading heading,
+                            dt.draught draught
+                        FROM fact_trajectory ft
+                        JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+                        WHERE duration > INTERVAL '1 second' AND ft.start_date_id = %s
+                    ) st
                 ) fdt
-                JOIN dim_cell_50m dc ON ST_Intersects(dc.geom, fdt.point::geometry)
             ) ci
         ) cid
     ) cif
