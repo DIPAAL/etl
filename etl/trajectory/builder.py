@@ -383,19 +383,17 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     dataframe = dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
     dataframe['is_outlier'] = False
 
-    for idx in range(0, len(dataframe.index)):
-        row = dataframe.iloc[[idx]]
-
+    for (idx, row) in dataframe.iterrows():
         if prev_row is None:  # this is the first point
-            prev_row = row
+            prev_row = (idx, row)
             continue
 
-        if not _check_outlier(dataframe, cur_point=idx, prev_point=prev_row, speed_threshold=SPEED_THRESHOLD_KNOTS,
-                              dist_func=_euclidian_dist):
-            prev_row = row
+        if not _check_outlier(dataframe, cur_point=(idx, row), prev_point=prev_row,
+                              speed_threshold=SPEED_THRESHOLD_KNOTS, dist_func=_euclidian_dist):
+            prev_row = (idx, row)
             continue
         # set as outlier in df
-        dataframe.at[row.index[0], 'is_outlier'] = True
+        dataframe.at[idx, 'is_outlier'] = True
 
     # remove outliers
     dataframe = dataframe[dataframe['is_outlier'] == False]  # noqa: E712
@@ -404,41 +402,37 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
 
-def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: int, prev_point: gpd.GeoDataFrame, speed_threshold: float,
-                   dist_func: Callable[[float, float, float, float], float]) -> bool:
+def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFrame), prev_point: (int, gpd.GeoDataFrame),
+                   speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Check whether the current point is an outlier.
 
     Keyword arguments:
-        dataframe: the dataframe containing curr AIS point that is checked.
-        cur_point: the index of the current AIS point in the dataframe.
-        prev_point: the last non-outlier AIS point checked
+        dataframe: the dataframe containing curr AIS point that is checked. Used for updating in place.
+        cur_point: A tuple consisting of the index of current point and a series representing current point.
+        prev_point: A tuple consisting of the index of previous point and a series representing previous point.
         speed_threshold: max speed that determine whether an AIS point is an outlier
         dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
-    cur_timestamp = dataframe.iloc[[cur_point]][TIMESTAMP_COL].values[0]
-    time_delta = cur_timestamp - prev_point[TIMESTAMP_COL].iloc[0]
+    time_delta_ns = cur_point[1][TIMESTAMP_COL] - prev_point[1][TIMESTAMP_COL]
+    time_delta = time_delta_ns / np.timedelta64(1, 's')
     # Previous and current point is in the same timestamp, detect it as an outlier
-    if time_delta.seconds == 0:
+    if time_delta == 0:
         return True
 
-    cur_geom = dataframe.iloc[[cur_point]][GEO_PANDAS_GEOMETRY_COL].values[0]
+    cur_geom = cur_point[1][GEO_PANDAS_GEOMETRY_COL]
+    prev_point_geom = prev_point[1][GEO_PANDAS_GEOMETRY_COL]
 
-    distance = dist_func(cur_geom.x, cur_geom.y,
-                         prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].x, prev_point[GEO_PANDAS_GEOMETRY_COL].iloc[0].y)
-    computed_speed = distance / time_delta.seconds  # m/s
+    distance = dist_func(cur_geom.x, cur_geom.y, prev_point_geom.x, prev_point_geom.y)
+    computed_speed = distance / time_delta  # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
 
     # if SOG is nan, replace it with calculated speed.
-    if np.isnan(dataframe.iloc[[cur_point]][SOG_COL].values[0]):
-        dataframe.at[cur_point, SOG_COL] = speed
+    if np.isnan(cur_point[1][SOG_COL]) or abs(cur_point[1][SOG_COL] - speed) >= COMPUTED_VS_SOG_KNOTS_THRESHOLD:
+        dataframe.at[cur_point[0], SOG_COL] = speed
+        cur_point = (cur_point[0], dataframe.loc[cur_point[0]])
 
-    # The other group uses SOG if the absolute difference is above a threshold
-    cur_sog = dataframe.iloc[[cur_point]][SOG_COL].values[0]
-    if abs((cur_sog - speed) > COMPUTED_VS_SOG_KNOTS_THRESHOLD):
-        speed = cur_sog
-
-    if speed > speed_threshold:
+    if cur_point[1][SOG_COL] > speed_threshold:
         return True
     return False
 

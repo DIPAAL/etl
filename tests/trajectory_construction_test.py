@@ -5,13 +5,12 @@ import pandas.api.types as ptypes
 import numpy as np
 
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe
-from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, \
-    TIMESTAMP_COL, T_LENGTH_COL
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS
+from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, T_LENGTH_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
     T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, \
@@ -53,35 +52,41 @@ def test_create_trajectory_db_df():
     assert all([ptypes.is_bool_dtype(test_df[col]) for col in columns_dtype_bool])
 
 
-def to_minimal_outlier_detection_frame(long: float, lat: float, timestamp: str, sog: float):
+def to_minimal_outlier_detection_frame(long: List[float], lat: List[float], timestamps: List[int], sog: List[float]):
     test_frame = pd.DataFrame(data={
         LONGITUDE_COL: pd.Series(data=long, dtype='float64'),
         LATITUDE_COL: pd.Series(data=lat, dtype='float64'),
-        TIMESTAMP_COL: pd.Series(data=datetime.strptime(timestamp, CVS_TIMESTAMP_FORMAT), dtype='object'),
+        # Timestamp col is 2022-01-01 00:00:00 + the value from timestamp list in seconds
+        TIMESTAMP_COL: pd.Series(data=[datetime(2022, 1, 1, 0, 0, 0) + timedelta(seconds=ts) for ts in timestamps]),
         SOG_COL: pd.Series(data=sog, dtype='float64')
     })
-    geo_test_frame = gpd.GeoDataFrame(data=test_frame, geometry=gpd.points_from_xy(x=test_frame[LONGITUDE_COL],
-                                                                                   y=test_frame[LONGITUDE_COL],
-                                                                                   crs=COORDINATE_REFERENCE_SYSTEM))
-
-    return geo_test_frame.iloc[[0]]
+    return gpd.GeoDataFrame(
+        data=test_frame,
+        geometry=gpd.points_from_xy(
+            x=test_frame[LONGITUDE_COL],
+            y=test_frame[LONGITUDE_COL],
+            crs=COORDINATE_REFERENCE_SYSTEM_METERS
+        )
+    )
 
 
 test_data_is_outlier = [
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(55.8079, 10.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
-    # Same timestammp
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(57.8079, 12.7168, '07/09/2021 00:06:02', 2.5), 1, _euclidian_dist, True),
-    # SOG is above threshold
-    (to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 0,
-     to_minimal_outlier_detection_frame(56.8079, 11.7168, '07/09/2021 00:00:00', 2.5), 100, _euclidian_dist, True),
-    # All is well
+    # Test Case 1: Same timestammp
+    (to_minimal_outlier_detection_frame([0, 0], [0, 0], [0, 0], [2.5, 2.5]), 100, True),
+    # Test Case 2: SOG is above threshold, where moving a bit more than 50km in 5 minutes.
+    (to_minimal_outlier_detection_frame([0, 50000], [0, 50000], [0, 300], [2.5, 2.5]), 1, True),
+    # Test Case 3: Not a outlier, where moving a bit more than 3km in 5 minutes.
+    (to_minimal_outlier_detection_frame([0, 3000], [0, 3000], [0, 300], [2.5, 2.5]), 100, False),
 ]
 
 
-@pytest.mark.parametrize('dataframe, curr_point, prev_point, speed_threshold, distance_func, expected', test_data_is_outlier)  # noqa: E501
-def test_check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func, expected):
+@pytest.mark.parametrize('dataframe, speed_threshold, expected', test_data_is_outlier)  # noqa: E501
+def test_check_outlier(dataframe,  speed_threshold, expected):
+    distance_func = _euclidian_dist
+
+    prev_point = (0, dataframe.loc[0])
+    curr_point = (1, dataframe.loc[1])
+
     assert _check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func) == expected
 
 
