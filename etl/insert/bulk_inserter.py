@@ -63,7 +63,6 @@ class BulkInserter:
         select_query = select_query.format(placeholders)
 
         result = pd.read_sql_query(select_query, conn, params=batch.values.flatten())
-        cursor.execute(select_query, batch.values.flatten())
 
         # Use the result dataframe to figure out which rows need to be inserted.
         # Merge by the columns in the batch dataframe.
