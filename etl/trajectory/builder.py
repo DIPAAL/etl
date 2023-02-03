@@ -408,7 +408,7 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFram
     Check whether the current point is an outlier.
 
     Keyword arguments:
-        dataframe: the dataframe containing curr AIS point that is checked. Used for updating in place.
+        dataframe: the dataframe containing curr AIS point that is checked. Used for updating in-place.
         cur_point: A tuple consisting of the index of current point and a series representing current point.
         prev_point: A tuple consisting of the index of previous point and a series representing previous point.
         speed_threshold: max speed that determine whether an AIS point is an outlier
