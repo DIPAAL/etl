@@ -427,7 +427,7 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFram
     computed_speed = distance / time_delta  # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
 
-    # if SOG is nan, replace it with calculated speed.
+    # if SOG is nan, or the delta between calculated and sog is above the threshold, replace it with calculated speed.
     if np.isnan(cur_point[1][SOG_COL]) or abs(cur_point[1][SOG_COL] - speed) >= COMPUTED_VS_SOG_KNOTS_THRESHOLD:
         dataframe.at[cur_point[0], SOG_COL] = speed
         cur_point = (cur_point[0], dataframe.loc[cur_point[0]])
