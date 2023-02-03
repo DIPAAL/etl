@@ -40,9 +40,9 @@ class BulkInserter:
         """
         num_batches = len(entries) // self.bulk_size + 1
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
-        sub_id_series = [self.__select_insert(batch, conn, insert_query, select_query) for batch in batches]
+        inserted_data = [self.__select_insert(batch, conn, insert_query, select_query) for batch in batches]
 
-        return pd.concat(sub_id_series)
+        return pd.concat(inserted_data)
 
     def __select_insert(self, batch: pd.DataFrame, conn, insert_query: str, select_query: str) -> pd.DataFrame:
         """
@@ -74,9 +74,9 @@ class BulkInserter:
 
         # Insert the rows that need to be inserted.
         if not to_insert.empty:
-            ids = self.__insert(to_insert, conn, insert_query, fetch=True)
+            inserted_data = self.__insert(to_insert, conn, insert_query, fetch=True)
             # Merge the ids into the result dataframe.
-            result.loc[result[self.id_col_name].isna(), self.id_col_name] = ids
+            result = result.merge(inserted_data, on=to_insert.columns.tolist(), how='left')
 
         return result
 
@@ -92,14 +92,14 @@ class BulkInserter:
         """
         num_batches = len(entries) // self.bulk_size + 1
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
-        sub_id_series = [self.__insert(batch, conn, query, fetch=fetch) for batch in batches]
+        fetched_dataframe = [self.__insert(batch, conn, query, fetch=fetch) for batch in batches]
 
         if not fetch:
             return
 
-        return pd.concat(sub_id_series)
+        return pd.concat(fetched_dataframe)
 
-    def __insert(self, batch: pd.DataFrame, conn, query: str, fetch: bool) -> pd.Series:
+    def __insert(self, batch: pd.DataFrame, conn, query: str, fetch: bool) -> pd.DataFrame:
         """
         Insert a batch into the database and returns database IDs.
 
@@ -118,11 +118,11 @@ class BulkInserter:
         query = query.format(placeholders)
         cursor.execute(query, batch.values.flatten())
 
-        ids = [row[0] for row in cursor.fetchall()] if fetch else None
+        fetched_data = cursor.fetchall() if fetch else None
 
         gal.log_bulk_insertion(self.dimension_name, len(batch))
 
         if not fetch:
             return
 
-        return pd.Series(ids, index=batch.index, dtype='int64')
+        return pd.DataFrame(fetched_data)
