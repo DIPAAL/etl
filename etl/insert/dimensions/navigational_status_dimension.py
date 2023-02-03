@@ -33,7 +33,7 @@ class NavigationalStatusDimensionInserter (BulkInserter):
         insert_query = """
             INSERT INTO dim_nav_status (nav_status)
             VALUES {}
-            RETURNING nav_status_id
+            RETURNING nav_status_id, nav_status
         """
 
         select_query = """
