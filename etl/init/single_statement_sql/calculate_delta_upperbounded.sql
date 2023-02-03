@@ -6,6 +6,10 @@ DECLARE
     i integer;
 BEGIN
     delta := 0;
+	IF array_upper(doubles, 1) < 2 OR array_upper(doubles, 1) IS NULL
+	THEN
+		RETURN delta;
+	END IF;
     FOR i IN 2..array_upper(doubles, 1) LOOP
         -- Try the differences on both sides of upper_bound to find the lowest as the delta
         -- Absolute is inherent from using modulo
