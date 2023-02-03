@@ -415,6 +415,7 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFram
         dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
     time_delta_ns = cur_point[1][TIMESTAMP_COL] - prev_point[1][TIMESTAMP_COL]
+    # To get time_delta in seconds, divide by 1s in nano seconds.
     time_delta = time_delta_ns / np.timedelta64(1, 's')
     # Previous and current point is in the same timestamp, detect it as an outlier
     if time_delta == 0:
