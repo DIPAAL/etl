@@ -110,7 +110,7 @@ FROM (
                         ST_Y ((point).point) cell_y,
                         ST_MakeEnvelope(ST_X((point).point), ST_Y((point).point), ST_X((point).point) + 50, ST_Y((point).point) + 50, 3034) cell_geom,
                         st.ship_id ship_id,
-						st.trajectory trajectory,
+                        st.trajectory trajectory,
                         st.ship_junk_id ship_junk_id,
                         st.nav_status_id nav_status_id,
                         st.trajectory_sub_id trajectory_sub_id,
