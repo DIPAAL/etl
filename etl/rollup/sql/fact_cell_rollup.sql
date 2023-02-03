@@ -22,7 +22,7 @@ SELECT
     CASE WHEN heading IS NULL THEN -1 ELSE calculate_delta((SELECT ARRAY_AGG(LOWER(head)) FROM UNNEST(GETVALUES(heading)) as head)) END delta_heading,
     draught,
     delta_cog,
-    stbox(cell_geom, period(startTime, endTime)) st_bounding_box
+    stbox(cell_geom, crossing_period) st_bounding_box
 FROM (
         SELECT
             get_lowest_json_key(start_edges) entry_direction,
@@ -35,8 +35,8 @@ FROM (
             ship_junk_id,
             nav_status_id,
             trajectory_sub_id,
-            startValue(atPeriod(draught, period(startTime, endTime, true, true))) draught,
-            atPeriod(heading, period(startTime, endTime, true, true)) heading,
+            startValue(atPeriod(draught, crossing_period)) draught,
+            atPeriod(heading, crossing_period) heading,
             startTime,
             endTime,
             delta_cog,
@@ -71,9 +71,10 @@ FROM (
                 ( -- Calculate the Delta COG
                     SELECT SUM(ABS(LOWER(delta))) FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
                 ) AS delta_cog,
-                -- Truncate the entry and exit timestamp to second. Add almost a second to exit value, to be inclusive.
+                -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp(crossing)) startTime,
-                date_trunc('second', endTimestamp(crossing) + INTERVAL '1000000 microseconds') endTime
+                date_trunc('second', endTimestamp(crossing)) endTime,
+                period(startTime, endTime, true, true) crossing_period
             FROM (
                 SELECT
                     unnest(sequences(atGeometry(fdt.trajectory, dc.geom))) crossing,
