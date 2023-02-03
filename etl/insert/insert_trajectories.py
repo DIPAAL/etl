@@ -2,7 +2,7 @@
 import random
 
 import pandas as pd
-from etl.constants import T_SHIP_ID_COL, T_SHIP_JUNK_ID_COL, \
+from etl.constants import T_SHIP_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
     T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_LENGTH_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_SUB_ID_COL, \
     INT32_MAX
@@ -10,7 +10,6 @@ from etl.helper_functions import get_connection
 from etl.insert.bulk_inserter import BulkInserter
 from etl.insert.dimensions.navigational_status_dimension import NavigationalStatusDimensionInserter
 from etl.insert.dimensions.ship_dimension import ShipDimensionInserter
-from etl.insert.dimensions.ship_junk_dimension import ShipJunkDimensionInserter
 from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInserter
 
 
@@ -62,8 +61,6 @@ class TrajectoryInserter (BulkInserter):
         conn = get_connection(config)
 
         df = ShipDimensionInserter("dim_ship", bulk_size=self.bulk_size, id_col_name="ship_id").ensure(df, conn)
-        df = ShipJunkDimensionInserter("dim_ship_junk", bulk_size=self.bulk_size,
-                                       id_col_name="ship_junk_id").ensure(df, conn)
         df = NavigationalStatusDimensionInserter("dim_nav_status", bulk_size=self.bulk_size,
                                                  id_col_name="nav_status_id").ensure(df, conn)
         df = TrajectoryDimensionInserter("dim_trajectory", bulk_size=self.bulk_size).ensure(df, conn)
@@ -82,7 +79,7 @@ class TrajectoryInserter (BulkInserter):
         """
         query = """
             INSERT INTO fact_trajectory (
-                ship_id, trajectory_sub_id, ship_junk_id, nav_status_id,
+                ship_id, trajectory_sub_id, nav_status_id,
                 start_date_id, start_time_id, end_date_id, end_time_id,
                 eta_date_id, eta_time_id,
                 duration, length, infer_stopped
@@ -93,7 +90,6 @@ class TrajectoryInserter (BulkInserter):
         columns = [
             T_SHIP_ID_COL,
             T_TRAJECTORY_SUB_ID_COL,
-            T_SHIP_JUNK_ID_COL,
             T_SHIP_NAVIGATIONAL_STATUS_ID_COL,
             T_START_DATE_COL,
             T_START_TIME_COL,
