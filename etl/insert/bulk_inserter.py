@@ -75,8 +75,11 @@ class BulkInserter:
         # Insert the rows that need to be inserted.
         if not to_insert.empty:
             inserted_data = self.__insert(to_insert, conn, insert_query, fetch=True)
-            # Merge the ids into the result dataframe.
+            # Assign the ids of the inserted rows to the result dataframe joined by the columns in the batch dataframe.
             result = result.merge(inserted_data, on=to_insert.columns.tolist(), how='left')
+
+            # Merge the id column with suffix _x and _y into a single column.
+            result[self.id_col_name] = result[self.id_col_name + '_x'].fillna(result[self.id_col_name + '_y'])
 
         return result
 
@@ -113,16 +116,15 @@ class BulkInserter:
         prepared_row = f"({','.join(['%s'] * column_count)})"
         placeholders = ','.join([prepared_row] * len(batch))
 
-        cursor = conn.cursor()
-
         query = query.format(placeholders)
-        cursor.execute(query, batch.values.flatten())
 
-        fetched_data = cursor.fetchall() if fetch else None
+        result = None
+        if fetch:
+            result = pd.read_sql_query(query, conn, params=batch.values.flatten())
+        else:
+            with conn.cursor() as cursor:
+                cursor.execute(query, batch.values.flatten())
 
         gal.log_bulk_insertion(self.dimension_name, len(batch))
 
-        if not fetch:
-            return
-
-        return pd.DataFrame(fetched_data)
+        return result

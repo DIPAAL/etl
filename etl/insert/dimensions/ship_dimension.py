@@ -37,7 +37,8 @@ class ShipDimensionInserter (BulkInserter):
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d,
             location_system_type, mobile_type, ship_type)
             VALUES {}
-            RETURNING ship_id, mmsi, imo, callsign, name, a, b, c, d, location_system_type, mobile_type, ship_type
+            RETURNING ship_id, mmsi, imo, callsign ship_callsign,
+                name ship_name, a, b, c, d, location_system_type, mobile_type, ship_type
         """
 
         select_query = """
