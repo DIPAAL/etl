@@ -276,10 +276,10 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
     if dataframe.empty:
         return None
 
-    # make a view of the dataframe where the float_column is not the same as the previous row
+    # Remove sequential duplicates, i.e. the values 1, 1, 1, 2, 1, 1 will become 1, 2, 1.
     df = dataframe[dataframe[float_column] != dataframe[float_column].shift()]
 
-    # make a new series where of TFloatInsts by applying the lambda function to each row
+    # Make a new series of TFloatInsts based on the float and timestamp column.
     series = df.apply(
         lambda row: TFloatInst(str(row[float_column]) + '@' + row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)),
         axis=1
