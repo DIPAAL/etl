@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: standalone-clean-etl-${JOB_ID}
+spec:
+  ttlSecondsAfterFinished: 253800
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: standalone-clean-etl-${JOB_ID}
+        image: ${IMAGE_NAME}
+        volumeMounts:
+          - name: ais-raw
+            mountPath: /data
+        command: ["python", "-u", "main.py", "--clean_standalone", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
+      restartPolicy: Never
+      volumes:
+        - name: ais-raw
+          persistentVolumeClaim:
+            claimName: ais-raw
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${NODE_NAME}
+  backoffLimit: 0
