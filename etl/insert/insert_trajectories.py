@@ -81,7 +81,7 @@ class TrajectoryInserter (BulkInserter):
                 ship_id, trajectory_sub_id, nav_status_id,
                 start_date_id, start_time_id, end_date_id, end_time_id,
                 eta_date_id, eta_time_id,
-                duration, length, infer_stopped
+                duration, infer_stopped
             )
             VALUES {}
         """
