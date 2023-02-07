@@ -62,6 +62,11 @@ benchmark:
   script:
     - envsubst < jobs/query-benchmark-job.yml | kubectl apply -f -
 
+clean_standalone:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/standalone-clean-job.yml | kubectl apply -f -
+
 pytest:
   stage: test
   image: docker:latest

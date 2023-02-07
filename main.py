@@ -3,7 +3,9 @@ import sys
 import argparse
 import configparser
 import os
+import pandas as pd
 from datetime import datetime, timedelta
+from typing import Generator, Tuple
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
@@ -30,20 +32,28 @@ def get_config():
     return config
 
 
+def configure_arguments():
+    """Configure the program argument parser."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--init', help='Initialize data warehouse and setup cluster', action='store_true')
+    parser.add_argument('--load', help="Load AIS data from given dates", action="store_true")
+    parser.add_argument('--clean_standalone',
+                        help='Standalone clean AIS data and construct trajectories which are stored as .pkl files',
+                        action='store_true')
+    parser.add_argument('--querybenchmark', help='Perform query benchmark', action='store_true')
+    parser.add_argument('--from_date',
+                        help='The date to load from, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
+    parser.add_argument('--to_date',
+                        help='The date to load to, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
+
+    return parser.parse_args()
+
+
 def main(argv):
     """Execute the main program."""
     config = get_config()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--init", help="Initialize data warehouse and setup cluster", action="store_true")
-    parser.add_argument("--load", help="Load AIS data from given dates", action="store_true")
-    parser.add_argument("--querybenchmark", help="Perform query benchmark", action="store_true")
-    parser.add_argument("--from_date",
-                        help="The date to load from, in the format YYYY-MM-DD, for example 2022-12-31", type=str)
-    parser.add_argument("--to_date",
-                        help="The date to load to, in the format YYYY-MM-DD, for example 2022-12-31", type=str)
-
-    args = parser.parse_args()
+    args = configure_arguments()
 
     date_from = datetime.strptime(args.from_date, '%Y-%m-%d') if args.from_date else None
     date_to = datetime.strptime(args.to_date, '%Y-%m-%d') if args.to_date else None
@@ -51,14 +61,17 @@ def main(argv):
     if args.init:
         wrap_with_timings("Database init", lambda: init_database(config))
 
-    if args.load:
-        load_range(date_from, date_to, config)
+    if args.clean_standalone or args.load:
+        ais_gen = clean_range(date_from, date_to, config, args.clean_standalone)
+        for date, ais_data in ais_gen:
+            load_data(ais_data, date, config) if args.load else None
 
     if args.querybenchmark:
         BenchmarkRunner(config).run_benchmark()
 
 
-def load_range(date_from: datetime, date_to: datetime, config):
+def clean_range(date_from: datetime, date_to: datetime, config, standalone: bool = False) -> \
+        Generator[Tuple[datetime, pd.DataFrame], None, None]:
     """
     Load data for all dates in the given range.
 
@@ -67,6 +80,7 @@ def load_range(date_from: datetime, date_to: datetime, config):
     Arguments:
         date_from: the date to start from
         date_to: the date to end at
+        standalone: whether standalone cleaning is run (default: False)
     """
     # ensure date_from and date_to is set
     if not date_from or not date_to:
@@ -78,33 +92,58 @@ def load_range(date_from: datetime, date_to: datetime, config):
 
     # loop through all dates and clean them
     while date_from <= date_to:
-        wrap_with_timings(f'Cleaning data for {date_from}', lambda: clean_date(date_from, config))
+        yield (date_from, wrap_with_timings(
+                            f'Cleaning data for {date_from}',
+                            lambda: clean_date(date_from, config, standalone)
+                        ))
         date_from += timedelta(days=1)
 
 
-def clean_date(date: datetime, config):
+def clean_date(date: datetime, config, standalone: bool = False) -> pd.DataFrame:
     """
-    Apply cleaning, trajectory construction, and insert/rollup the results.
+    Apply cleaning and trajectory construction.
 
     Arguments:
         date: the date to clean
         config: the application configuration
+        standalone: whether standalone cleaning is run (Default: False)
     """
     file_path = wrap_with_timings(
         "Ensuring file for current date exists",
         lambda: ensure_file_for_date(date, config),
     )
+
     gal.log_file(file_path)  # logs the name, rows and size of the file
 
-    clean_sorted_ais = wrap_with_timings("Data Cleaning", lambda: clean_data(config, file_path),
-                                         audit_etl_stage=ETL_STAGE_CLEAN)
-    gal.log_etl_stage_rows_df("cleaning", clean_sorted_ais)
-    trajectories = wrap_with_timings("Trajectory construction", lambda: build_from_geopandas(clean_sorted_ais),
-                                     audit_etl_stage=ETL_STAGE_TRAJECTORY)
-    gal.log_etl_stage_rows_df("trajectory", trajectories)
+    if file_path.endswith('.pkl'):
+        print(f'Pickle file found for date {date}')
+        return wrap_with_timings('Reading Pre-processed AIS Pickle', lambda: pd.read_pickle(file_path))
 
+    clean_sorted_ais = wrap_with_timings('Data Cleaning', lambda: clean_data(config, file_path),
+                                         audit_etl_stage=ETL_STAGE_CLEAN)
+    gal.log_etl_stage_rows_df('cleaning', clean_sorted_ais)
+    trajectories = wrap_with_timings('Trajectory Construction', lambda: build_from_geopandas(clean_sorted_ais),
+                                     audit_etl_stage=ETL_STAGE_TRAJECTORY)
+    gal.log_etl_stage_rows_df('trajectory', trajectories)
+
+    if standalone:
+        pickle_path = file_path.replace('.csv', '.pkl')
+        wrap_with_timings('Pickle Creation', lambda: trajectories.to_pickle(pickle_path))
+
+    return trajectories
+
+
+def load_data(data: pd.DataFrame, date: datetime, config) -> None:
+    """
+    Insert and rollup the data into the DW.
+
+    Arguments:
+        data: the dataframe containing the data
+        date: the date to insert
+        config: the application config
+    """
     conn = wrap_with_timings("Inserting trajectories",
-                             lambda: TrajectoryInserter("fact_trajectory").persist(trajectories, config),
+                             lambda: TrajectoryInserter("fact_trajectory").persist(data, config),
                              audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)

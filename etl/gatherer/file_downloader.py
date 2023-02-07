@@ -8,6 +8,7 @@ import patoolib
 import requests
 from bs4 import BeautifulSoup
 from etl.helper_functions import wrap_with_timings
+from typing import List
 
 
 @dataclass
@@ -25,6 +26,20 @@ class AisFile:
     url: str
 
 
+def check_file_exists(*paths: List[str]) -> str:
+    """
+    Return first existing path.
+
+    As such, order of arguments matter
+
+    Arguments:
+        *paths: list of file pats
+    """
+    for path in paths:
+        if os.path.isfile(path):
+            return path
+
+
 def ensure_file_for_date(date: datetime, config) -> str:
     """
     Ensure that the file for the given date exists and return the file path.
@@ -35,13 +50,15 @@ def ensure_file_for_date(date: datetime, config) -> str:
         date: the date to ensure the file for
         config: the application configuration
     """
-    expected_filename = f"aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv"
+    expected_filename = f'aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv'
     path = os.path.join(config['DataSource']['ais_path'], expected_filename)
 
-    # First, check if the file exists.
-    if os.path.isfile(path):
-        print(f"File already exists: {path}")
-        return path
+    # First, check if a file exists.
+    pickle_path = path.replace('.csv', '.pkl')
+    file_path = check_file_exists(pickle_path, path)
+    if file_path is not None:
+        print(f'File already exists: {file_path}')
+        return file_path
 
     # The file does not exist, check what files are available from DMA.
     file_names = get_file_names(config['DataSource']['ais_url'])
@@ -49,10 +66,10 @@ def ensure_file_for_date(date: datetime, config) -> str:
     # Check if our current date is in the list of available files.
     # If not, check if the month is in the list of available files.
     if date not in file_names:
-        print(f"File not found for date: {date}. Trying first day of month.")
+        print(f'File not found for date: {date}. Trying first day of month.')
         date = datetime(year=date.year, month=date.month, day=1)
         if date not in file_names:
-            raise Exception(f"File for {date} not found as existing on Danish Maritime Authority website.")
+            raise Exception(f'File for {date} not found as existing on Danish Maritime Authority website.')
 
     # The file exists, download it.
     file = file_names[date]
