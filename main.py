@@ -5,7 +5,7 @@ import configparser
 import os
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Generator, Tuple, Callable
+from typing import Generator, Tuple
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
@@ -63,15 +63,15 @@ def main(argv):
 
     if args.clean_standalone or args.load:
         ais_gen = clean_range(date_from, date_to, config, args.clean_standalone)
-        for date, ais_data_func in ais_gen:
-            load_data(ais_data_func(), date, config) if args.load else ais_data_func()
+        for date, ais_data in ais_gen:
+            load_data(ais_data, date, config) if args.load else None
 
     if args.querybenchmark:
         BenchmarkRunner(config).run_benchmark()
 
 
 def clean_range(date_from: datetime, date_to: datetime, config, standalone: bool = False) -> \
-        Generator[Tuple[datetime, Callable[[], pd.DataFrame]], None, None]:
+        Generator[Tuple[datetime, pd.DataFrame], None, None]:
     """
     Load data for all dates in the given range.
 
@@ -92,7 +92,7 @@ def clean_range(date_from: datetime, date_to: datetime, config, standalone: bool
 
     # loop through all dates and clean them
     while date_from <= date_to:
-        yield (date_from, lambda: wrap_with_timings(
+        yield (date_from, wrap_with_timings(
                             f'Cleaning data for {date_from}',
                             lambda: clean_date(date_from, config, standalone)
                         ))
