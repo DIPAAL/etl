@@ -39,8 +39,6 @@ def check_file_exists(*paths: List[str]) -> str:
         if os.path.isfile(path):
             return path
 
-    return None
-
 
 def ensure_file_for_date(date: datetime, config) -> str:
     """
