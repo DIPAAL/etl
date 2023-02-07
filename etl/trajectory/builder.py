@@ -402,7 +402,7 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
 
-def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFrame), prev_point: (int, gpd.GeoDataFrame),
+def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoSeries), prev_point: (int, gpd.GeoSeries),
                    speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Check whether the current point is an outlier.
