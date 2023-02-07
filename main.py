@@ -113,11 +113,11 @@ def clean_date(date: datetime, config, standalone: bool = False) -> pd.DataFrame
         lambda: ensure_file_for_date(date, config),
     )
 
+    gal.log_file(file_path)  # logs the name, rows and size of the file
+
     if file_path.endswith('.pkl'):
         print(f'Pickle file found for date {date}')
         return wrap_with_timings('Reading Pre-processed AIS Pickle', lambda: pd.read_pickle(file_path))
-
-    gal.log_file(file_path)  # logs the name, rows and size of the file
 
     clean_sorted_ais = wrap_with_timings('Data Cleaning', lambda: clean_data(config, file_path),
                                          audit_etl_stage=ETL_STAGE_CLEAN)

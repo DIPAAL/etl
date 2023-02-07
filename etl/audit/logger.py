@@ -137,7 +137,8 @@ class AuditLogger:
         """
         self.log_dict['file_name'] = os.path.basename(file_path)
         self.log_dict['file_size'] = os.path.getsize(file_path)
-        if self.log_file_rows:
+        # Do not attempt to count the rows of a pickle because it is binary
+        if self.log_file_rows and not file_path.endswith('.pkl'):
             self.log_dict['file_rows'] = self._get_file_rows(file_path)
 
     @staticmethod
