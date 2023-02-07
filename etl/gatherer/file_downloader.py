@@ -55,10 +55,10 @@ def ensure_file_for_date(date: datetime, config) -> str:
 
     # First, check if a file exists.
     pickle_path = path.replace('.csv', '.pkl')
-    fpath = check_file_exists(pickle_path, path)
-    if fpath is not None:
-        print(f'File already exists: {fpath}')
-        return fpath
+    file_path = check_file_exists(pickle_path, path)
+    if file_path is not None:
+        print(f'File already exists: {file_path}')
+        return file_path
 
     # The file does not exist, check what files are available from DMA.
     file_names = get_file_names(config['DataSource']['ais_url'])
