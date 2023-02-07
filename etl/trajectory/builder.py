@@ -427,15 +427,15 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoDataFram
     distance = dist_func(cur_geom.x, cur_geom.y, prev_point_geom.x, prev_point_geom.y)
     computed_speed = distance / time_delta  # m/s
     speed = computed_speed * KNOTS_PER_METER_SECONDS
+    sog = cur_point[1][SOG_COL]
+    speed_to_determine_outlier = sog  # Default to sog
 
     # if SOG is nan, or the delta between calculated and sog is above the threshold, replace it with calculated speed.
-    if np.isnan(cur_point[1][SOG_COL]) or abs(cur_point[1][SOG_COL] - speed) >= COMPUTED_VS_SOG_KNOTS_THRESHOLD:
+    if np.isnan(sog) or abs(sog - speed) >= COMPUTED_VS_SOG_KNOTS_THRESHOLD:
         dataframe.at[cur_point[0], SOG_COL] = speed
-        cur_point = (cur_point[0], dataframe.loc[cur_point[0]])
+        speed_to_determine_outlier = speed
 
-    if cur_point[1][SOG_COL] > speed_threshold:
-        return True
-    return False
+    return speed_to_determine_outlier > speed_threshold
 
 
 def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) -> float:
