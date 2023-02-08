@@ -13,8 +13,7 @@ CREATE TABLE dim_ship (
     mobile_type text,
     ship_type text,
     UNIQUE (imo, mmsi, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type)
-    -- Padding: Text columns round to nearest 4 bytes at the right boundary.
-    -- So worst case is 3 bytes of padding per text column except for the last one.
+    -- Padding: Maybe, at worst 12 bytes. Text attributes will round up to nearest 4 bytes, except the last one.
 );
 
 -- Create index on mmsi

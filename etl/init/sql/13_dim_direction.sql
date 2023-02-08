@@ -3,8 +3,7 @@ CREATE TABLE dim_direction (
     "from" text NOT NULL,
     "to" text NOT NULL,
     UNIQUE ("from", "to")
-    -- Padding: Can be measured given the direction is known.
-    -- Not needed for now, as it would not change order currently.
+    -- Padding: Maybe, at most 3 bytes. "from" attribute will round up to nearest 4 bytes.
 );
 
 WITH directions as (

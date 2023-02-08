@@ -5,7 +5,7 @@ CREATE TABLE
         hour_of_day int,  -- Aligned
         minute_of_hour int,
         second_of_minute int -- Aligned
-        -- Padding: None
+        -- Padding: None. Aligned.
     );
 
 -- Insert unknown time

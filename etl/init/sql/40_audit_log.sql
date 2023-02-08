@@ -22,10 +22,10 @@ CREATE TABLE audit_log (
 
     bulk_insert_delta_time integer, -- Aligned
     -- Padding: None
-    bulk_insert_insertion_stats jsonb,
+
     etl_version text,
     file_name text,
-    requirements text[]
-    -- Padding: Text columns round to nearest 4 bytes at the right boundary.
-    -- So worst case is 3 bytes of padding per text column except for the last one.
+    requirements text[],
+    bulk_insert_insertion_stats jsonb
+    -- Padding: Some, at worst 9 bytes. Text attributes will round up to nearest 4 bytes.
  )

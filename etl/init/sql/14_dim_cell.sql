@@ -3,7 +3,7 @@ CREATE TABLE dim_cell_50m (
     y integer NOT NULL,
     geom geometry NOT NULL,
     PRIMARY KEY (x, y)
-    -- Padding: None. Variable length column is last, no padding is needed.
+    -- Padding: None, as variable length attribute is last.
 );
 
 -- Create the 50m grid

@@ -9,7 +9,7 @@ CREATE TABLE
         month_of_year int,
         quarter_of_year int,
         year int
-        -- Padding: None, data and int are stored in 4 bytes. Serial are also int.
+        -- Padding: None. All columns are same size.
     );
 
 -- Insert unknown date

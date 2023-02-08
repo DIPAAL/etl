@@ -1,5 +1,5 @@
 CREATE TABLE fact_trajectory (
-    duration interval NOT NULL, -- 16 bytes, put first to avoid padding
+    duration interval NOT NULL, -- 16 bytes
 
     ship_id integer NOT NULL,
     start_date_id integer NOT NULL,
