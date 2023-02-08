@@ -8,7 +8,7 @@ CREATE TABLE dim_trajectory
     rot tfloat,
     draught tfloat,
     -- Padding: Some, but unknown. Text attribute will round up to nearest 4 bytes.
-    -- Padding for MobilityDB types is unknown.
+    -- MobilityDB types are variable length, but rounding is unknown.
     PRIMARY KEY (date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (date_id);
 

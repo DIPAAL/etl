@@ -6,14 +6,14 @@ CREATE TABLE dim_ship (
     ship_id serial PRIMARY KEY,
     imo int NOT NULL, -- Aligned
     mmsi int NOT NULL,
-    -- Padding: 4 bytes
+    -- Padding: 8-4 = 4 bytes
     name text,
     callsign text,
     location_system_type text,
     mobile_type text,
     ship_type text,
     UNIQUE (imo, mmsi, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type)
-    -- Padding: Maybe, at worst 12 bytes. Text attributes will round up to nearest 4 bytes, except the last one.
+    -- Padding: Maybe, at worst 12 bytes. Text attributes are variable length and will round up to nearest 4 bytes.
 );
 
 -- Create index on mmsi

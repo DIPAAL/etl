@@ -4,7 +4,7 @@ CREATE TABLE audit_log (
     audit_id serial PRIMARY KEY,
     file_rows integer, -- Aligned
 
-   -- Delta time is the time each stage took to complete in seconds
+    -- Delta time is the time each stage took to complete in seconds
     -- Row count is the number of rows after being processed by each stage with the exception of bulk insert
     total_delta_time integer,
 
