@@ -6,7 +6,7 @@ import pandas as pd
 import math
 from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
@@ -463,7 +463,8 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
 
-def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoSeries), prev_point: (int, gpd.GeoSeries),
+def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: Tuple[int, gpd.GeoSeries],
+                   prev_point: Tuple[int, gpd.GeoSeries],
                    speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Check whether the current point is an outlier.
