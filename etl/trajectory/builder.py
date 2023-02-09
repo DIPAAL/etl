@@ -32,6 +32,9 @@ UNKNOWN_STRING_VALUE = 'Unknown'
 UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
 
+AIS_LONGEST_REPORTING_RATE_MIN = 3  # 3 min
+POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD = (AIS_LONGEST_REPORTING_RATE_MIN * 5) * 60  # 3 min * 5 = 15 min = 900 seconds
+
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     """
@@ -88,6 +91,22 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
     return _construct_moving_trajectory(mmsi, dataframe, 0)
 
 
+def _constraint_time_difference(cur_row: gpd.GeoSeries, prev_row: gpd.GeoSeries) -> bool:
+    """
+    Check if time difference constraint between consequtive AIS point is satisfied.
+
+    Attributes:
+        cur_row: the row containing data for the current AIS data point for the trajectory
+        prev_row: the row containing data for the previous AIS data point in the trajectory
+    """
+    # If there is no previous row, then do not enforce constraint
+    if prev_row is None:
+        return False
+
+    time_diff_dt = cur_row[TIMESTAMP_COL] - prev_row[TIMESTAMP_COL]
+    return time_diff_dt.seconds >= POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
+
+
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
     Construct and returns trajectories from the AIS data as a pandas dataframe.
@@ -120,6 +139,21 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         else:
             # Reset any possible stop because we are currently moving
             idx_cannot_handle = None
+
+        # Check whether split because of time difference
+        prev_idx = idx - 1
+        # Make sure that we do not go past the first point in the current range of values
+        prev_row = trajectory_dataframe.iloc[prev_idx] if prev_idx >= from_idx else None
+        if _constraint_time_difference(row, prev_row):
+            trajectory = _finalize_trajectory(
+                    mmsi,
+                    trajectory_dataframe,
+                    from_idx,
+                    idx,
+                    infer_stopped=False
+                )
+            trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
+            return pd.concat([trajectory, trajectories])
 
     return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                 infer_stopped=False)
@@ -334,6 +368,21 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([stopped_trajectory, trajectories])
+
+        # Check whether split because of time difference
+        prev_idx = idx - 1
+        # Make sure that we do not go past the first point in the current range of values
+        prev_row = trajectory_dataframe.iloc[prev_idx] if prev_idx >= from_idx else None
+        if _constraint_time_difference(row, prev_row):
+            trajectory = _finalize_trajectory(
+                    mmsi,
+                    trajectory_dataframe,
+                    from_idx,
+                    idx,
+                    infer_stopped=True
+                )
+            trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx)
+            return pd.concat([trajectory, trajectories])
 
     stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                               infer_stopped=True)
