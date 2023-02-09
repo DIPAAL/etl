@@ -42,7 +42,7 @@ class TrajectoryInserter (BulkInserter):
 
         # if there were duplicates, make sure to match length of dataframe
         while len(initial) < len(df):
-            initial = initial.append(pd.Series(sampler(range(max), len(df) - len(initial))))
+            initial = pd.concat([initial, pd.Series(sampler(range(max), len(df) - len(initial)))])
             initial = initial[~initial.duplicated()]
         return initial
 
