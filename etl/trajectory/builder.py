@@ -107,6 +107,26 @@ def _constraint_time_difference(cur_row: gpd.GeoSeries, prev_row: gpd.GeoSeries)
     return time_diff_dt.seconds >= POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
 
 
+def _update_stopped_index(cur_sog: float, cur_idx: int, stopped_idx: int) -> int:
+    """
+    Update stopped index based on speed constraint.
+
+    Keyword arguments:
+        cur_sog: Speed over ground of the current AIS data point
+        cur_idx: Index at the currently examined AIS data point
+        stopped_idx: Index to AIS point where a ship is suspected of having stopped
+    """
+    if cur_sog >= STOPPED_KNOTS_THRESHOLD:
+        # Reset any possible stop because we are currently moving
+        return None
+    elif stopped_idx is None:
+        # We have a new possible stop
+        return cur_idx
+    else:
+        # We already have a possible stop
+        return stopped_idx
+
+
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
     Construct and returns trajectories from the AIS data as a pandas dataframe.
@@ -120,25 +140,17 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
     for idx in range(from_idx, len(trajectory_dataframe.index)):
         row = trajectory_dataframe.iloc[idx]
 
-        # Has the ship possibly stopped?
-        if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
-            # Have we already detected a possible stop?
-            if idx_cannot_handle is not None:
-                current_date = row[TIMESTAMP_COL]
-                prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
-                # How long has the ship been stopped for?
-                if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
-                    trajectory = _finalize_trajectory(
-                        mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
-                    )
-                    trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
-                    return pd.concat([trajectory, trajectories])
-            else:
-                # We have a possible stop
-                idx_cannot_handle = idx
-        else:
-            # Reset any possible stop because we are currently moving
-            idx_cannot_handle = None
+        idx_cannot_handle = _update_stopped_index(row[SOG_COL], idx, idx_cannot_handle)
+        if idx_cannot_handle is not None:
+            current_date = row[TIMESTAMP_COL]
+            prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+            # How long has the ship been stopped for?
+            if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                trajectory = _finalize_trajectory(
+                    mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
+                )
+                trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
+                return pd.concat([trajectory, trajectories])
 
         # Check whether split because of time difference
         prev_idx = idx - 1
