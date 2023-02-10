@@ -10,8 +10,8 @@ from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS, \
-    _update_stopped_index, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
-from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL, T_LENGTH_COL
+    _update_cannot_handle, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
+from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
     T_TRAJECTORY_COL, T_DESTINATION_COL, T_DURATION_COL, T_HEADING_COL, T_DRAUGHT_COL, T_MOBILE_TYPE_COL, \
@@ -40,7 +40,7 @@ def test_create_trajectory_db_df():
     test_df = _create_trajectory_db_df()
     columns_dtype_int64 = [T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL,
                            T_ETA_TIME_COL, T_IMO_COL, T_MMSI_COL]
-    columns_dtype_float64 = [T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_LENGTH_COL]
+    columns_dtype_float64 = [T_A_COL, T_B_COL, T_C_COL, T_D_COL]
     columns_dtype_object = [T_DRAUGHT_COL, T_NAVIGATIONAL_STATUS_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, T_ROT_COL,
                             T_HEADING_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL]
     columns_dtype_timedelta = [T_DURATION_COL]
@@ -228,16 +228,6 @@ def test_point_to_trajectory_threshold_above_returns_trajectory():
     assert expected_dataframe_size == len(result_frame.index)
 
 
-def test_point_to_trajectory_correct_length():
-    ferry_dataframe = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(ANE_LAESOE_FERRY_DATA).compute())
-    result_dataframe = build_from_geopandas(ferry_dataframe)
-    total_length = result_dataframe[T_LENGTH_COL].sum()
-
-    expected_length = 27345
-
-    assert abs(total_length - expected_length) < 1
-
-
 def create_nan_test_dataframe(float_values: List[float]) -> gpd.GeoDataFrame:
     col_1 = 'col_1'
     values_size = len(float_values)
@@ -292,7 +282,7 @@ def test_time_diff_split_constraint(test_file, expected_stopped, expected_moving
     assert expected_stopped == len(stopped_result)
 
 
-test_updated_stopped_data = [
+test_update_cannot_handle_data = [
     (STOPPED_KNOTS_THRESHOLD, 0, 0, None),
     (STOPPED_KNOTS_THRESHOLD + 0.1, 0, 0, None),
     (STOPPED_KNOTS_THRESHOLD + 0.2, 10, 5, None),
@@ -304,11 +294,18 @@ test_updated_stopped_data = [
 ]
 
 
-@pytest.mark.parametrize('sog, idx, stp_idx, expected_stp_idx', test_updated_stopped_data)
-def test_updated_stopped_index(sog: float, idx: int, stp_idx: int, expected_stp_idx: int):
-    result = _update_stopped_index(sog, idx, stp_idx)
+@pytest.mark.parametrize('sog, cur_idx, cannot_handle_idx, expected_idx', test_update_cannot_handle_data)
+def test_update_cannot_handle(sog: float, cur_idx: int, cannot_handle_idx: int, expected_idx: int):
+    date_and_time = pd.to_datetime('01/01/1970 10:00:00', format='%d/%m/%Y %H:%M:%S')
+    cur_row = pd.Series(data={
+        TIMESTAMP_COL: date_and_time,
+        SOG_COL: sog
+    })
+    cannot_handle = None if cannot_handle_idx is None else (cannot_handle_idx, date_and_time)
 
-    assert expected_stp_idx == result
+    result = _update_cannot_handle(cur_row, cur_idx, cannot_handle)
+
+    assert expected_idx == result[0] if expected_idx is not None else result is None
 
 
 test_constraint_time_difference_data = [

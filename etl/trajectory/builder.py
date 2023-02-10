@@ -10,8 +10,7 @@ from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
-    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, T_LENGTH_COL, \
-    TRAJECTORY_SRID
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, TRAJECTORY_SRID
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -107,24 +106,25 @@ def _constraint_time_difference(cur_row: gpd.GeoSeries, prev_row: gpd.GeoSeries)
     return time_diff_dt.seconds >= POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
 
 
-def _update_stopped_index(cur_sog: float, cur_idx: int, stopped_idx: int) -> int:
+def _update_cannot_handle(cur_row: gpd.GeoSeries, cur_idx: int, cannot_handle: Tuple[int, datetime]) \
+        -> Tuple[int, datetime]:
     """
     Update stopped index based on speed constraint.
 
     Keyword arguments:
-        cur_sog: Speed over ground of the current AIS data point
-        cur_idx: Index at the currently examined AIS data point
-        stopped_idx: Index to AIS point where a ship is suspected of having stopped
+        cur_row: the row containing data for the current AIS data point for the trajectory
+        cur_idx: index at the currently examined AIS data point
+        cannot_handle: original tuple indicating if a ship is suspected of being stopped
     """
-    if cur_sog >= STOPPED_KNOTS_THRESHOLD:
+    if cur_row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
         # Reset any possible stop because we are currently moving
         return None
-    elif stopped_idx is None:
+    elif cannot_handle is None:
         # We have a new possible stop
-        return cur_idx
+        return (cur_idx, cur_row[TIMESTAMP_COL])
     else:
         # We already have a possible stop
-        return stopped_idx
+        return cannot_handle
 
 
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
@@ -136,36 +136,34 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
         from_idx: the index to start creating trajectories from
     """
-    idx_cannot_handle = None
-    for idx in range(from_idx, len(trajectory_dataframe.index)):
-        row = trajectory_dataframe.iloc[idx]
-
-        idx_cannot_handle = _update_stopped_index(row[SOG_COL], idx, idx_cannot_handle)
-        if idx_cannot_handle is not None:
+    cannot_handle = None
+    prev_row = None
+    for idx, row in trajectory_dataframe.iloc[from_idx:].iterrows():
+        cannot_handle = _update_cannot_handle(row, idx, cannot_handle)
+        # Has the ship possibly stopped?
+        if cannot_handle is not None:
             current_date = row[TIMESTAMP_COL]
-            prev_date = trajectory_dataframe.iloc[idx_cannot_handle][TIMESTAMP_COL]
+            prev_date = cannot_handle[1]
             # How long has the ship been stopped for?
             if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
                 trajectory = _finalize_trajectory(
-                    mmsi, trajectory_dataframe, from_idx, idx_cannot_handle, infer_stopped=False
+                    mmsi, trajectory_dataframe, from_idx, cannot_handle[0], infer_stopped=False
                 )
-                trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx_cannot_handle)
+                trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, cannot_handle[0])
                 return pd.concat([trajectory, trajectories])
 
-        # Check whether split because of time difference
-        prev_idx = idx - 1
-        # Make sure that we do not go past the first point in the current range of values
-        prev_row = trajectory_dataframe.iloc[prev_idx] if prev_idx >= from_idx else None
-        if _constraint_time_difference(row, prev_row):
+        if prev_row is not None and _constraint_time_difference(row, prev_row):
             trajectory = _finalize_trajectory(
-                    mmsi,
-                    trajectory_dataframe,
-                    from_idx,
-                    idx,
-                    infer_stopped=False
-                )
+                mmsi,
+                trajectory_dataframe,
+                from_idx,
+                idx,
+                infer_stopped=False
+            )
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([trajectory, trajectories])
+
+        prev_row = row
 
     return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                 infer_stopped=False)
@@ -254,10 +252,6 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
-    # Metadata
-    # The total delta length of all points in the trajectory
-    total_length = _calculate_delta_length(working_dataframe)
-
     return pd.concat([dataframe, _create_trajectory_db_df(dict={
         T_START_DATE_COL: start_date_id,
         T_START_TIME_COL: start_time_id,
@@ -286,8 +280,6 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_B_COL: b,
         T_C_COL: c,
         T_D_COL: d,
-        # Metadata
-        T_LENGTH_COL: total_length
     })])
 
 
@@ -330,14 +322,16 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
     if dataframe.empty:
         return None
 
-    tfloat_lst = []
-    for _, row in dataframe.iterrows():
+    # Remove sequential duplicates, i.e. the values 1, 1, 1, 2, 1, 1 will become 1, 2, 1.
+    df = dataframe[dataframe[float_column] != dataframe[float_column].shift()]
 
-        mobilitydb_timestamp = row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)
-        float_val = str(row[float_column])
-        tfloat_lst.append(TFloatInst(str(float_val + '@' + mobilitydb_timestamp)))
+    # Make a new series of TFloatInsts based on the float and timestamp column.
+    series = df.apply(
+        lambda row: TFloatInst(str(row[float_column]) + '@' + row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)),
+        axis=1
+    )
 
-    return TFloatInstSet(*tfloat_lst)
+    return TFloatInstSet(series.tolist())
 
 
 def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:
@@ -352,18 +346,6 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 
-def _calculate_delta_length(dataframe: gpd.GeoDataFrame) -> float:
-    """
-    Calculate the total delta length of all points in the trajectory.
-
-    Keyword arguments:
-        dataframe: dataframe containing the data to calculate delta length for
-    """
-    # Extract geometry column as a GeoSeries with CRS for meters
-    point_gs = dataframe[GEO_PANDAS_GEOMETRY_COL].to_crs(COORDINATE_REFERENCE_SYSTEM_METERS)
-    return point_gs.distance(point_gs.shift(1)).sum()
-
-
 def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
     Construct and returns trajectories as a pandas dataframe from the AIS data.
@@ -373,9 +355,7 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
         trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
         from_idx: the index to start creating trajectories from
     """
-    for idx in range(from_idx, len(trajectory_dataframe.index)):
-        row = trajectory_dataframe.iloc[idx]
-
+    for idx, row in trajectory_dataframe.iloc[from_idx:].iterrows():
         if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
@@ -557,6 +537,4 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_B_COL: pd.Series(dtype='float64', data=dict[T_B_COL] if T_B_COL in dict else []),
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
         T_D_COL: pd.Series(dtype='float64', data=dict[T_D_COL] if T_D_COL in dict else []),
-        # Metadata
-        T_LENGTH_COL: pd.Series(dtype='float64', data=dict[T_LENGTH_COL] if T_LENGTH_COL in dict else []),
     })
