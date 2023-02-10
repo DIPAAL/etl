@@ -267,7 +267,8 @@ def test_nan_values_removed(test_frame, defaulted, remove, expected_number_of_va
 test_time_diff_split_data = [
     ('tests/data/no_split_ferry.csv', 1, 0),
     ('tests/data/1s_split_ferry.csv', 2, 0),
-    ('tests/data/1m_split_ferry.csv', 0, 2)
+    ('tests/data/1m_split_ferry.csv', 0, 2),
+    ('tests/data/1m_1s_split_ferry.csv', 2, 2)
 ]
 
 
