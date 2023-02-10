@@ -1,10 +1,10 @@
 CREATE TABLE dim_ship (
-    a float, -- 8 bytes
+    a float,
     b float,
     c float,
     d float,
     ship_id serial PRIMARY KEY,
-    imo int NOT NULL, -- Aligned
+    imo int NOT NULL,
     mmsi int NOT NULL,
     -- Padding: 8-4 = 4 bytes
     name text,

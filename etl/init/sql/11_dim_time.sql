@@ -1,10 +1,10 @@
 CREATE TABLE
     dim_time (
-        time time, -- 8 bytes
+        time time,
         time_id integer PRIMARY KEY,
-        hour_of_day int,  -- Aligned
+        hour_of_day int,
         minute_of_hour int,
-        second_of_minute int -- Aligned
+        second_of_minute int
         -- Padding: None. Aligned.
     );
 

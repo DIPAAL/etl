@@ -1,5 +1,5 @@
 CREATE TABLE fact_cell (
-    st_bounding_box stbox NOT NULL, -- 80 bytes
+    st_bounding_box stbox NOT NULL,
 
     sog float NOT NULL,
     delta_heading float,
@@ -7,14 +7,14 @@ CREATE TABLE fact_cell (
     delta_cog float,
 
     cell_x integer NOT NULL,
-    cell_y integer NOT NULL, -- Aligned
+    cell_y integer NOT NULL,
     ship_id integer NOT NULL,
-    entry_date_id integer NOT NULL, -- Aligned
+    entry_date_id integer NOT NULL,
     entry_time_id integer NOT NULL,
-    exit_date_id integer NOT NULL, -- Aligned
+    exit_date_id integer NOT NULL,
     exit_time_id integer NOT NULL,
-    trajectory_sub_id integer NOT NULL, -- Aligned
-    direction_id smallint NOT NULL, -- 2 bytes
+    trajectory_sub_id integer NOT NULL,
+    direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
     -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
 
