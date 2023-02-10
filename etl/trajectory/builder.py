@@ -355,17 +355,14 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
         trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
         from_idx: the index to start creating trajectories from
     """
+    prev_row = None
     for idx, row in trajectory_dataframe.iloc[from_idx:].iterrows():
         if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([stopped_trajectory, trajectories])
 
-        # Check whether split because of time difference
-        prev_idx = idx - 1
-        # Make sure that we do not go past the first point in the current range of values
-        prev_row = trajectory_dataframe.iloc[prev_idx] if prev_idx >= from_idx else None
-        if _constraint_time_difference(row, prev_row):
+        if prev_row is not None and _constraint_time_difference(row, prev_row):
             trajectory = _finalize_trajectory(
                     mmsi,
                     trajectory_dataframe,
@@ -375,6 +372,9 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
                 )
             trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([trajectory, trajectories])
+
+        # Update the previous row
+        prev_row = row
 
     stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                               infer_stopped=True)
