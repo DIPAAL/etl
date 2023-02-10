@@ -9,6 +9,7 @@ CREATE TABLE
         month_of_year int,
         quarter_of_year int,
         year int
+        -- Padding: None. All attributes are the same type.
     );
 
 -- Insert unknown date

@@ -1,8 +1,12 @@
 CREATE TABLE dim_direction (
     direction_id smallserial PRIMARY KEY,
-    "from" text NOT NULL,
+    "from" text NOT NULL, -- Between 4 and 6 bytes, as "West" is the shortest and "Unknown" is the longest
+    -- Padding: Up to 3 bytes due to int alignment of text attributes.
     "to" text NOT NULL,
+    -- Padding: None, as it is the last attribute.
     UNIQUE ("from", "to")
+
+
 );
 
 WITH directions as (

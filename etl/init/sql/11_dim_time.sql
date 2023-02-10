@@ -1,10 +1,11 @@
 CREATE TABLE
     dim_time (
-        time_id integer PRIMARY KEY,
         time time,
+        time_id integer PRIMARY KEY,
         hour_of_day int,
         minute_of_hour int,
         second_of_minute int
+        -- Padding: None. Aligned.
     );
 
 -- Insert unknown time

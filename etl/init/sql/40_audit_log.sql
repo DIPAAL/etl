@@ -1,15 +1,13 @@
 CREATE TABLE audit_log (
-    audit_id serial PRIMARY KEY,
-    import_datetime timestamp,
-    etl_version text,
-    requirements text[],
-
-    file_name text,
     file_size bigint,
+    import_datetime timestamp,
+    audit_id serial PRIMARY KEY,
     file_rows integer,
 
     -- Delta time is the time each stage took to complete in seconds
     -- Row count is the number of rows after being processed by each stage with the exception of bulk insert
+    total_delta_time integer,
+
     cleaning_delta_time integer,
     cleaning_rows integer,
 
@@ -23,7 +21,11 @@ CREATE TABLE audit_log (
     cell_construct_rows integer,
 
     bulk_insert_delta_time integer,
-    bulk_insert_insertion_stats jsonb,
+    -- Padding: None. Aligned.
 
-    total_delta_time integer
-)
+    etl_version text,
+    file_name text,
+    requirements text[],
+    bulk_insert_insertion_stats jsonb
+    -- Padding: Some, at worst 9 bytes. Text attributes will round up to nearest 4 bytes.
+ )

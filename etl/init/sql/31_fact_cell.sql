@@ -1,4 +1,11 @@
 CREATE TABLE fact_cell (
+    st_bounding_box stbox NOT NULL,
+
+    sog float NOT NULL,
+    delta_heading float,
+    draught float,
+    delta_cog float,
+
     cell_x integer NOT NULL,
     cell_y integer NOT NULL,
     ship_id integer NOT NULL,
@@ -6,16 +13,12 @@ CREATE TABLE fact_cell (
     entry_time_id integer NOT NULL,
     exit_date_id integer NOT NULL,
     exit_time_id integer NOT NULL,
+    trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
-    trajectory_sub_id integer NOT NULL,
-    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
+    -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    st_bounding_box stbox NOT NULL,
-    sog float NOT NULL,
-    delta_heading float,
-    draught float,
-    delta_cog float,
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
 
     FOREIGN KEY (cell_x, cell_y) REFERENCES dim_cell_50m(x,y),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
