@@ -6,7 +6,7 @@ import pandas as pd
 import math
 from datetime import datetime
 from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
@@ -30,6 +30,9 @@ POINTS_FOR_TRAJECTORY_THRESHOLD = 2  # P=2
 UNKNOWN_STRING_VALUE = 'Unknown'
 UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
+
+AIS_LONGEST_REPORTING_RATE_MIN = 3  # 3 min
+POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD = (AIS_LONGEST_REPORTING_RATE_MIN * 5) * 60  # 3 min * 5 = 15 min = 900 seconds
 
 
 def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
@@ -87,6 +90,43 @@ def _create_trajectory(grouped_data) -> pd.DataFrame:
     return _construct_moving_trajectory(mmsi, dataframe, 0)
 
 
+def _constraint_time_difference(cur_row: gpd.GeoSeries, prev_row: gpd.GeoSeries) -> bool:
+    """
+    Check if time difference constraint between consequtive AIS point is satisfied.
+
+    Attributes:
+        cur_row: the row containing data for the current AIS data point for the trajectory
+        prev_row: the row containing data for the previous AIS data point in the trajectory
+    """
+    # If there is no previous row, then do not enforce constraint
+    if prev_row is None:
+        return False
+
+    time_diff_dt = cur_row[TIMESTAMP_COL] - prev_row[TIMESTAMP_COL]
+    return time_diff_dt.seconds >= POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
+
+
+def _update_cannot_handle(cur_row: gpd.GeoSeries, cur_idx: int, cannot_handle: Tuple[int, datetime]) \
+        -> Tuple[int, datetime]:
+    """
+    Update stopped index based on speed constraint.
+
+    Keyword arguments:
+        cur_row: the row containing data for the current AIS data point for the trajectory
+        cur_idx: index at the currently examined AIS data point
+        cannot_handle: original tuple indicating if a ship is suspected of being stopped
+    """
+    if cur_row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
+        # Reset any possible stop because we are currently moving
+        return None
+    elif cannot_handle is None:
+        # We have a new possible stop
+        return (cur_idx, cur_row[TIMESTAMP_COL])
+    else:
+        # We already have a possible stop
+        return cannot_handle
+
+
 def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from_idx: int) -> pd.DataFrame:
     """
     Construct and returns trajectories from the AIS data as a pandas dataframe.
@@ -97,27 +137,33 @@ def _construct_moving_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFra
         from_idx: the index to start creating trajectories from
     """
     cannot_handle = None
+    prev_row = None
     for idx, row in trajectory_dataframe.iloc[from_idx:].iterrows():
-
+        cannot_handle = _update_cannot_handle(row, idx, cannot_handle)
         # Has the ship possibly stopped?
-        if row[SOG_COL] < STOPPED_KNOTS_THRESHOLD:
-            # Have we already detected a possible stop?
-            if cannot_handle is not None:
-                current_date = row[TIMESTAMP_COL]
-                prev_date = cannot_handle[1]
-                # How long has the ship been stopped for?
-                if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
-                    trajectory = _finalize_trajectory(
-                        mmsi, trajectory_dataframe, from_idx, cannot_handle[0], infer_stopped=False
-                    )
-                    trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, cannot_handle[0])
-                    return pd.concat([trajectory, trajectories])
-            else:
-                # We have a possible stop
-                cannot_handle = (idx, row[TIMESTAMP_COL])
-        else:
-            # Reset any possible stop because we are currently moving
-            cannot_handle = None
+        if cannot_handle is not None:
+            current_date = row[TIMESTAMP_COL]
+            prev_date = cannot_handle[1]
+            # How long has the ship been stopped for?
+            if (current_date - prev_date).seconds >= STOPPED_TIME_SECONDS_THRESHOLD:
+                trajectory = _finalize_trajectory(
+                    mmsi, trajectory_dataframe, from_idx, cannot_handle[0], infer_stopped=False
+                )
+                trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, cannot_handle[0])
+                return pd.concat([trajectory, trajectories])
+
+        if prev_row is not None and _constraint_time_difference(row, prev_row):
+            trajectory = _finalize_trajectory(
+                mmsi,
+                trajectory_dataframe,
+                from_idx,
+                idx,
+                infer_stopped=False
+            )
+            trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
+            return pd.concat([trajectory, trajectories])
+
+        prev_row = row
 
     return _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                 infer_stopped=False)
@@ -309,11 +355,26 @@ def _construct_stopped_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFr
         trajectory_dataframe: geopandas dataframe containing AIS points for a single ship
         from_idx: the index to start creating trajectories from
     """
+    prev_row = None
     for idx, row in trajectory_dataframe.iloc[from_idx:].iterrows():
         if row[SOG_COL] >= STOPPED_KNOTS_THRESHOLD:
             stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, idx, infer_stopped=True)
             trajectories = _construct_moving_trajectory(mmsi, trajectory_dataframe, idx)
             return pd.concat([stopped_trajectory, trajectories])
+
+        if prev_row is not None and _constraint_time_difference(row, prev_row):
+            trajectory = _finalize_trajectory(
+                    mmsi,
+                    trajectory_dataframe,
+                    from_idx,
+                    idx,
+                    infer_stopped=True
+                )
+            trajectories = _construct_stopped_trajectory(mmsi, trajectory_dataframe, idx)
+            return pd.concat([trajectory, trajectories])
+
+        # Update the previous row
+        prev_row = row
 
     stopped_trajectory = _finalize_trajectory(mmsi, trajectory_dataframe, from_idx, len(trajectory_dataframe.index),
                                               infer_stopped=True)
@@ -382,7 +443,8 @@ def _remove_outliers(dataframe: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return dataframe.to_crs(COORDINATE_REFERENCE_SYSTEM)
 
 
-def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: (int, gpd.GeoSeries), prev_point: (int, gpd.GeoSeries),
+def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: Tuple[int, gpd.GeoSeries],
+                   prev_point: Tuple[int, gpd.GeoSeries],
                    speed_threshold: float, dist_func: Callable[[float, float, float, float], float]) -> bool:
     """
     Check whether the current point is an outlier.

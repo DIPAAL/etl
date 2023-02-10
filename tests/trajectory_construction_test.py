@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
-    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS
+    POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS, \
+    _update_cannot_handle, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
 from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
@@ -261,3 +262,71 @@ def test_nan_values_removed(test_frame, defaulted, remove, expected_number_of_va
 
     assert expected_number_of_values == actual.numInstants
     assert original_num_values == len(test_frame)  # Test original frame has not been changed
+
+
+test_time_diff_split_data = [
+    ('tests/data/no_split_ferry.csv', 1, 0),
+    ('tests/data/1s_split_ferry.csv', 2, 0),
+    ('tests/data/1m_split_ferry.csv', 0, 2),
+    ('tests/data/1m_1s_split_ferry.csv', 2, 2)
+]
+
+
+@pytest.mark.parametrize('test_file, expected_stopped, expected_moving', test_time_diff_split_data)
+def test_time_diff_split_constraint(test_file, expected_stopped, expected_moving):
+    dirty_df = rebuild_to_geodataframe(create_dirty_df_from_ais_csv(test_file).compute())
+    resulting_trajectories = build_from_geopandas(dirty_df)
+    moving_result = resulting_trajectories[~resulting_trajectories[T_INFER_STOPPED_COL]]
+    stopped_result = resulting_trajectories[resulting_trajectories[T_INFER_STOPPED_COL]]
+
+    assert expected_moving == len(moving_result)
+    assert expected_stopped == len(stopped_result)
+
+
+test_update_cannot_handle_data = [
+    (STOPPED_KNOTS_THRESHOLD, 0, 0, None),
+    (STOPPED_KNOTS_THRESHOLD + 0.1, 0, 0, None),
+    (STOPPED_KNOTS_THRESHOLD + 0.2, 10, 5, None),
+    (STOPPED_KNOTS_THRESHOLD - 0.2, 0, None, 0),
+    (STOPPED_KNOTS_THRESHOLD - 0.1, 0, 0, 0),
+    (STOPPED_KNOTS_THRESHOLD - 0.2, 5, None, 5),
+    (STOPPED_KNOTS_THRESHOLD - 0.2, 0, None, 0),
+    (STOPPED_KNOTS_THRESHOLD - 0.3, 10, 3, 3)
+]
+
+
+@pytest.mark.parametrize('sog, cur_idx, cannot_handle_idx, expected_idx', test_update_cannot_handle_data)
+def test_update_cannot_handle(sog: float, cur_idx: int, cannot_handle_idx: int, expected_idx: int):
+    date_and_time = pd.to_datetime('01/01/1970 10:00:00', format='%d/%m/%Y %H:%M:%S')
+    cur_row = pd.Series(data={
+        TIMESTAMP_COL: date_and_time,
+        SOG_COL: sog
+    })
+    cannot_handle = None if cannot_handle_idx is None else (cannot_handle_idx, date_and_time)
+
+    result = _update_cannot_handle(cur_row, cur_idx, cannot_handle)
+
+    assert expected_idx == result[0] if expected_idx is not None else result is None
+
+
+test_constraint_time_difference_data = [
+    ('10/10/2010 10:10:10', None, False),
+    ('10/10/2010 10:10:10', 0, False),
+    ('10/10/2010 10:10:10', POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD - 1, False),
+    ('10/10/2010 10:10:10', POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD, True),
+    ('10/10/2010 10:10:10', POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD + 1, True),
+]
+
+
+@pytest.mark.parametrize('time_str, seconds_to_add, expected', test_constraint_time_difference_data)
+def test_constraint_time_difference(time_str: str, seconds_to_add: int, expected: bool):
+    start_timestamp = datetime.strptime(time_str, '%d/%m/%Y %H:%M:%S')
+    prev = pd.Series(data={TIMESTAMP_COL: start_timestamp}) if seconds_to_add is not None else None
+
+    end_timestamp = start_timestamp + timedelta(seconds=seconds_to_add) \
+        if seconds_to_add is not None else start_timestamp
+    cur = pd.Series(data={TIMESTAMP_COL: end_timestamp})
+
+    result = _constraint_time_difference(cur, prev)
+
+    assert expected == result
