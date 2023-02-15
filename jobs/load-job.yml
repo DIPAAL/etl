@@ -14,7 +14,7 @@ spec:
         volumeMounts:
           - name: ais-raw
             mountPath: /data
-        command: ["python", "-u", "main.py", "--load", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
+        command: ["./main_wrapper.sh", "--load", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
       restartPolicy: Never
       volumes:
         - name: ais-raw
