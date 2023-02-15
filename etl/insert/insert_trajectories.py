@@ -4,8 +4,7 @@ import random
 import pandas as pd
 from etl.constants import T_SHIP_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
-    T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_LENGTH_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_SUB_ID_COL, \
-    INT32_MAX
+    T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_SUB_ID_COL, INT32_MAX
 from etl.helper_functions import get_connection
 from etl.insert.bulk_inserter import BulkInserter
 from etl.insert.dimensions.navigational_status_dimension import NavigationalStatusDimensionInserter
@@ -42,7 +41,7 @@ class TrajectoryInserter (BulkInserter):
 
         # if there were duplicates, make sure to match length of dataframe
         while len(initial) < len(df):
-            initial = initial.append(pd.Series(sampler(range(max), len(df) - len(initial))))
+            initial = pd.concat([initial, pd.Series(sampler(range(max), len(df) - len(initial)))])
             initial = initial[~initial.duplicated()]
         return initial
 
@@ -82,7 +81,7 @@ class TrajectoryInserter (BulkInserter):
                 ship_id, trajectory_sub_id, nav_status_id,
                 start_date_id, start_time_id, end_date_id, end_time_id,
                 eta_date_id, eta_time_id,
-                duration, length, infer_stopped
+                duration, infer_stopped
             )
             VALUES {}
         """
@@ -98,7 +97,6 @@ class TrajectoryInserter (BulkInserter):
             T_ETA_DATE_COL,
             T_ETA_TIME_COL,
             T_DURATION_COL,
-            T_LENGTH_COL,
             T_INFER_STOPPED_COL
         ]
 

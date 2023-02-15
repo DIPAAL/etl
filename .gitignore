@@ -2,6 +2,7 @@ config-local.properties
 # .idea but not runConfigurations
 .idea/*
 !/.idea/runConfigurations
+.vscode/*
 # Virtual python environment
 .venv
 # any __pycache__ and .pyc files
@@ -11,6 +12,7 @@ __pycache__/
 .tmp
 # Folder for gitlab-ci-local (run pipeline locally)
 .gitlab-ci-local
+
 
 # Code coverage reports
 **/p_coverage.xml

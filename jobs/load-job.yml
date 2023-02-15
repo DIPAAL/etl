@@ -19,7 +19,7 @@ spec:
       volumes:
         - name: ais-raw
           persistentVolumeClaim:
-            claimName: ais-raw
+            claimName: ais-raw-pkl
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
