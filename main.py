@@ -41,11 +41,11 @@ def configure_arguments():
                         help='Standalone clean AIS data and construct trajectories which are stored as .pkl files',
                         action='store_true')
     parser.add_argument('--querybenchmark', help='Perform query benchmark', action='store_true')
+    parser.add_argument('--ensure_files', help='Runs the file downloader for a given date range.', action='store_true')
     parser.add_argument('--from_date',
                         help='The date to load from, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
     parser.add_argument('--to_date',
                         help='The date to load to, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
-    parser.add_argument('--ensure_files', help='Runs the file downloader for a given date range.')
 
     return parser.parse_args()
 
