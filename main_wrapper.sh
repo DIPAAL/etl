@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This is a shell script that should wrap the python script to avoid memory leaks
 
@@ -20,11 +21,6 @@ while [ "$from_date" != "$to_date" ]; do
 
     # run python and redirect stdout and stderr to stdout and stderr of this script
     python3 -u main.py $args --from_date $from_date --to_date $from_date 1>&1 2>&1
-
-    # if exit code is not 0, exit with the same exit code
-    if [ $? -ne 0 ]; then
-        exit $?
-    fi
 
     from_date=$(date -d "$from_date + 1 day" +%Y-%m-%d)
 done
