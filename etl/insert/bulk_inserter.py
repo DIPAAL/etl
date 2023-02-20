@@ -15,7 +15,7 @@ class BulkInserter:
 
     """
 
-    def __init__(self, dimension_name: str, bulk_size: int = 1000, id_col_name: str = None):
+    def __init__(self, dimension_name: str, bulk_size: int = 10000, id_col_name: str = None):
         """
         Construct an instance of the BulkInserter class.
 

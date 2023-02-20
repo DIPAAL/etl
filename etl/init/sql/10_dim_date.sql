@@ -29,4 +29,4 @@ SELECT
     EXTRACT(QUARTER FROM date),
     EXTRACT(YEAR FROM date)
 FROM
-    generate_series('2015-01-01'::date, '2026-01-01'::date, '1 day') AS date;
+    generate_series('2022-01-01'::date, '2023-01-01'::date, '1 day') AS date;

@@ -61,6 +61,7 @@ def create_fact_partitions(config):
     cur = conn.cursor()
     # create monthly partitions for fact table for each dim_date
     cur.execute("SELECT DISTINCT year, month_of_year FROM dim_date ORDER BY year, month_of_year;")
+
     for date in cur.fetchall():
         year, month = date
         # 0 pad month to 2 digits
@@ -70,14 +71,30 @@ def create_fact_partitions(config):
             continue
         smart_key = int(f"{year}{month}00")
         # add 99 to the smart key, as the last two digits are reserved for the day
+
         cur.execute(f"""
             CREATE TABLE fact_trajectory_{year}_{month}
             PARTITION OF fact_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
 
         cur.execute(f"""
-            CREATE TABLE fact_cell_{year}_{month}
-            PARTITION OF fact_cell FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+            CREATE TABLE fact_cell_50m_{year}_{month}
+            PARTITION OF fact_cell_50m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+        """)
+
+        cur.execute(f"""
+            CREATE TABLE fact_cell_200m_{year}_{month}
+            PARTITION OF fact_cell_200m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+        """)
+
+        cur.execute(f"""
+            CREATE TABLE fact_cell_1000m_{year}_{month}
+            PARTITION OF fact_cell_1000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+        """)
+
+        cur.execute(f"""
+            CREATE TABLE fact_cell_5000m_{year}_{month}
+            PARTITION OF fact_cell_5000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
 
         cur.execute(f"""
