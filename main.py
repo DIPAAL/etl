@@ -41,6 +41,7 @@ def configure_arguments():
                         help='Standalone clean AIS data and construct trajectories which are stored as .pkl files',
                         action='store_true')
     parser.add_argument('--querybenchmark', help='Perform query benchmark', action='store_true')
+    parser.add_argument('--ensure_files', help='Runs the file downloader for a given date range.', action='store_true')
     parser.add_argument('--from_date',
                         help='The date to load from, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
     parser.add_argument('--to_date',
@@ -49,7 +50,7 @@ def configure_arguments():
     return parser.parse_args()
 
 
-def main(argv):
+def main(argv):  # noqa: C901
     """Execute the main program."""
     config = get_config()
 
@@ -68,6 +69,9 @@ def main(argv):
 
     if args.querybenchmark:
         BenchmarkRunner(config).run_benchmark()
+
+    if args.ensure_files:
+        ensure_files_for_range(date_from, date_to, config)
 
 
 def clean_range(date_from: datetime, date_to: datetime, config, standalone: bool = False) -> \
@@ -153,6 +157,20 @@ def load_data(data: pd.DataFrame, date: datetime, config) -> None:
     gal.reset_log()  # reset the log for the next loop
 
     conn.commit()
+
+
+def ensure_files_for_range(date_from: datetime, date_to: datetime, config):
+    """
+    Ensure files are downloaded and unzipped for a given date range.
+
+    Keyword arguments:
+        date_from: the date to start from
+        date_to: the date to end at
+        config: the application configuration
+    """
+    while date_from <= date_to:
+        wrap_with_timings(f"Ensuring files for date {date_from}", lambda: ensure_file_for_date(date_from, config))
+        date_from += timedelta(days=1)
 
 
 if __name__ == '__main__':
