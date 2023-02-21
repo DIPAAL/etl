@@ -1,5 +1,5 @@
 WITH
-    enc(geom) AS (SELECT geom, geom_geodetic FROM enc_cells ORDER BY random() LIMIT 1),
+    enc(geom) AS (SELECT geom, geom_geodetic FROM reference_geometries WHERE type = 'enc' ORDER BY random() LIMIT 1),
     q_window(box) AS (
         SELECT
             STBox(
