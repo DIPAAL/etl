@@ -77,7 +77,7 @@ FROM (
                 trajectory_sub_id,
                 draught,
                 heading,
-                0 as delta_cog,
+                0 AS delta_cog,
                 date_trunc('second', startTimestamp (crossing)) startTime,
                 date_trunc('second', endTimestamp (crossing)) endTime
             FROM (
@@ -123,7 +123,7 @@ FROM (
                             ST_Y((t.split).point) + 5000,
                             3034
                         ) geom,
-                        (t.split).tpoint trajectory,
+                        unnest(sequences((t.split).tpoint)) trajectory,
                         t.heading heading,
                         t.draught draught,
                         t.nav_status_id nav_status_id,
