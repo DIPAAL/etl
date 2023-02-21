@@ -8,7 +8,8 @@ from etl.audit.logger import global_audit_logger as gal
 from sqlalchemy import create_engine
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
     LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL, A_COL, B_COL, C_COL, D_COL, WIDTH_COL, \
-    SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL, ETL_STAGE_SPATIAL
+    SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL, \
+    ETL_STAGE_SPATIAL, POSITION_FIXING_DEVICE_COL, MOBILE_TYPE_COL
 
 CSV_EXTENSION = '.csv'
 GEOMETRY_BOUNDS_QUERY = './etl/cleaning/sql/geometry_bounds.sql'
@@ -102,6 +103,8 @@ def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
             DRAUGHT_COL: 'float64',
             HEADING_COL: 'float64',
             IMO_COL: 'object',
+            POSITION_FIXING_DEVICE_COL: 'object',
+            MOBILE_TYPE_COL: 'object',
             SHIP_TYPE_COL: 'object',
             NAME_COL: 'object',
             LATITUDE_COL: 'float64',

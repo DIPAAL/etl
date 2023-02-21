@@ -12,7 +12,8 @@ CREATE TABLE dim_ship (
     location_system_type text,
     mobile_type text,
     ship_type text,
-    UNIQUE (imo, mmsi, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type)
+    position_fixing_device text,
+    UNIQUE (imo, mmsi, name, callsign, a, b, c, d, location_system_type, mobile_type, ship_type, position_fixing_device)
     -- Padding: Maybe, at worst 12 bytes. Text attributes are variable length and will round up to nearest 4 bytes.
 );
 

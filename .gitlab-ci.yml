@@ -67,6 +67,11 @@ clean_standalone:
   script:
     - envsubst < jobs/standalone-clean-job.yml | kubectl apply -f -
 
+ensure_files:
+  extends: .kube-job
+  script:
+    - envsubst < jobs/ensure-files-job.yml | kubectl apply -f -
+
 pytest:
   stage: test
   image: docker:latest

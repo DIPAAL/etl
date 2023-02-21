@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ensure-files-etl-${JOB_ID}
+  labels:
+    app: ensure-files-etl
+spec:
+  ttlSecondsAfterFinished: 253800
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: ensure-files-${JOB_ID}
+        image: ${IMAGE_NAME}
+        volumeMounts:
+          - name: ais-raw
+            mountPath: /data
+        command: ["./main_wrapper.sh", "--ensure_files", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
+      restartPolicy: Never
+      volumes:
+        - name: ais-raw
+          persistentVolumeClaim:
+            claimName: ais-raw-pkl
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${NODE_NAME}
+  backoffLimit: 0
