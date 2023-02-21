@@ -44,7 +44,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
         ais_file_path_csv: the absolute or relative file path to the AIS data csv file
     """
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
-    danish_waters_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_danish_waters_boundary(config))
+    cleaning_boundary_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_cleaning_reference_boundary(config))
 
     # Read from georeferenced AIS dataframe from csv file
     dirty_geo_dataframe = wrap_with_timings(
@@ -58,8 +58,8 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
         lambda: _ais_df_initial_cleaning(dirty_dataframe=dirty_geo_dataframe).compute()
     )
 
-    # Do a spatial join (inner join) to find all the ships that is within the boundary of danish_waters
-    lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, danish_waters_gdf, predicate='within')
+    # Do a spatial join (inner join) to find all the ships that is within the cleaning boundary
+    lazy_clean = d_gpd.sjoin(initial_cleaned_dataframe, cleaning_boundary_gdf, predicate='within')
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute(),
                                   audit_etl_stage=ETL_STAGE_SPATIAL
                                   )
@@ -69,9 +69,9 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     return clean_gdf
 
 
-def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
+def _get_cleaning_reference_boundary(config) -> d_gpd.GeoDataFrame:
     """
-    Return Danish Waters geometry bounds from the DWH.
+    Return cleaning geometry bounds from the DWH.
 
     Keyword arguments:
         config: the application configuration
@@ -79,8 +79,8 @@ def _get_danish_waters_boundary(config) -> d_gpd.GeoDataFrame:
     conn = _create_pandas_postgresql_connection(config)
 
     query = get_first_query_in_file(GEOMETRY_BOUNDS_QUERY)
-    temp_waters = gpd.read_postgis(sql=query, con=conn)
-    return d_gpd.from_geopandas(data=temp_waters, npartitions=1)
+    temp_boundry = gpd.read_postgis(sql=query, con=conn)
+    return d_gpd.from_geopandas(data=temp_boundry, npartitions=1)
 
 
 def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
