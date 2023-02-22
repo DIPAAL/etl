@@ -62,6 +62,7 @@ T_SHIP_ID_COL = 'ship_id'
 T_LOCATION_SYSTEM_TYPE_COL = 'location_system_type'
 T_TRAJECTORY_SUB_ID_COL = 'trajectory_sub_id'
 T_SHIP_NAVIGATIONAL_STATUS_ID_COL = 'ship_navigational_status_id'
+T_SHIP_TYPE_ID_COL = 'ship_type_id'
 
 # Other dataframe columns
 MBDB_TRAJECTORY_COL = 'tgeompoint'
