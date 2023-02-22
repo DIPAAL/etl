@@ -5,6 +5,8 @@ CREATE TABLE dim_cell_5000m (
     x integer NOT NULL,
     y integer NOT NULL,
     geom geometry NOT NULL,
+    parent_x integer,
+    parent_y integer,
     PRIMARY KEY (x, y)
 );
 
