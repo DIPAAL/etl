@@ -15,7 +15,6 @@ def apply_rollups(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to apply the rollups for
     """
-
     wrap_with_timings("Applying simplify rollup", lambda: apply_simplify_query(conn, date))
     wrap_with_timings("Applying length calculation rollup", lambda: apply_calc_length_query(conn, date))
 
@@ -23,6 +22,7 @@ def apply_rollups(conn, date: datetime) -> None:
     conn.commit()
 
     wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
+
 
 def apply_simplify_query(conn, date: datetime) -> None:
     """
@@ -64,7 +64,6 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to apply the rollup for
     """
-
     with open('etl/rollup/sql/staging_split_trajectories.sql', 'r') as f:
         query = f.read()
 
@@ -78,12 +77,15 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
 
     end = perf_counter()
     seconds_elapsed = end - start
-    gal.log_bulk_insertion(f"traj_split_5k_duration", seconds_elapsed)
+    gal.log_bulk_insertion("traj_split_5k_duration", seconds_elapsed)
 
     cell_sizes = [50, 200, 1000, 5000]
 
     for (cell_size, parent_cell_size) in reversed([*zip(cell_sizes, cell_sizes[1:]), (cell_sizes[-1], None)]):
-        wrap_with_timings(f"Applying {cell_size}m cell fact rollup", lambda: apply_cell_fact_rollup(conn, date, cell_size, parent_cell_size))
+        wrap_with_timings(
+            f"Applying {cell_size}m cell fact rollup",
+            lambda: apply_cell_fact_rollup(conn, date, cell_size, parent_cell_size)
+        )
 
 
 def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_size: int) -> None:
@@ -127,7 +129,9 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
     parent_formula_x = f"cell_x/{(int)(parent_cell_size/cell_size)}" if parent_cell_size else "NULL"
     parent_formula_y = f"cell_y/{(int)(parent_cell_size/cell_size)}" if parent_cell_size else "NULL"
 
-    lazy_dim_cell_query = lazy_dim_cell_query.format(CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y)
+    lazy_dim_cell_query = lazy_dim_cell_query.format(
+        CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y
+    )
 
     start = perf_counter()
     with conn.cursor() as cursor:
@@ -146,9 +150,3 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
-
-
-
-
-
-
