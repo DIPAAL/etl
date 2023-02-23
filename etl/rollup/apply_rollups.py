@@ -88,7 +88,7 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
     date_smart_key = extract_date_smart_id(date)
     for size in CELL_SIZES:
         query = query_template.format(CELL_SIZE=size)
-        _apply_heatmap_aggregation(conn, date_smart_key, query, size)
+        _apply_heatmap_aggregation(conn, date_smart_key, query)
 
 
 def _apply_heatmap_aggregation(conn, date_key: int, query: str) -> None:
