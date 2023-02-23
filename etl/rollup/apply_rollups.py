@@ -21,6 +21,7 @@ def apply_rollups(conn, date: datetime) -> None:
     conn.commit()
 
     wrap_with_timings("Applying cell fact rollup", lambda: apply_cell_fact_rollup(conn, date))
+    wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregation(conn, date))
 
 
 def apply_cell_fact_rollup(conn, date: datetime) -> None:
@@ -70,3 +71,21 @@ def apply_calc_length_query(conn, date: datetime) -> None:
     date_smart_key = extract_date_smart_id(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
+
+
+def apply_heatmap_aggregation(conn, date:datetime) -> None:
+    """
+    Pre-aggregate heatmaps for a given data.
+
+    Keyword Arguments:
+        conn: The database connection
+        date: The date to pre-aggregate heatmaps for
+    """
+    with open('etl/rollup/sql/heatmap.sql', 'r') as f:
+        query = f.read()
+    
+
+    cell_size = 50  # Meters
+    date_smart_key = extract_date_smart_id(date)
+    with conn.cursor() as cursor:
+        cursor.execute(query, (cell_size, date_smart_key, date_smart_key))
