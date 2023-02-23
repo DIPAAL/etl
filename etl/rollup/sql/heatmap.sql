@@ -1,10 +1,10 @@
-INSERT INTO fact_cell_heatmap_%sm (
+INSERT INTO fact_cell_heatmap_{CELL_SIZE}m (
     cell_x, cell_y, date_id, ship_type_id, density_histogram
 )
 SELECT
 	i1.cell_x,
 	i1.cell_y,
-	%s AS date_id,
+	%(date_key)s AS date_id,
 	i1.ship_type_id,
 	(
 		SELECT create_histogram(
@@ -24,7 +24,7 @@ FROM
 		FROM fact_cell fc
 		INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
         INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
-		WHERE fc.entry_date_id = %s
+		WHERE fc.entry_date_id = %(date_key)s
 		GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id
 	) i1
 GROUP BY i1.cell_x, i1.cell_y, i1.ship_type_id

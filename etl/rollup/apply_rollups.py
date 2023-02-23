@@ -83,22 +83,22 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         date: The date to pre-aggregate heatmaps for
     """
     with open('etl/rollup/sql/heatmap.sql', 'r') as f:
-        query = f.read()
+        query_template = f.read()
 
     date_smart_key = extract_date_smart_id(date)
     for size in CELL_SIZES:
+        query = query_template.format(CELL_SIZE=size)
         _apply_heatmap_aggregation(conn, date_smart_key, query, size)
 
 
-def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) -> None:
+def _apply_heatmap_aggregation(conn, date_key: int, query: str) -> None:
     """
-    Pre-aggregate heatmap for single cell size.
+    Pre-aggregate single heatmap.
 
     Keyword Arguments:
         conn: The database connection
         date_key: The DW smart key for the date to apply aggregation
         query: The aggregation query
-        cell_size: The size of heatmap to aggregate
     """
     with conn.cursor() as cursor:
-        cursor.execute(query, (cell_size, date_key, date_key))
+        cursor.execute(query, {'date_key': date_key})
