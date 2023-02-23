@@ -4,6 +4,7 @@ from datetime import datetime
 from etl.helper_functions import wrap_with_timings
 from etl.trajectory.builder import extract_date_smart_id
 from etl.audit.logger import global_audit_logger as gal
+from etl.constants import CELL_SIZES
 
 
 def apply_rollups(conn, date: datetime) -> None:
@@ -21,7 +22,7 @@ def apply_rollups(conn, date: datetime) -> None:
     conn.commit()
 
     wrap_with_timings("Applying cell fact rollup", lambda: apply_cell_fact_rollup(conn, date))
-    wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregation(conn, date))
+    wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
 
 def apply_cell_fact_rollup(conn, date: datetime) -> None:
@@ -73,9 +74,9 @@ def apply_calc_length_query(conn, date: datetime) -> None:
         cursor.execute(query, (date_smart_key,))
 
 
-def apply_heatmap_aggregation(conn, date:datetime) -> None:
+def apply_heatmap_aggregations(conn, date:datetime) -> None:
     """
-    Pre-aggregate heatmaps for a given data.
+    Pre-aggregate heatmaps.
 
     Keyword Arguments:
         conn: The database connection
@@ -84,8 +85,21 @@ def apply_heatmap_aggregation(conn, date:datetime) -> None:
     with open('etl/rollup/sql/heatmap.sql', 'r') as f:
         query = f.read()
     
-
-    cell_size = 50  # Meters
     date_smart_key = extract_date_smart_id(date)
+    for size in CELL_SIZES:
+        _apply_heatmap_aggregation(conn, date_smart_key, query, size)
+
+
+def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) -> None:
+    """
+    Pre-aggregate heatmap for single cell size.
+
+    Keyword Arguments:
+        conn: The database connection
+        date_key: The DW smart key for the date to apply aggregation
+        query: The aggregation query
+        cell_size: The size of heatmap to aggregate
+    """
+
     with conn.cursor() as cursor:
-        cursor.execute(query, (cell_size, date_smart_key, date_smart_key))
+        cursor.execute(query, (cell_size, date_key, date_key))
