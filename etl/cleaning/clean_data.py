@@ -44,7 +44,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
         ais_file_path_csv: the absolute or relative file path to the AIS data csv file
     """
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
-    cleaning_boundary_gdf = wrap_with_timings('Fetch Danish Waters', lambda: _get_cleaning_reference_boundary(config))
+    cleaning_boundary_gdf = wrap_with_timings('Fetch Cleaning Boundaries', lambda: _get_cleaning_reference_boundary(config))
 
     # Read from georeferenced AIS dataframe from csv file
     dirty_geo_dataframe = wrap_with_timings(
