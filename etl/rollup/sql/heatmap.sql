@@ -19,7 +19,7 @@ FROM
             ds.ship_type_id,
             dt.hour_of_day,
             COUNT (*) AS cnt
-        FROM fact_cell fc
+        FROM fact_cell_{CELL_SIZE}m fc
         INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
         INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
         WHERE fc.entry_date_id = %(date_key)s
