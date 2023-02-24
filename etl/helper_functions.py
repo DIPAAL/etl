@@ -1,6 +1,6 @@
 """Helper functions for the ETL process."""
 from datetime import datetime, timedelta
-from typing import List, Tuple, Any, Callable, TypeVar
+from typing import List, Tuple, Callable, TypeVar
 from time import perf_counter
 import psycopg2
 from etl.audit.logger import global_audit_logger as gal

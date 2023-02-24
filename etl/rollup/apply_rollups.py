@@ -1,9 +1,8 @@
 """Module to apply rollups after inserting."""
 from datetime import datetime
 from time import perf_counter
-from typing import List
 
-from etl.helper_functions import wrap_with_timings, measure_time
+from etl.helper_functions import wrap_with_timings, measure_time, execute_query_on_connection
 from etl.trajectory.builder import extract_date_smart_id
 from etl.audit.logger import global_audit_logger as gal
 
@@ -143,5 +142,3 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
-
-
