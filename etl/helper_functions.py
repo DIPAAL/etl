@@ -37,6 +37,8 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
     return result
 
 
+# Type variable for the return type of the function passed to measure_time.
+# Used to indicate same return type as the function parameter
 T = TypeVar('T')
 
 
@@ -103,7 +105,7 @@ def get_queries_in_file(file_path: str) -> List[str]:
         return queries
 
 
-def execute_query_on_connection(conn, query: str, params=None) -> List:
+def execute_insert_query_on_connection(conn, query: str, params=None, fetch_count: bool = False) -> int:
     """
     Execute a query on a connection.
 
@@ -111,7 +113,10 @@ def execute_query_on_connection(conn, query: str, params=None) -> List:
         conn: The connection to execute the query on
         query: The query to execute
         params: The parameters to pass to the query
+        fetch_count: If true, the return value will be using fetch instead of cursor row count.
     """
     with conn.cursor() as cursor:
         cursor.execute(query, params)
-        return cursor.fetchall()
+        if fetch_count:
+            return cursor.fetchone()[0]
+        return cursor.rowcount

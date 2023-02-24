@@ -1,8 +1,7 @@
 """Module to apply rollups after inserting."""
 from datetime import datetime
-from time import perf_counter
 
-from etl.helper_functions import wrap_with_timings, measure_time, execute_query_on_connection
+from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection
 from etl.trajectory.builder import extract_date_smart_id
 from etl.audit.logger import global_audit_logger as gal
 
@@ -69,15 +68,11 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
 
     date_smart_key = extract_date_smart_id(date)
 
-    start = perf_counter()
-
-    with conn.cursor() as cursor:
-        cursor.execute(query, (date_smart_key,))
-        gal.log_etl_stage_rows_cursor("cell_construct", cursor)
-
-    end = perf_counter()
-    seconds_elapsed = end - start
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, query, (date_smart_key,))
+    )
     gal.log_bulk_insertion("traj_split_5k_duration", seconds_elapsed)
+    gal.log_bulk_insertion("traj_split_5k_rows", rows)
 
     cell_sizes = [50, 200, 1000, 5000]
 
@@ -105,40 +100,39 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     date_smart_key = extract_date_smart_id(date)
 
-    (_, seconds_elapsed) = measure_time(
-        lambda: execute_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
     )
     gal.log_bulk_insertion(f"fact_cell_{cell_size}m_rollup_duration", seconds_elapsed)
+    gal.log_bulk_insertion(f"fact_cell_{cell_size}m_rollup_rows", rows)
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
 
-    count_query = f"SELECT COUNT(*) FROM dim_cell_{cell_size}m"
-    with conn.cursor() as cursor:
-        cursor.execute(count_query)
-        count_before = cursor.fetchone()[0]
+    lazy_load_dim_cell(cell_size, conn, parent_cell_size, date_smart_key)
 
+
+def lazy_load_dim_cell(cell_size: int, conn, parent_cell_size: int, date_smart_key: int):
+    """
+    Lazy load the dim_cell table for the given cell size.
+
+    Args:
+        cell_size: The cell size to lazy load for
+        conn: The database connection
+        parent_cell_size: The parent cell size to lazy load for
+        date_smart_key: The date smart key to lazy load for
+    """
     with open('etl/rollup/sql/lazy_load_cells_from_cell_facts.sql', 'r') as f:
         lazy_dim_cell_query = f.read()
-
-    parent_formula_x = f"cell_x/{(int)(parent_cell_size/cell_size)}" if parent_cell_size else "NULL"
-    parent_formula_y = f"cell_y/{(int)(parent_cell_size/cell_size)}" if parent_cell_size else "NULL"
-
+    parent_formula_x = f"cell_x/{(int)(parent_cell_size / cell_size)}" if parent_cell_size else "NULL"
+    parent_formula_y = f"cell_y/{(int)(parent_cell_size / cell_size)}" if parent_cell_size else "NULL"
     lazy_dim_cell_query = lazy_dim_cell_query.format(
         CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y
     )
-
-    (_, seconds_elapsed) = measure_time(
-        lambda: execute_query_on_connection(conn, lazy_dim_cell_query, (date_smart_key,))
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query, (date_smart_key,), fetch_count=True),
     )
-    gal.log_etl_stage_rows_cursor("cell_construct", cursor)
     gal.log_bulk_insertion(f"dim_cell_{cell_size}m_lazy_duration", seconds_elapsed)
-
-    with conn.cursor() as cursor:
-        cursor.execute(count_query)
-        count_after = cursor.fetchone()[0]
-
-    gal.log_bulk_insertion(f"dim_cell_{cell_size}m", count_after - count_before)
-
+    gal.log_bulk_insertion(f"dim_cell_{cell_size}m_lazy_rows", rows)
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()

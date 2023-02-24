@@ -53,7 +53,3 @@ CREATE TABLE dim_cell_50m (
 
 -- Create spatial index
 CREATE INDEX dim_cell_50m_geom_idx ON dim_cell_50m USING spgist (geom);
-
-
-
-
