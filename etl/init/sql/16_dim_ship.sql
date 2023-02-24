@@ -6,7 +6,7 @@ CREATE TABLE dim_ship (
     ship_id serial PRIMARY KEY,
     imo int NOT NULL,
     mmsi int NOT NULL,
-    ship_type_id INTEGER NOT NULL,
+    ship_type_id SMALLINTEGER NOT NULL,
     -- Padding: 8-4 = 4 bytes
     name text,
     callsign text,
