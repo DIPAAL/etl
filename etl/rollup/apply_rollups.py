@@ -123,9 +123,7 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     gal.log_bulk_insertion("traj_split_5k_duration", seconds_elapsed)
     gal.log_bulk_insertion("traj_split_5k_rows", rows)
 
-    cell_sizes = [50, 200, 1000, 5000]
-
-    for (cell_size, parent_cell_size) in reversed([*zip(cell_sizes, cell_sizes[1:]), (cell_sizes[-1], None)]):
+    for (cell_size, parent_cell_size) in reversed([*zip(CELL_SIZES, CELL_SIZES[1:]), (CELL_SIZES[-1], None)]):
         wrap_with_timings(
             f"Applying {cell_size}m cell fact rollup",
             lambda: apply_cell_fact_rollup(conn, date, cell_size, parent_cell_size)

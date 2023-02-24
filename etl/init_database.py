@@ -79,26 +79,6 @@ def create_fact_partitions(config):
         """)
 
         cur.execute(f"""
-            CREATE TABLE fact_cell_50m_{year}_{month}
-            PARTITION OF fact_cell_50m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_200m_{year}_{month}
-            PARTITION OF fact_cell_200m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_1000m_{year}_{month}
-            PARTITION OF fact_cell_1000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_5000m_{year}_{month}
-            PARTITION OF fact_cell_5000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
             CREATE TABLE dim_trajectory_{year}_{month}
             PARTITION OF dim_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
@@ -108,6 +88,11 @@ def create_fact_partitions(config):
                 CREATE TABLE fact_cell_heatmap_{size}m_{year}_{month}
                 PARTITION OF fact_cell_heatmap_{size}m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}')
                 USING columnar;
+            """)
+
+            cur.execute(f"""
+            CREATE TABLE fact_cell_{size}m_{year}_{month}
+            PARTITION OF fact_cell_{size}m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
             """)
 
 
