@@ -1,8 +1,9 @@
 """Module to apply rollups after inserting."""
 from datetime import datetime
 from time import perf_counter
+from typing import List
 
-from etl.helper_functions import wrap_with_timings
+from etl.helper_functions import wrap_with_timings, measure_time
 from etl.trajectory.builder import extract_date_smart_id
 from etl.audit.logger import global_audit_logger as gal
 
@@ -105,15 +106,10 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     date_smart_key = extract_date_smart_id(date)
 
-    start = perf_counter()
-
-    with conn.cursor() as cursor:
-        cursor.execute(cell_fact_rollup_query)
-        gal.log_etl_stage_rows_cursor("cell_construct", cursor)
-
-    end = perf_counter()
-    seconds_elapsed = end - start
-    gal.log_bulk_insertion(f"dim_cell_{cell_size}m_rollup_duration", seconds_elapsed)
+    (_, seconds_elapsed) = measure_time(
+        lambda: execute_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
+    )
+    gal.log_bulk_insertion(f"fact_cell_{cell_size}m_rollup_duration", seconds_elapsed)
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
@@ -133,13 +129,10 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
         CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y
     )
 
-    start = perf_counter()
-    with conn.cursor() as cursor:
-        cursor.execute(lazy_dim_cell_query, (date_smart_key,))
-        gal.log_etl_stage_rows_cursor("cell_construct", cursor)
-
-    end = perf_counter()
-    seconds_elapsed = end - start
+    (_, seconds_elapsed) = measure_time(
+        lambda: execute_query_on_connection(conn, lazy_dim_cell_query, (date_smart_key,))
+    )
+    gal.log_etl_stage_rows_cursor("cell_construct", cursor)
     gal.log_bulk_insertion(f"dim_cell_{cell_size}m_lazy_duration", seconds_elapsed)
 
     with conn.cursor() as cursor:
@@ -150,3 +143,5 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
+
+

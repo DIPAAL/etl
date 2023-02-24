@@ -18,7 +18,7 @@ CREATE TABLE fact_cell_50m (
     nav_status_id smallint NOT NULL,
     -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    PRIMARY KEY (cell_x, cell_y, ship_id, trajectory_sub_id, entry_date_id, entry_time_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (entry_time_id) REFERENCES dim_time(time_id),

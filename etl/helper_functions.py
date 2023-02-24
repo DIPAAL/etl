@@ -1,6 +1,6 @@
 """Helper functions for the ETL process."""
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Tuple, Any, Callable, TypeVar
 from time import perf_counter
 import psycopg2
 from etl.audit.logger import global_audit_logger as gal
@@ -35,6 +35,22 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
         gal.log_etl_stage_time(audit_etl_stage, start, end)
 
     return result
+
+
+T = TypeVar('T')
+
+
+def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
+    """
+    Execute a given function and return a tuple with the result and the time it took to execute.
+
+    Keyword arguments:
+        func: the zero argument function to execute
+    """
+    start = perf_counter()
+    result = func()
+    end = perf_counter()
+    return result, end - start
 
 
 def get_connection(config, database=None, host=None, user=None, password=None):
@@ -85,3 +101,17 @@ def get_queries_in_file(file_path: str) -> List[str]:
         queries = [query.strip() for query in queries if query.strip() != '']
 
         return queries
+
+
+def execute_query_on_connection(conn, query: str, params=None) -> List:
+    """
+    Execute a query on a connection.
+
+    Args:
+        conn: The connection to execute the query on
+        query: The query to execute
+        params: The parameters to pass to the query
+    """
+    with conn.cursor() as cursor:
+        cursor.execute(query, params)
+        return cursor.fetchall()
