@@ -25,23 +25,6 @@ def apply_rollups(conn, date: datetime) -> None:
     wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
 
-def apply_cell_fact_rollup(conn, date: datetime) -> None:
-    """
-    Apply the cell fact rollup for the given date.
-
-    Args:
-        conn: The database connection
-        date: The date to apply the rollup for
-    """
-    with open('etl/rollup/sql/fact_cell_rollup.sql', 'r') as f:
-        query = f.read()
-
-    date_smart_key = extract_date_smart_id(date)
-    with conn.cursor() as cursor:
-        cursor.execute(query, (date_smart_key,))
-        gal.log_etl_stage_rows_cursor("cell_construct", cursor)
-
-
 def apply_simplify_query(conn, date: datetime) -> None:
     """
     Apply the simplify query for the given date.
