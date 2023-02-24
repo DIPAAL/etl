@@ -6,12 +6,10 @@ SELECT
     i1.cell_y,
     %(date_key)s AS date_id,
     i1.ship_type_id,
-    (
-        SELECT create_histogram(
-            24, -- 24 hours = 24 entries in histogram
-            ARRAY_AGG(i1.hour_of_day ORDER BY i1.hour_of_day ASC)::int[],
-            ARRAY_AGG(i1.cnt ORDER BY i1.hour_of_day ASC)::int[]
-        )
+    create_histogram(
+        24, -- 24 hours = 24 entries in histogram
+        ARRAY_AGG(i1.hour_of_day ORDER BY i1.hour_of_day ASC)::int[],
+        ARRAY_AGG(i1.cnt ORDER BY i1.hour_of_day ASC)::int[]
     ) AS density_histogram
 FROM
     (
