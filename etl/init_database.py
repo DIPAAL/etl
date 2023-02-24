@@ -2,6 +2,7 @@
 from etl.helper_functions import wrap_with_timings, get_connection
 from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_timings, \
     run_single_statement_sql_files_in_folder
+from etl.constants import CELL_SIZES
 
 
 def setup_citus_instance(host, config):
@@ -84,6 +85,13 @@ def create_fact_partitions(config):
             CREATE TABLE dim_trajectory_{year}_{month}
             PARTITION OF dim_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
+
+        for size in CELL_SIZES:
+            cur.execute(f"""
+                CREATE TABLE fact_cell_heatmap_{size}m_{year}_{month}
+                PARTITION OF fact_cell_heatmap_{size}m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}')
+                USING columnar;
+            """)
 
 
 def init_database(config):
