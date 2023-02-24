@@ -125,6 +125,9 @@ class BulkInserter:
             with conn.cursor() as cursor:
                 cursor.execute(query, batch.values.flatten())
 
-        gal.log_bulk_insertion(self.dimension_name, len(batch))
+        # Log the number of rows inserted in the GAL
+        if self.dimension_name not in gal.log_dict[gal.TIMINGS_KEY]:
+            gal.log_dict[gal.TIMINGS_KEY][self.dimension_name] = 0
+        gal.log_dict[gal.TIMINGS_KEY][self.dimension_name] += len(batch)
 
         return result

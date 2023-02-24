@@ -16,7 +16,7 @@ from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.insert.insert_audit import AuditInserter
 from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
-from etl.audit.logger import global_audit_logger as gal
+from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL
 
 
@@ -125,10 +125,10 @@ def clean_date(date: datetime, config, standalone: bool = False) -> pd.DataFrame
 
     clean_sorted_ais = wrap_with_timings('Data Cleaning', lambda: clean_data(config, file_path),
                                          audit_etl_stage=ETL_STAGE_CLEAN)
-    gal.log_etl_stage_rows_df('cleaning', clean_sorted_ais)
+    gal.log_dict[ROWS_KEY]['points_after_clean'] = len(clean_sorted_ais.index)
     trajectories = wrap_with_timings('Trajectory Construction', lambda: build_from_geopandas(clean_sorted_ais),
                                      audit_etl_stage=ETL_STAGE_TRAJECTORY)
-    gal.log_etl_stage_rows_df('trajectory', trajectories)
+    gal.log_dict[ROWS_KEY]['trajectories_built'] = len(trajectories.index)
 
     if standalone:
         pickle_path = file_path.replace('.csv', '.pkl')
@@ -152,7 +152,6 @@ def load_data(data: pd.DataFrame, date: datetime, config) -> None:
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
 
-    gal.log_requirements()  # logs the versions of the requirements
     wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
     gal.reset_log()  # reset the log for the next loop
 
