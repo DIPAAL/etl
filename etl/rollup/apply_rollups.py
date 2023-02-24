@@ -3,7 +3,7 @@ from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection
 from etl.trajectory.builder import extract_date_smart_id
-from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY, DEBUG_KEY
 
 
 def apply_rollups(conn, date: datetime) -> None:
@@ -71,8 +71,8 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     (rows, seconds_elapsed) = measure_time(
         lambda: execute_insert_query_on_connection(conn, query, (date_smart_key,))
     )
-    gal.log_dict[TIMINGS_KEY]["traj_split_5k"] = seconds_elapsed
-    gal.log_dict[ROWS_KEY]["traj_split_5k"] = rows
+    gal.log_dict[DEBUG_KEY][TIMINGS_KEY]["traj_split_5k"] = seconds_elapsed
+    gal.log_dict[DEBUG_KEY][ROWS_KEY]["traj_split_5k"] = rows
 
     cell_sizes = [50, 200, 1000, 5000]
 
@@ -103,8 +103,8 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
     (rows, seconds_elapsed) = measure_time(
         lambda: execute_insert_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
     )
-    gal.log_dict[TIMINGS_KEY][f"fact_cell_{cell_size}m_rollup"] = seconds_elapsed
-    gal.log_dict[ROWS_KEY][f"fact_cell_{cell_size}m_rollup"] = rows
+    gal.log_dict[DEBUG_KEY][TIMINGS_KEY][f"fact_cell_{cell_size}m_rollup"] = seconds_elapsed
+    gal.log_dict[DEBUG_KEY][ROWS_KEY][f"fact_cell_{cell_size}m_rollup"] = rows
 
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()
@@ -132,7 +132,7 @@ def lazy_load_dim_cell(cell_size: int, conn, parent_cell_size: int, date_smart_k
     (rows, seconds_elapsed) = measure_time(
         lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query, (date_smart_key,), fetch_count=True),
     )
-    gal.log_dict[TIMINGS_KEY][f"dim_cell_{cell_size}m_lazy"] = seconds_elapsed
-    gal.log_dict[ROWS_KEY][f"dim_cell_{cell_size}m_lazy"] = rows
+    gal.log_dict[DEBUG_KEY][TIMINGS_KEY][f"dim_cell_{cell_size}m_lazy"] = seconds_elapsed
+    gal.log_dict[DEBUG_KEY][ROWS_KEY][f"dim_cell_{cell_size}m_lazy"] = rows
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
     conn.commit()

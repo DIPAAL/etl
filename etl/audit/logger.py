@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import pandas as pd
 
+DEBUG_KEY = 'debug_info'
 ROWS_KEY = 'rows'
 TIMINGS_KEY = 'timings'
 
@@ -27,10 +28,6 @@ class AuditLogger:
         """Construct an instance of the AuditLogger class."""
         self.log_dict = None
         self.reset_log()
-
-    def _log_total_delta_time(self):
-        """Calculate the total time of the ETL process."""
-        # TODO not implemented yet
 
     def _log_etl_version(self):
         """Log the version of the ETL process."""
@@ -88,6 +85,7 @@ class AuditLogger:
 
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
+        self.log_dict['total_delta_time'] = int((datetime.now() - self.log_dict['import_datetime']).total_seconds())
         df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
         return df
 
