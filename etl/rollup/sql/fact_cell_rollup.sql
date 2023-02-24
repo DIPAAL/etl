@@ -1,7 +1,6 @@
-INSERT INTO fact_cell (
+INSERT INTO fact_cell_{CELL_SIZE}m (
     cell_x, cell_y, ship_id,
-    entry_date_id, entry_time_id,
-    exit_date_id, exit_time_id,
+    entry_date_id, entry_time_id, exit_time_id,
     direction_id, nav_status_id, trajectory_sub_id,
     sog, delta_heading, draught, delta_cog, st_bounding_box
 )
@@ -11,7 +10,6 @@ SELECT
     ship_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
     (EXTRACT(HOUR FROM startTime) * 10000) + (EXTRACT(MINUTE FROM startTime) * 100) + (EXTRACT(SECOND FROM startTime)) AS entry_time_id,
-    (EXTRACT(YEAR FROM endTime) * 10000) + (EXTRACT(MONTH FROM endTime) * 100) + (EXTRACT(DAY FROM endTime)) AS exit_date_id,
     (EXTRACT(HOUR FROM endTime) * 10000) + (EXTRACT(MINUTE FROM endTime) * 100) + (EXTRACT(SECOND FROM endTime)) AS exit_time_id,
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
@@ -78,11 +76,7 @@ FROM (
                 trajectory_sub_id,
                 draught,
                 heading,
-                ( -- Calculate the Delta COG
-                    calculate_delta_upperbounded ((
-                        SELECT
-                            ARRAY_AGG(LOWER(delta))
-                        FROM UNNEST(GETVALUES (DEGREES(AZIMUTH (crossing)))) AS delta), 360)) AS delta_cog,
+                0 AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
                 date_trunc('second', endTimestamp (crossing)) endTime
@@ -119,24 +113,10 @@ FROM (
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
                     fdt.heading heading
-                FROM (
-                    SELECT
-                        ft.*,
-                        -- Split the trajectory into cells of 5000m x 5000m. This makes it much faster to join to cell dimension.
-                        (spaceSplit (transform (setSRID (dt.trajectory, 4326), 3034), 5000)).tpoint point,
-                        transform (dt.trajectory, 3034) trajectory,
-                        dt.heading heading,
-                        dt.draught draught
-                    FROM
-                        fact_trajectory ft
-                        JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id
-                            AND ft.start_date_id = dt.date_id
-                    WHERE
-                        duration > INTERVAL '1 second'
-                        AND ft.start_date_id = %s) fdt
-                    JOIN dim_cell_50m dc ON ST_Intersects (dc.geom, fdt.point::geometry)
-                ) ci
-            ) cid
-        ) ct
+                FROM staging.split_trajectories fdt
+                JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry)
+            ) cj
+        ) cid
     ) cif
+) ir
 ON CONFLICT DO NOTHING;

@@ -10,7 +10,8 @@ from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
-    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, TRAJECTORY_SRID
+    MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, \
+    TRAJECTORY_SRID, MOBILE_TYPE_COL, T_POSITION_FIXING_DEVICE_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -220,9 +221,14 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[IMO_COL], drop_na=True)
     imo = most_recurring[IMO_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_INT_VALUE
 
-    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL],
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[MOBILE_TYPE_COL],
                                           drop_na=True)
     mobile_type = \
+        most_recurring[MOBILE_TYPE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
+
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[POSITION_FIXING_DEVICE_COL],
+                                          drop_na=True)
+    position_device = \
         most_recurring[POSITION_FIXING_DEVICE_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_STRING_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[SHIP_TYPE_COL], drop_na=True)
@@ -276,6 +282,7 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_SHIP_NAME_COL: ship_name,
         T_SHIP_CALLSIGN_COL: ship_callsign,
         T_LOCATION_SYSTEM_TYPE_COL: location_system_type,
+        T_POSITION_FIXING_DEVICE_COL: position_device,
         T_A_COL: a,
         T_B_COL: b,
         T_C_COL: c,
@@ -525,6 +532,8 @@ def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
         T_IMO_COL: pd.Series(dtype='int64', data=dict[T_IMO_COL] if T_IMO_COL in dict else []),
         T_MMSI_COL: pd.Series(dtype='int64', data=dict[T_MMSI_COL] if T_MMSI_COL in dict else []),
         T_MOBILE_TYPE_COL: pd.Series(dtype='object', data=dict[T_MOBILE_TYPE_COL] if T_MOBILE_TYPE_COL in dict else []),
+        T_POSITION_FIXING_DEVICE_COL: pd.Series(dtype='object', data=dict[T_POSITION_FIXING_DEVICE_COL] \
+                                                if T_POSITION_FIXING_DEVICE_COL in dict else []),
         T_SHIP_TYPE_COL: pd.Series(dtype='object', data=dict[T_SHIP_TYPE_COL] if T_SHIP_TYPE_COL in dict else []),
         T_SHIP_NAME_COL: pd.Series(dtype='object', data=dict[T_SHIP_NAME_COL] if T_SHIP_NAME_COL in dict else []),
         T_SHIP_CALLSIGN_COL: pd.Series(dtype='object',
