@@ -79,8 +79,8 @@ def _get_cleaning_reference_boundary(config) -> d_gpd.GeoDataFrame:
     conn = _create_pandas_postgresql_connection(config)
 
     query = get_first_query_in_file(GEOMETRY_BOUNDS_QUERY)
-    temp_boundry = gpd.read_postgis(sql=query, con=conn)
-    return d_gpd.from_geopandas(data=temp_boundry, npartitions=1)
+    temp_boundary = gpd.read_postgis(sql=query, con=conn)
+    return d_gpd.from_geopandas(data=temp_boundary, npartitions=1)
 
 
 def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
