@@ -17,7 +17,8 @@ BEGIN
 	cur_placement := 1;
 
 	FOR i IN 1..histogram_size LOOP
-		IF elem_placements[cur_placement] = i
+		-- Going from 0-index to 1-index
+		IF (elem_placements[cur_placement] + 1) = i
 		THEN
 			arr[i] := elem_values[cur_placement];
 			cur_placement := cur_placement + 1;
