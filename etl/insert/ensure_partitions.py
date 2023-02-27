@@ -2,24 +2,13 @@
 from etl.helper_functions import extract_date_from_smart_date_id
 
 
-def ensure_date_dim_and_partitions_for_partitioned_tables(conn,  date_id: int):
-    """
-    Ensure that the date entry exists and partitions for the given date exists in partitioned tables.
-
-    Args:
-        conn: The database connection
-        date: The date to ensure exists
-    """
-    _ensure_partitions_for_partitioned_tables(conn, date_id)
-
-
-def _ensure_partitions_for_partitioned_tables(conn, date_id: int):
+def ensure_partitions_for_partitioned_tables(conn, date_id: int):
     """
     Ensure that partitions for the given date exists in partitioned tables.
 
     Args:
         conn: The database connection
-        date: The date to ensure exists
+        date_id: The smarte date id to ensure exists
     """
     date_partitioned_table_names = [
         "fact_cell_50m",
@@ -41,7 +30,7 @@ def _ensure_partition_for_table(conn, table_name, date_id: int):
     Args:
         conn: The database connection
         table_name: The name of the table to ensure a partition exists for
-        date_id: The date to ensure exists
+        date_id: The smart date id to ensure exists
     """
     rounded_smart_date_id = date_id - date_id % 100
 
