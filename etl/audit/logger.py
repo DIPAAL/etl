@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import pandas as pd
 
-DEBUG_KEY = 'debug_info'
+STATS_KEY = 'statistics'
 ROWS_KEY = 'rows'
 TIMINGS_KEY = 'timings'
 
@@ -75,7 +75,7 @@ class AuditLogger:
         """Reset the log dictionary."""
         self.log_dict = {
             'import_datetime': datetime.now(),
-            'debug_info': {
+            STATS_KEY: {
                 TIMINGS_KEY: {},
                 ROWS_KEY: {},
             },

@@ -5,7 +5,7 @@ CREATE TABLE audit_log (
     file_rows integer,
     total_delta_time integer,
     -- Used to store information such as runtime and rows of individual steps.
-    debug_info jsonb,
+    statistics jsonb,
     etl_version text,
     file_name text,
     requirements text[],
