@@ -83,13 +83,12 @@ def create_fact_partitions(config):
             PARTITION OF dim_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
         """)
 
-        for size in CELL_SIZES:
-            cur.execute(f"""
-                CREATE TABLE fact_cell_heatmap_{size}m_{year}_{month}
-                PARTITION OF fact_cell_heatmap_{size}m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}')
-                USING columnar;
-            """)
+        cur.execute(f"""
+            CREATE TABLE fact_cell_heatmap_{year}_{month}
+            PARTITION OF fact_cell_heatmap FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
+        """)
 
+        for size in CELL_SIZES:
             cur.execute(f"""
             CREATE TABLE fact_cell_{size}m_{year}_{month}
             PARTITION OF fact_cell_{size}m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
