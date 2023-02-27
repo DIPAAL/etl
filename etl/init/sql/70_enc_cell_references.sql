@@ -152,5 +152,5 @@ INSERT INTO public.reference_geometries (name, type, geom_geodetic) VALUES ('Sm√
 INSERT INTO public.reference_geometries (name, type, geom_geodetic) VALUES ('Aabenraa Havn', 'enc', '01030000000100000005000000802F4CA60AD62240B867F20762824B40802F4CA60AD62240B0D85F764F864B406066666666E62240B0D85F764F864B406066666666E62240B867F20762824B40802F4CA60AD62240B867F20762824B40');
 
 -- Update ENC cells
-UPDATE public.reference_geometries SET geom_geodetic = ST_SETSRID(geom_geodetic, 4326) WHERE geom IS NULL;
-UPDATE public.reference_geometries SET geom = ST_Transform(geom_geodetic, 3034) WHERE geom IS NULL;
+UPDATE public.reference_geometries SET geom_geodetic = ST_SETSRID(geom_geodetic, 4326) WHERE type = 'enc';
+UPDATE public.reference_geometries SET geom = ST_Transform(geom_geodetic, 3034) WHERE type = 'enc';
