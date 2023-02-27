@@ -1,6 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  labels:
+    app: init-etl
   name: init-etl-${JOB_ID}
 spec:
   ttlSecondsAfterFinished: 253800
