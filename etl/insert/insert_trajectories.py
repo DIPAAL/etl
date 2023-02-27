@@ -7,6 +7,8 @@ from etl.constants import T_SHIP_ID_COL, \
     T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_SUB_ID_COL, INT32_MAX
 from etl.helper_functions import get_connection
 from etl.insert.bulk_inserter import BulkInserter
+from etl.insert.ensure_partitions import ensure_date_dim_and_partitions_for_partitioned_tables
+from etl.insert.dimensions.date_dimension import DateDimensionInserter
 from etl.insert.dimensions.navigational_status_dimension import NavigationalStatusDimensionInserter
 from etl.insert.dimensions.ship_dimension import ShipDimensionInserter
 from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInserter
@@ -58,6 +60,11 @@ class TrajectoryInserter (BulkInserter):
         df[T_TRAJECTORY_SUB_ID_COL] = self.generate_unique_random_series(df, INT32_MAX)
 
         conn = get_connection(config)
+
+        # Ensure date id and partitions exists
+        ensure_date_dim_and_partitions_for_partitioned_tables(conn,  int(df[T_START_DATE_COL].iloc[0]))
+
+        DateDimensionInserter().ensure(df, conn)
 
         df = ShipDimensionInserter("dim_ship", bulk_size=self.bulk_size, id_col_name="ship_id").ensure(df, conn)
         df = NavigationalStatusDimensionInserter("dim_nav_status", bulk_size=self.bulk_size,

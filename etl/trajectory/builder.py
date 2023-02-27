@@ -11,12 +11,14 @@ from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_C
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
     MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, \
-    TRAJECTORY_SRID, MOBILE_TYPE_COL, T_POSITION_FIXING_DEVICE_COL
+    TRAJECTORY_SRID, MOBILE_TYPE_COL, T_POSITION_FIXING_DEVICE_COL, UNKNOWN_INT_VALUE
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
     T_START_TIME_COL, T_START_DATE_COL, T_END_TIME_COL, T_END_DATE_COL
 from tqdm import tqdm
+
+from etl.helper_functions import extract_smart_date_id_from_date
 
 SPEED_THRESHOLD_KNOTS = 100
 
@@ -29,7 +31,6 @@ STOPPED_TIME_SECONDS_THRESHOLD = 5 * 60  # 5 minutes
 SPLIT_GAP_SECONDS_THRESHOLD = 5 * 60  # 5 minutes
 POINTS_FOR_TRAJECTORY_THRESHOLD = 2  # P=2
 UNKNOWN_STRING_VALUE = 'Unknown'
-UNKNOWN_INT_VALUE = -1
 UNKNOWN_FLOAT_VALUE = -1.0
 
 AIS_LONGEST_REPORTING_RATE_MIN = 3  # 3 min
@@ -201,11 +202,11 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     destination = sorted_series_by_frequency[DESTINATION_COL][0]
 
     # Split eta, start_datetime, and end_datetime and create their smart keys
-    eta_date_id = extract_date_smart_id(eta)
+    eta_date_id = extract_smart_date_id_from_date(eta)
     eta_time_id = _extract_time_smart_id(eta)
-    start_date_id = extract_date_smart_id(start_datetime)
+    start_date_id = extract_smart_date_id_from_date(start_datetime)
     start_time_id = _extract_time_smart_id(start_datetime)
-    end_date_id = extract_date_smart_id(end_datetime)
+    end_date_id = extract_smart_date_id_from_date(end_datetime)
     end_time_id = _extract_time_smart_id(end_datetime)
 
     duration = end_datetime - start_datetime
@@ -288,18 +289,6 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_C_COL: c,
         T_D_COL: d,
     })])
-
-
-def extract_date_smart_id(datetime: datetime) -> int:
-    """
-    Extract the date integer smart-key from a given datetime.
-
-    Keyword arguments:
-        datetime: object representation of a datetime to extract date smart-key from
-    """
-    if pd.isna(datetime):
-        return UNKNOWN_INT_VALUE
-    return (datetime.year * 10000) + (datetime.month * 100) + datetime.day
 
 
 def _extract_time_smart_id(datetime: datetime) -> int:
@@ -461,7 +450,6 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: Tuple[int, gpd.GeoSer
         cur_point: A tuple consisting of the index of current point and a series representing current point.
         prev_point: A tuple consisting of the index of previous point and a series representing previous point.
         speed_threshold: max speed that determine whether an AIS point is an outlier
-        dist_function: distance function used to calculate the distance between cur_point and prev_point
     """
     time_delta_ns = cur_point[1][TIMESTAMP_COL] - prev_point[1][TIMESTAMP_COL]
     # To get time_delta in seconds, divide by 1s in nano seconds.
@@ -502,13 +490,16 @@ def _euclidian_dist(a_long: float, a_lat: float, b_long: float, b_lat: float) ->
     )
 
 
-def _create_trajectory_db_df(dict={}) -> pd.DataFrame:
+def _create_trajectory_db_df(dict=None) -> pd.DataFrame:
     """
     Create trajectory dataframe representing DWH structure.
 
     Keyword arguments:
         dict: a dictionary with initial values for the created dataframe (default {})
     """
+    if dict is None:
+        dict = {}
+
     return pd.DataFrame({
         # Dimensions
         T_START_DATE_COL: pd.Series(dtype='int64', data=dict[T_START_DATE_COL] if T_START_DATE_COL in dict else []),
