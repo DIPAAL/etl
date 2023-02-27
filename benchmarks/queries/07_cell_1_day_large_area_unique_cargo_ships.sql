@@ -1,5 +1,5 @@
 WITH
-    enc(geom) AS (SELECT geom, geom_geodetic FROM enc_cells WHERE cell_id = 147),
+    enc(geom) AS (SELECT geom, geom_geodetic FROM reference_geometries WHERE id = 148 AND type = 'enc'),
     q_window(box, start_date_id, end_date_id) AS (
         SELECT
             SetSRID(STBox(
