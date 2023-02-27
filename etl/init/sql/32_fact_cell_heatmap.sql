@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     ship_type_id INTEGER NOT NULL,
     histogram_id INTEGER NOT NULL,
     heatmap_type_id SMALLINT NOT NULL,
+
     PRIMARY KEY (cell_x, cell_y, date_id, time_id, ship_type_id, histogram_id, heatmap_type_id),
     FOREIGN KEY (cell_x, cell_y) REFERENCES dim_cell_5000m (x, y),
     FOREIGN KEY (date_id) REFERENCES dim_date(date_id),

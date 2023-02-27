@@ -1,29 +1,54 @@
-INSERT INTO fact_cell_heatmap_{CELL_SIZE}m (
-    cell_x, cell_y, date_id, ship_type_id, density_histogram
+-- Insert 5000m density heatmap
+WITH raster_ref (rast) AS (
+    SELECT ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034)
 )
+INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, histogram, heatmap_type_id)
 SELECT
-    i1.cell_x,
-    i1.cell_y,
+    i2.cell_x,
+    i2.cell_y,
     %(date_key)s AS date_id,
-    i1.ship_type_id,
-    create_histogram(
-        24, -- 24 hours = 24 entries in histogram
-        ARRAY_AGG(i1.hour_of_day ORDER BY i1.hour_of_day ASC)::int[],
-        ARRAY_AGG(i1.cnt ORDER BY i1.hour_of_day ASC)::int[]
-    ) AS density_histogram
+    (i2.hour_of_day || '0000')::int AS time_id,
+    i2.ship_type_id,
+    (
+		SELECT
+        	create_histogram(
+            	i2.rast,
+            	{CELL_SIZE},
+            	3600
+        	)
+    ) AS histogram,
+    (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count') AS heatmap_type_id
 FROM
     (
-        SELECT
-            fc.cell_x,
-            fc.cell_y,
-            ds.ship_type_id,
-            dt.hour_of_day,
-            COUNT (*) AS cnt
-        FROM fact_cell_{CELL_SIZE}m fc
-        INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
-        INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
-        WHERE fc.entry_date_id = %(date_key)s
-        GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id
-    ) i1
-GROUP BY i1.cell_x, i1.cell_y, i1.ship_type_id
+		SELECT
+			ST_Union(
+				ST_AsRaster(
+					i1.geom,
+				    rr.rast,
+					'32BUI'::text,
+					cnt::int
+				)
+			) AS rast,
+			i1.cell_x / (5000 / {CELL_SIZE}) AS cell_x,
+			i1.cell_y / (5000 / {CELL_SIZE}) AS cell_y,
+			i1.hour_of_day,
+			i1.ship_type_id
+		FROM raster_ref rr,
+		(
+			SELECT
+            	cell_x,
+            	cell_y,
+            	dt.hour_of_day,
+            	ds.ship_type_id,
+				dc.geom,
+				COUNT(*) cnt
+        	FROM fact_cell_{CELL_SIZE}m fc
+        	INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
+        	INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
+			INNER JOIN dim_cell_{CELL_SIZE}m dc ON dc.x = fc.cell_x and dc.y = fc.cell_y
+        	WHERE fc.entry_date_id = %(date_key)s
+        	GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id, dc.geom
+    	) i1
+		GROUP BY i1.cell_x / (5000 / {CELL_SIZE}), i1.cell_y / (5000 / {CELL_SIZE}), i1.hour_of_day, i1.ship_type_id
+	) i2
 ;
