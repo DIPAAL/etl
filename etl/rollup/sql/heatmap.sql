@@ -37,14 +37,13 @@ FROM
                 cell_y,
                 dt.hour_of_day,
                 ds.ship_type_id,
-                dc.geom,
+                dc.st_bounding_box::geometry AS geom,
                 COUNT(*) cnt
             FROM fact_cell_{CELL_SIZE}m fc
             INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
             INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
-            INNER JOIN dim_cell_{CELL_SIZE}m dc ON dc.x = fc.cell_x and dc.y = fc.cell_y
             WHERE fc.entry_date_id = %(DATE_KEY)s
-            GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id, dc.geom
+            GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id, dc.st_bounding_box::geometry
         ) i1
         GROUP BY i1.cell_x / (5000 / {CELL_SIZE}), i1.cell_y / (5000 / {CELL_SIZE}), i1.hour_of_day, i1.ship_type_id
     ) i2
