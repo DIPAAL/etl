@@ -1,4 +1,4 @@
-from etl.audit.logger import AuditLogger
+from etl.audit.logger import AuditLogger, ROWS_KEY, STATS_KEY
 import os
 import pytest
 
@@ -10,14 +10,14 @@ def test_audit_log_version_number():
         del os.environ['tag']
     al._log_etl_version()
 
-    assert al.log_dict['etl_version'] == 'local_dev'
+    assert al._log_dict['etl_version'] == 'local_dev'
 
     al.reset_log()
     expected_tag = 'v1.0.0'
     os.environ['tag'] = expected_tag
     al._log_etl_version()
 
-    assert al.log_dict['etl_version'] == expected_tag
+    assert al._log_dict['etl_version'] == expected_tag
 
 
 def test_audit_log_file_raises_error():
@@ -38,6 +38,6 @@ def test_audit_log_file(file_path):
     file_size = os.path.getsize(file_path)
     file_rows = len(open(file_path).readlines())  # Loads entire file into memory but fast
 
-    assert al.log_dict['file_name'] == file_name
-    assert al.log_dict['file_size'] == file_size
-    assert al.log_dict['file_rows'] == file_rows
+    assert al._log_dict['file_name'] == file_name
+    assert al._log_dict['file_size'] == file_size
+    assert al._log_dict[STATS_KEY][ROWS_KEY]['file'] == file_rows

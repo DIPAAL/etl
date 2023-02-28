@@ -20,7 +20,7 @@ def apply_rollups(conn, date: datetime) -> None:
     # Commit the changes, this is neccessary as citus does not distribute the rollup query efficiently otherwise.
     conn.commit()
 
-    wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
+    # wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
 
 
 def apply_simplify_query(conn, date: datetime) -> None:
