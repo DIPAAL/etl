@@ -14,6 +14,11 @@ def setup_citus_instance(host, config):
     """
     conn = get_connection(config, host=host, database='postgres')
     conn.set_session(autocommit=True)
+
+    if config['Database']['drop_database_on_init']:
+        with conn.cursor() as cursor:
+            cursor.execute(f"DROP DATABASE IF EXISTS {config['Database']['database']} WITH (FORCE);")
+
     run_sql_file_with_timings('etl/init/setup_database.sql', config, conn)
 
     conn = get_connection(config, host=host)
@@ -49,60 +54,6 @@ def setup_master(config):
     conn.commit()
 
 
-def create_fact_partitions(config):
-    """
-    Create partitions for the fact tables.
-
-    Args:
-        config: the application configuration
-    """
-    conn = get_connection(config)
-    conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    # create monthly partitions for fact table for each dim_date
-    cur.execute("SELECT DISTINCT year, month_of_year FROM dim_date ORDER BY year, month_of_year;")
-
-    for date in cur.fetchall():
-        year, month = date
-        # 0 pad month to 2 digits
-        month = str(month).zfill(2)
-
-        if year is None or month is None:
-            continue
-        smart_key = int(f"{year}{month}00")
-        # add 99 to the smart key, as the last two digits are reserved for the day
-
-        cur.execute(f"""
-            CREATE TABLE fact_trajectory_{year}_{month}
-            PARTITION OF fact_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_50m_{year}_{month}
-            PARTITION OF fact_cell_50m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_200m_{year}_{month}
-            PARTITION OF fact_cell_200m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_1000m_{year}_{month}
-            PARTITION OF fact_cell_1000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE fact_cell_5000m_{year}_{month}
-            PARTITION OF fact_cell_5000m FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-        cur.execute(f"""
-            CREATE TABLE dim_trajectory_{year}_{month}
-            PARTITION OF dim_trajectory FOR VALUES FROM ('{smart_key}') TO ('{smart_key + 99}');
-        """)
-
-
 def init_database(config):
     """
     Drop and recreate the database and all tables.
@@ -114,4 +65,3 @@ def init_database(config):
     setup_master(config)
     run_sql_folder_with_timings('etl/init/sql', config)
     run_single_statement_sql_files_in_folder('etl/init/single_statement_sql', config)
-    wrap_with_timings("Creating fact partitions", lambda: create_fact_partitions(config))

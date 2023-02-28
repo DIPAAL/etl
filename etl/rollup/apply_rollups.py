@@ -1,8 +1,8 @@
 """Module to apply rollups after inserting."""
 from datetime import datetime
 
-from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection
-from etl.trajectory.builder import extract_date_smart_id
+from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
+    extract_smart_date_id_from_date
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
@@ -34,7 +34,7 @@ def apply_simplify_query(conn, date: datetime) -> None:
     with open('etl/rollup/sql/simplify_trajectories.sql', 'r') as f:
         query = f.read()
 
-    date_smart_key = extract_date_smart_id(date)
+    date_smart_key = extract_smart_date_id_from_date(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
 
@@ -50,7 +50,7 @@ def apply_calc_length_query(conn, date: datetime) -> None:
     with open('etl/rollup/sql/calc_length.sql', 'r') as f:
         query = f.read()
 
-    date_smart_key = extract_date_smart_id(date)
+    date_smart_key = extract_smart_date_id_from_date(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
 
@@ -66,7 +66,7 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     with open('etl/rollup/sql/staging_split_trajectories.sql', 'r') as f:
         query = f.read()
 
-    date_smart_key = extract_date_smart_id(date)
+    date_smart_key = extract_smart_date_id_from_date(date)
 
     (rows, seconds_elapsed) = measure_time(
         lambda: execute_insert_query_on_connection(conn, query, (date_smart_key,))
@@ -98,7 +98,7 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
 
     cell_fact_rollup_query = cell_fact_rollup_query.format(CELL_SIZE=cell_size)
 
-    date_smart_key = extract_date_smart_id(date)
+    date_smart_key = extract_smart_date_id_from_date(date)
 
     (rows, seconds_elapsed) = measure_time(
         lambda: execute_insert_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
