@@ -1,7 +1,7 @@
 INSERT INTO fact_cell_{CELL_SIZE}m (
     cell_x, cell_y, ship_id,
     entry_date_id, entry_time_id, exit_time_id,
-    direction_id, nav_status_id, trajectory_sub_id,
+    direction_id, nav_status_id, infer_stopped, trajectory_sub_id,
     sog, delta_heading, draught, delta_cog, st_bounding_box
 )
 SELECT
@@ -13,6 +13,7 @@ SELECT
     (EXTRACT(HOUR FROM endTime) * 10000) + (EXTRACT(MINUTE FROM endTime) * 100) + (EXTRACT(SECOND FROM endTime)) AS exit_time_id,
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
+    infer_stopped,
     trajectory_sub_id,
     length(crossing) / GREATEST (durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
     -- if delta_heading is null, then set as -1, else use calculate_delta
@@ -38,6 +39,7 @@ FROM (
         cell_geom,
         ship_id,
         nav_status_id,
+        infer_stopped,
         trajectory_sub_id,
         startValue (atPeriod (draught, crossing_period)) draught,
         atPeriod (heading, crossing_period) heading,
@@ -73,6 +75,7 @@ FROM (
                 cell_geom,
                 ship_id,
                 nav_status_id,
+                infer_stopped,
                 trajectory_sub_id,
                 draught,
                 heading,
@@ -110,6 +113,7 @@ FROM (
                     dc.geom cell_geom,
                     fdt.ship_id ship_id,
                     fdt.nav_status_id nav_status_id,
+                    fdt.infer_stopped infer_stopped,
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
                     fdt.heading heading
