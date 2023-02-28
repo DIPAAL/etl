@@ -23,7 +23,7 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         _ensure_partition_for_table(conn, table_name, date_id)
 
 
-def _ensure_partition_for_table(conn, table_name, date_id: int):
+def _ensure_partition_for_table(conn, table_name: str, date_id: int):
     """
     Ensure that a partition for the given date exists in the given table.
 
@@ -32,7 +32,7 @@ def _ensure_partition_for_table(conn, table_name, date_id: int):
         table_name: The name of the table to ensure a partition exists for
         date_id: The smart date id to ensure exists
     """
-    rounded_smart_date_id = date_id - date_id % 100
+    rounded_smart_date_id = date_id - (date_id % 100)
 
     query = """
         SELECT 1 FROM pg_inherits
