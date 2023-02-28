@@ -2,7 +2,7 @@
 WITH raster_ref (rast) AS (
     SELECT ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034)
 )
-INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, histogram_id, heatmap_type_id)
+INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, raster_id, heatmap_type_id)
 SELECT
     i2.cell_x,
     i2.cell_y,
@@ -11,12 +11,12 @@ SELECT
     i2.ship_type_id,
     (
         SELECT
-            create_histogram(
+            insert_raster(
                 i2.rast,
                 {CELL_SIZE},
                 3600
             )
-    ) AS histogram,
+    ) AS raster_id,
     (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count') AS heatmap_type_id
 FROM
     (
