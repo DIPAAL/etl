@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     cell_y INTEGER NOT NULL,
     date_id INTEGER NOT NULL,
     time_id INTEGER NOT NULL,
-    ship_type_id INTEGER NOT NULL,
     histogram_id INTEGER NOT NULL,
+    ship_type_id SMALLINT NOT NULL,
     heatmap_type_id SMALLINT NOT NULL,
 
     PRIMARY KEY (cell_x, cell_y, date_id, time_id, ship_type_id, histogram_id, heatmap_type_id),
