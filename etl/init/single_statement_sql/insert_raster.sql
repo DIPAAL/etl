@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION insert_raster(rast RASTER, spatial_resolution INTEGER
 DECLARE
     raster_id INTEGER;
 BEGIN
-    INSERT INTO dim_raster AS dr (rast, spatial_resolution, temporal_resolution) VALUES (rast, spatial_resolution, temporal_resolution) RETURNING dr.raster_id INTO raster_id;
-    RETURN histogram_id;
+    INSERT INTO dim_raster AS dr (rast, spatial_resolution_meter, temporal_resolution_sec) VALUES (rast, spatial_resolution, temporal_resolution) RETURNING dr.raster_id INTO raster_id;
+    RETURN raster_id;
 END;
 $$ LANGUAGE plpgsql

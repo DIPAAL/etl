@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     FOREIGN KEY (date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (ship_type_id) REFERENCES dim_ship_type(ship_type_id),
-    FOREIGN KEY (raster_id) REFERENCES dim_histogram(raster_id),
+    FOREIGN KEY (raster_id) REFERENCES dim_raster(raster_id),
     FOREIGN KEY (heatmap_type_id) REFERENCES dim_heatmap_type(heatmap_type_id)
 ) PARTITION BY RANGE(date_id);

@@ -12,15 +12,10 @@ SELECT create_reference_table('dim_cell_1000m');
 SELECT create_reference_table('dim_cell_200m');
 SELECT create_reference_table('dim_cell_50m');
 
--- Heatmaps
-SELECT create_reference_table('dim_heatmap_type');
-SELECT create_reference_table('dim_raster');
-SELECT create_reference_table('fact_cell_heatmap');
-
 -- And other references
 SELECT create_reference_table('danish_waters');
 
--- Distribute the fact tables and ship dimension
+-- Distribute the fact tables and trajectory dimension
 SELECT create_distributed_table('dim_trajectory', 'trajectory_sub_id');
 SELECT create_distributed_table('fact_trajectory', 'trajectory_sub_id', colocate_with=>'dim_trajectory');
 SELECT create_distributed_table('fact_cell_1000m', 'trajectory_sub_id', colocate_with=>'dim_trajectory');
