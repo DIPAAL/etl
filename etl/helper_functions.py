@@ -32,7 +32,7 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
 
     # Audit logging - Name of the ETL stage and the time it took to execute
     if audit_etl_stage is not None:
-        gal.log_dict[STATS_KEY][TIMINGS_KEY][audit_etl_stage] = end - start
+        gal[TIMINGS_KEY][audit_etl_stage] = end - start
 
     return result
 

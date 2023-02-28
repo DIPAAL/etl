@@ -64,7 +64,7 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     clean_gdf = wrap_with_timings('Spatial cleaning', lambda: lazy_clean.compute(),
                                   audit_etl_stage=ETL_STAGE_SPATIAL
                                   )
-    gal.log_dict[STATS_KEY][ROWS_KEY]['spatial_join'] = len(clean_gdf.index)
+    gal[ROWS_KEY]['spatial_join'] = len(clean_gdf.index)
     print('Number of rows in boundary cleaned dataframe: ' + str(len(clean_gdf.index)))
 
     return clean_gdf

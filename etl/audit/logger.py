@@ -1,4 +1,5 @@
 """Module responsible for logging details about the execution of each stage of the ETL process."""
+import json
 from datetime import datetime
 
 import os
@@ -19,19 +20,16 @@ class AuditLogger:
         reset_logs(): reset the logs
         to_df(): return a dataframe containing the logs
         get_logs_dict(): return the dictionary containing the logs
-
-    Attributes:
-        log_dict (dict): dictionary containing the logs
     """
 
     def __init__(self):
         """Construct an instance of the AuditLogger class."""
-        self.log_dict = None
+        self._log_dict = None
         self.reset_log()
 
     def _log_etl_version(self):
         """Log the version of the ETL process."""
-        self.log_dict['etl_version'] = os.getenv('tag', 'local_dev')
+        self._log_dict['etl_version'] = os.getenv('tag', 'local_dev')
 
     def log_file(self, file_path):
         """Log the file name, size and number of rows.
@@ -39,11 +37,11 @@ class AuditLogger:
         Keyword arguments:
             file_path: path to the file
         """
-        self.log_dict['file_name'] = os.path.basename(file_path)
-        self.log_dict['file_size'] = os.path.getsize(file_path)
+        self._log_dict['file_name'] = os.path.basename(file_path)
+        self._log_dict['file_size'] = os.path.getsize(file_path)
         # Do not attempt to count the rows of a pickle because it is binary
         if not file_path.endswith('.pkl'):
-            self.log_dict['file_rows'] = self._get_file_rows(file_path)
+            self[ROWS_KEY]['file'] = self._get_file_rows(file_path)
 
     @staticmethod
     def _get_file_rows(file_path):
@@ -69,11 +67,11 @@ class AuditLogger:
             if line.startswith('#'):
                 continue
             requirements.append(line.strip())
-        self.log_dict['requirements'] = requirements
+        self._log_dict['requirements'] = requirements
 
     def reset_log(self):
         """Reset the log dictionary."""
-        self.log_dict = {
+        self._log_dict = {
             'import_datetime': datetime.now(),
             STATS_KEY: {
                 TIMINGS_KEY: {},
@@ -85,13 +83,25 @@ class AuditLogger:
 
     def to_dataframe(self):
         """Return a pandas DataFrame containing the logs."""
-        self.log_dict['total_delta_time'] = int((datetime.now() - self.log_dict['import_datetime']).total_seconds())
-        df = pd.DataFrame.from_dict(self.log_dict, orient='index').T
+        self._log_dict['total_delta_time'] = int((datetime.now() - self._log_dict['import_datetime']).total_seconds())
+
+        temp_dict = self._log_dict.copy()
+
+        # Convert the deep objects to a string to allow pandas to convert it.
+        temp_dict [STATS_KEY] = json.dumps(self._log_dict[STATS_KEY])
+
+        df = pd.DataFrame.from_dict(temp_dict, orient='index').T
         return df
 
     def get_logs_dict(self):
         """Return a dictionary containing the logs."""
-        return self.log_dict
+        return self._log_dict
+
+    def __getitem__(self, key):
+        return self._log_dict[STATS_KEY][key]
+
+    def __setitem__(self, key, value):
+        self._log_dict[STATS_KEY][key] = value
 
 
 # Global audit logger class object, for storing logs.

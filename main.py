@@ -125,10 +125,10 @@ def clean_date(date: datetime, config, standalone: bool = False) -> pd.DataFrame
 
     clean_sorted_ais = wrap_with_timings('Data Cleaning', lambda: clean_data(config, file_path),
                                          audit_etl_stage=ETL_STAGE_CLEAN)
-    gal.log_dict[STATS_KEY][ROWS_KEY]['points_after_clean'] = len(clean_sorted_ais.index)
+    gal[ROWS_KEY]['points_after_clean'] = len(clean_sorted_ais.index)
     trajectories = wrap_with_timings('Trajectory Construction', lambda: build_from_geopandas(clean_sorted_ais),
                                      audit_etl_stage=ETL_STAGE_TRAJECTORY)
-    gal.log_dict[STATS_KEY][ROWS_KEY]['trajectories_built'] = len(trajectories.index)
+    gal[ROWS_KEY]['trajectories_built'] = len(trajectories.index)
 
     if standalone:
         pickle_path = file_path.replace('.csv', '.pkl')

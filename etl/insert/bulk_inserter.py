@@ -1,6 +1,6 @@
 """Class implementing bulk insertion of data into a database."""
 import pandas as pd
-from etl.audit.logger import global_audit_logger as gal
+from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 
 
 class BulkInserter:
@@ -126,8 +126,8 @@ class BulkInserter:
                 cursor.execute(query, batch.values.flatten())
 
         # Log the number of rows inserted in the GAL
-        if self.dimension_name not in gal.log_dict[gal.TIMINGS_KEY]:
-            gal.log_dict[gal.TIMINGS_KEY][self.dimension_name] = 0
-        gal.log_dict[gal.TIMINGS_KEY][self.dimension_name] += len(batch)
+        if self.dimension_name not in gal[ROWS_KEY]:
+            gal[ROWS_KEY][self.dimension_name] = 0
+        gal[ROWS_KEY][self.dimension_name] += len(batch)
 
         return result
