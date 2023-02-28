@@ -1,7 +1,4 @@
 -- Insert 5000m density heatmap
-WITH raster_ref (rast) AS (
-    SELECT ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034)
-)
 INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, raster_id, heatmap_type_id)
 SELECT
     i2.cell_x,
@@ -12,7 +9,7 @@ SELECT
     (
         SELECT
             insert_raster(
-                i2.rast,
+                ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034),
                 {CELL_SIZE},
                 3600
             )
@@ -33,7 +30,7 @@ FROM
             i1.cell_y / (5000 / {CELL_SIZE}) AS cell_y,
             i1.hour_of_day,
             i1.ship_type_id
-        FROM raster_ref rr,
+        FROM
         (
             SELECT
                 cell_x,
