@@ -450,6 +450,7 @@ def _check_outlier(dataframe: gpd.GeoDataFrame, cur_point: Tuple[int, gpd.GeoSer
         cur_point: A tuple consisting of the index of current point and a series representing current point.
         prev_point: A tuple consisting of the index of previous point and a series representing previous point.
         speed_threshold: max speed that determine whether an AIS point is an outlier
+        dist_func: distance function used to calculate the distance between cur_point and prev_point
     """
     time_delta_ns = cur_point[1][TIMESTAMP_COL] - prev_point[1][TIMESTAMP_COL]
     # To get time_delta in seconds, divide by 1s in nano seconds.
