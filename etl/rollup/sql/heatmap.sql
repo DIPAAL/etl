@@ -2,11 +2,11 @@
 WITH raster_ref (rast) AS (
     SELECT ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034)
 )
-INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, histogram, heatmap_type_id)
+INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, histogram_id, heatmap_type_id)
 SELECT
     i2.cell_x,
     i2.cell_y,
-    %(date_key)s AS date_id,
+    %(DATE_KEY)s AS date_id,
     (i2.hour_of_day || '0000')::int AS time_id,
     i2.ship_type_id,
     (
@@ -46,7 +46,7 @@ FROM
         	INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
         	INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
 			INNER JOIN dim_cell_{CELL_SIZE}m dc ON dc.x = fc.cell_x and dc.y = fc.cell_y
-        	WHERE fc.entry_date_id = %(date_key)s
+        	WHERE fc.entry_date_id = %(DATE_KEY)s
         	GROUP BY fc.cell_x, fc.cell_y, dt.hour_of_day, ds.ship_type_id, dc.geom
     	) i1
 		GROUP BY i1.cell_x / (5000 / {CELL_SIZE}), i1.cell_y / (5000 / {CELL_SIZE}), i1.hour_of_day, i1.ship_type_id

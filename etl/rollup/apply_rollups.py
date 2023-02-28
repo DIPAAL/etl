@@ -84,7 +84,7 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str) -> None:
         query: The aggregation query
     """
     with conn.cursor() as cursor:
-        cursor.execute(query, {'date_key': date_key})
+        cursor.execute(query, {'DATE_KEY': date_key})
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:
