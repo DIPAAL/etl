@@ -5,7 +5,7 @@ from time import perf_counter
 
 import pandas as pd
 import psycopg2
-from etl.audit.logger import global_audit_logger as gal
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 from etl.constants import UNKNOWN_INT_VALUE
 
 
@@ -35,7 +35,7 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
 
     # Audit logging - Name of the ETL stage and the time it took to execute
     if audit_etl_stage is not None:
-        gal.log_etl_stage_time(audit_etl_stage, start, end)
+        gal[TIMINGS_KEY][audit_etl_stage] = end - start
 
     return result
 
