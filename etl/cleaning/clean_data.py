@@ -4,7 +4,7 @@ import dask.dataframe as dd
 import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings, get_first_query_in_file
-from etl.audit.logger import global_audit_logger as gal, ROWS_KEY, STATS_KEY
+from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from sqlalchemy import create_engine
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
     LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL, A_COL, B_COL, C_COL, D_COL, WIDTH_COL, \

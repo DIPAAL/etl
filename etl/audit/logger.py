@@ -88,7 +88,7 @@ class AuditLogger:
         temp_dict = self._log_dict.copy()
 
         # Convert the deep objects to a string to allow pandas to convert it.
-        temp_dict [STATS_KEY] = json.dumps(self._log_dict[STATS_KEY])
+        temp_dict[STATS_KEY] = json.dumps(self._log_dict[STATS_KEY])
 
         df = pd.DataFrame.from_dict(temp_dict, orient='index').T
         return df
@@ -98,9 +98,22 @@ class AuditLogger:
         return self._log_dict
 
     def __getitem__(self, key):
+        """
+        Return the value of a given key in the log dictionary.
+
+        Keyword arguments:
+            key: key to retrieve
+        """
         return self._log_dict[STATS_KEY][key]
 
     def __setitem__(self, key, value):
+        """
+        Set the value of a given key in the log dictionary.
+
+        Keyword arguments:
+            key: key to set
+            value: value to set
+        """
         self._log_dict[STATS_KEY][key] = value
 
 

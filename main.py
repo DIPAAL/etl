@@ -16,7 +16,7 @@ from etl.insert.insert_trajectories import TrajectoryInserter
 from etl.insert.insert_audit import AuditInserter
 from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
-from etl.audit.logger import global_audit_logger as gal, ROWS_KEY, STATS_KEY
+from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL
 
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import List, Tuple, Callable, TypeVar
 from time import perf_counter
 import psycopg2
-from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, STATS_KEY
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):

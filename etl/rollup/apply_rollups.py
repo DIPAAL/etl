@@ -3,7 +3,7 @@ from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection
 from etl.trajectory.builder import extract_date_smart_id
-from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY, STATS_KEY
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
 def apply_rollups(conn, date: datetime) -> None:
