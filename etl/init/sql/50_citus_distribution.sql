@@ -13,7 +13,7 @@ SELECT create_reference_table('dim_cell_200m');
 SELECT create_reference_table('dim_cell_50m');
 
 -- And other references
-SELECT create_reference_table('danish_waters');
+SELECT create_reference_table('reference_geometries');
 
 -- Distribute the fact tables and trajectory dimension
 SELECT create_distributed_table('dim_trajectory', 'trajectory_sub_id');

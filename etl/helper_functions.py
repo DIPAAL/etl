@@ -2,8 +2,11 @@
 from datetime import datetime, timedelta
 from typing import List, Tuple, Callable, TypeVar
 from time import perf_counter
+
+import pandas as pd
 import psycopg2
-from etl.audit.logger import global_audit_logger as gal
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
+from etl.constants import UNKNOWN_INT_VALUE
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -32,7 +35,7 @@ def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
 
     # Audit logging - Name of the ETL stage and the time it took to execute
     if audit_etl_stage is not None:
-        gal.log_etl_stage_time(audit_etl_stage, start, end)
+        gal[TIMINGS_KEY][audit_etl_stage] = end - start
 
     return result
 
@@ -120,3 +123,25 @@ def execute_insert_query_on_connection(conn, query: str, params=None, fetch_coun
         if fetch_count:
             return cursor.fetchone()[0]
         return cursor.rowcount
+
+
+def extract_smart_date_id_from_date(date: datetime) -> int:
+    """
+    Extract the smart date id from a given date.
+
+    Keyword arguments:
+        date: the date to extract the smart date id from
+    """
+    if pd.isna(date):
+        return UNKNOWN_INT_VALUE
+    return (date.year * 10000) + (date.month * 100) + date.day
+
+
+def extract_date_from_smart_date_id(smart_date_id: int) -> datetime:
+    """
+    Extract the date from a given smart date id.
+
+    Keyword arguments:
+        smart_date_id: the smart date id to extract the date from
+    """
+    return datetime.strptime(str(smart_date_id), '%Y%m%d')

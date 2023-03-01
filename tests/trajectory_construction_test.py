@@ -8,7 +8,7 @@ from typing import List
 from datetime import datetime, timedelta
 from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
-    _create_trajectory_db_df, _check_outlier, extract_date_smart_id, _extract_time_smart_id, _find_most_recurring, \
+    _create_trajectory_db_df, _check_outlier, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS, \
     _update_cannot_handle, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
 from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL
@@ -90,22 +90,6 @@ def test_check_outlier(dataframe,  speed_threshold, expected):
     curr_point = (1, dataframe.loc[1])
 
     assert _check_outlier(dataframe, curr_point, prev_point, speed_threshold, distance_func) == expected
-
-
-test_data_date_smart_key_extraction = [
-    (datetime.strptime('01/01/2022 00:00:00', CVS_TIMESTAMP_FORMAT), 20220101),
-    (datetime.strptime('02/01/2022 00:00:00', CVS_TIMESTAMP_FORMAT), 20220102),
-    (datetime.strptime('01/02/2022 00:00:00', CVS_TIMESTAMP_FORMAT), 20220201),
-    (datetime.strptime('07/09/2021 00:00:00', CVS_TIMESTAMP_FORMAT), 20210907),
-    (datetime.strptime('31/01/2022 10:10:20', CVS_TIMESTAMP_FORMAT), 20220131),  # Show that time does not matter
-    (datetime.strptime('31/01/2022 13:14:15', CVS_TIMESTAMP_FORMAT), 20220131),  # Show that time does not matter
-    (None, -1)
-]
-
-
-@pytest.mark.parametrize('date, expected_smart_key', test_data_date_smart_key_extraction)
-def test_date_smart_key_extraction(date, expected_smart_key):
-    assert extract_date_smart_id(date) == expected_smart_key
 
 
 test_data_time_smart_key_extraction = [

@@ -1,6 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  labels:
+    app: standalone-clean-etl
   name: standalone-clean-etl-${JOB_ID}
 spec:
   ttlSecondsAfterFinished: 253800

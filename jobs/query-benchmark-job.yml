@@ -1,6 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  labels:
+    app: query-benchmark
   name: query-benchmark-${JOB_ID}
 spec:
   ttlSecondsAfterFinished: 253800
