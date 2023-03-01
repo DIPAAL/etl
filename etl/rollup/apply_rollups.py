@@ -68,7 +68,7 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
     with open('etl/rollup/sql/heatmap.sql', 'r') as f:
         query_template = f.read()
 
-    date_smart_key = extract_date_smart_id(date)
+    date_smart_key = extract_smart_date_id_from_date(date)
     for size in CELL_SIZES:
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(

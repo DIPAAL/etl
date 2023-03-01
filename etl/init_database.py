@@ -2,7 +2,6 @@
 from etl.helper_functions import wrap_with_timings, get_connection
 from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_timings, \
     run_single_statement_sql_files_in_folder
-from etl.constants import CELL_SIZES
 
 
 def setup_citus_instance(host, config):
