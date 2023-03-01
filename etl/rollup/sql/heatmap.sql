@@ -1,20 +1,15 @@
 -- Insert 5000m density heatmap
-INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, raster_id, heatmap_type_id)
+INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, raster_id, heatmap_type_id, spatial_resolution, temporal_resolution_sec)
 SELECT
     i2.cell_x,
     i2.cell_y,
     %(DATE_KEY)s AS date_id,
     (i2.hour_of_day || '0000')::int AS time_id,
     i2.ship_type_id,
-    (
-        SELECT
-            insert_raster(
-                i2.rast,
-                {CELL_SIZE},
-                3600
-            )
-    ) AS raster_id,
-    (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count') AS heatmap_type_id
+    (SELECT insert_raster(i2.rast)) AS raster_id,
+    (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count') AS heatmap_type_id,
+    {CELL_SIZE} AS spatial_resolution,
+    86400 AS temporal_resolution_sec
 FROM
     (
         SELECT

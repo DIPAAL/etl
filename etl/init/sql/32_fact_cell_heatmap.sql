@@ -5,6 +5,11 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     date_id INTEGER NOT NULL,
     time_id INTEGER NOT NULL,
     raster_id INTEGER NOT NULL,
+
+    -- Non-additive Measures
+    temporal_resolution_sec INTEGER NOT NULL,
+    spatial_resolution INTEGER NOT NULL,
+
     ship_type_id SMALLINT NOT NULL,
     heatmap_type_id SMALLINT NOT NULL,
 
