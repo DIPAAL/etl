@@ -73,11 +73,11 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(
             f'Creating heatmap for {size}m cells',
-            lambda: _apply_heatmap_aggregation(conn, date_smart_key, query)
+            lambda: _apply_heatmap_aggregation(conn, date_smart_key, query, size)
         )
 
 
-def _apply_heatmap_aggregation(conn, date_key: int, query: str) -> None:
+def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) -> None:
     """
     Pre-aggregate single heatmap.
 
@@ -85,9 +85,15 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str) -> None:
         conn: The database connection
         date_key: The DW smart key for the date to apply aggregation
         query: The aggregation query
+        cell_size: The size of the cells the heatmap is created from
     """
-    with conn.cursor() as cursor:
-        cursor.execute(query, {'DATE_KEY': date_key})
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, query, {'DATE_KEY': date_key})
+    )
+
+    # Audit log the information
+    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
+    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:
