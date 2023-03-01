@@ -1,5 +1,5 @@
 """Module for initializing the database."""
-from etl.helper_functions import wrap_with_timings, get_connection
+from etl.helper_functions import wrap_with_timings, get_connection, get_cell_hierarchy
 from etl.init.sqlrunner import run_sql_folder_with_timings, run_sql_file_with_timings, \
     run_single_statement_sql_files_in_folder
 
@@ -54,6 +54,23 @@ def setup_master(config):
     conn.commit()
 
 
+def setup_cell_configurations(config):
+    """
+    Sets up the staging area in the data warehouse.
+
+    Args:
+        config: the application configuration
+    """
+    CELL_SIZES = get_cell_hierarchy()
+    for (cell_size, parent_cell_size) in reversed([*zip(CELL_SIZES, CELL_SIZES[1:]), (CELL_SIZES[-1], None)]):
+        run_sql_file_with_timings('etl/init/sql/cell/01_staging_cells.sql', config, format=dict(CELL_SIZE=cell_size))
+        run_sql_file_with_timings('etl/init/sql/cell/02_dim_cell.sql', config, format=dict(CELL_SIZE=cell_size))
+        if parent_cell_size:
+            run_sql_file_with_timings('etl/init/sql/cell/03_dim_cell_keys.sql', config, format=dict(CELL_SIZE=cell_size, PARENT_CELL_SIZE=parent_cell_size))
+        run_sql_file_with_timings('etl/init/sql/cell/04_fact_cell.sql', config, format=dict(CELL_SIZE=cell_size))
+    
+
+
 def init_database(config):
     """
     Drop and recreate the database and all tables.
@@ -64,4 +81,5 @@ def init_database(config):
     setup_citus_instances(config)
     setup_master(config)
     run_sql_folder_with_timings('etl/init/sql', config)
+    setup_cell_configurations(config)
     run_single_statement_sql_files_in_folder('etl/init/single_statement_sql', config)

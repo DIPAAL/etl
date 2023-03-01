@@ -1,5 +1,5 @@
 """Ensure that the date entry exists and partitions for the given date exists in partitioned tables."""
-from etl.helper_functions import extract_date_from_smart_date_id
+from etl.helper_functions import extract_date_from_smart_date_id, get_cell_hierarchy
 
 
 def ensure_partitions_for_partitioned_tables(conn, date_id: int):
@@ -11,13 +11,14 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         date_id: The smarte date id to ensure exists
     """
     date_partitioned_table_names = [
-        "fact_cell_50m",
-        "fact_cell_200m",
-        "fact_cell_1000m",
-        "fact_cell_5000m",
         "fact_trajectory",
         "dim_trajectory"
     ]
+    CELL_SIZES = get_cell_hierarchy()
+    for size in CELL_SIZES:
+        date_partitioned_table_names.append(
+            f'fact_cell_{size}m'
+        )
 
     for table_name in date_partitioned_table_names:
         _ensure_partition_for_table(conn, table_name, date_id)

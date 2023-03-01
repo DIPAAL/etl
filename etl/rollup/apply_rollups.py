@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
-    extract_smart_date_id_from_date
+    extract_smart_date_id_from_date, get_cell_hierarchy
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
@@ -74,8 +74,7 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     gal[TIMINGS_KEY]["traj_split_5k"] = seconds_elapsed
     gal[ROWS_KEY]["traj_split_5k"] = rows
 
-    cell_sizes = [50, 200, 1000, 5000]
-
+    cell_sizes = get_cell_hierarchy()
     for (cell_size, parent_cell_size) in reversed([*zip(cell_sizes, cell_sizes[1:]), (cell_sizes[-1], None)]):
         wrap_with_timings(
             f"Applying {cell_size}m cell fact rollup",

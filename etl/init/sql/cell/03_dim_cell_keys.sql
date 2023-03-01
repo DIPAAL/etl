@@ -1,0 +1,1 @@
+ALTER TABLE dim_cell_{0[CELL_SIZE]}m ADD FOREIGN KEY (parent_x, parent_y) REFERENCES dim_cell_{0[PARENT_CELL_SIZE]}m(x,y);
