@@ -25,21 +25,21 @@ class ShipTypeDimensionInserter(BulkInserter):
             conn: database connection used for insertion
         """
         unique_columns = [
-            T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
+            T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
         ]
 
         ship_types = df[unique_columns].drop_duplicates()
 
         insert_query = """
-            INSERT INTO dim_ship_type (location_system_type, mobile_type, ship_type)
+            INSERT INTO dim_ship_type (mobile_type, ship_type)
             VALUES {}
-            RETURNING ship_type_id, location_system_type, mobile_type, ship_type
+            RETURNING ship_type_id, mobile_type, ship_type
         """
 
         select_query = """
-            SELECT ship_type_id, location_system_type, mobile_type, ship_type
+            SELECT ship_type_id, mobile_type, ship_type
             FROM dim_ship_type
-            WHERE (location_system_type, mobile_type, ship_type) IN {}
+            WHERE (mobile_type, ship_type) IN {}
         """
 
         ship_types = self._bulk_select_insert(ship_types, conn, insert_query, select_query)
