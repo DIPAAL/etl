@@ -74,10 +74,6 @@ FROM
 
 CREATE INDEX IF NOT EXISTS cell_50m_geom_idx ON staging.cell_50m USING SPGIST (geom);
 
-
-
-
-
 -- Make them all reference tables
 SELECT create_reference_table('staging.cell_50m');
 SELECT create_reference_table('staging.cell_200m');

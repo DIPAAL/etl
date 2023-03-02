@@ -5,6 +5,7 @@ TRAJECTORY_SRID = 4326
 COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'
 CVS_TIMESTAMP_FORMAT = '%d/%m/%Y %H:%M:%S'  # 07/09/2021 00:00:00
 INT32_MAX = 2147483647
+CELL_SIZES = [50, 200, 1000, 5000]  # In meters
 UNKNOWN_INT_VALUE = -1
 
 # AIS data column names
@@ -65,6 +66,7 @@ T_LOCATION_SYSTEM_TYPE_COL = 'location_system_type'
 T_TRAJECTORY_SUB_ID_COL = 'trajectory_sub_id'
 T_SHIP_NAVIGATIONAL_STATUS_ID_COL = 'ship_navigational_status_id'
 T_POSITION_FIXING_DEVICE_COL = 'position_fixing_device'
+T_SHIP_TYPE_ID_COL = 'ship_type_id'
 
 # Other dataframe columns
 MBDB_TRAJECTORY_COL = 'tgeompoint'
