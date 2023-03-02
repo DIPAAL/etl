@@ -21,6 +21,7 @@ def apply_rollups(conn, date: datetime) -> None:
     conn.commit()
 
     wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
+    wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
 
 def apply_simplify_query(conn, date: datetime) -> None:
@@ -53,6 +54,45 @@ def apply_calc_length_query(conn, date: datetime) -> None:
     date_smart_key = extract_smart_date_id_from_date(date)
     with conn.cursor() as cursor:
         cursor.execute(query, (date_smart_key,))
+
+
+def apply_heatmap_aggregations(conn, date: datetime) -> None:
+    """
+    Pre-aggregate heatmaps.
+
+    Keyword Arguments:
+        conn: The database connection
+        date: The date to pre-aggregate heatmaps for
+    """
+    with open('etl/rollup/sql/heatmap.sql', 'r') as f:
+        query_template = f.read()
+
+    date_smart_key = extract_smart_date_id_from_date(date)
+    for size in CELL_SIZES:
+        query = query_template.format(CELL_SIZE=size)
+        wrap_with_timings(
+            f'Creating heatmap for {size}m cells',
+            lambda: _apply_heatmap_aggregation(conn, date_smart_key, query, size)
+        )
+
+
+def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) -> None:
+    """
+    Pre-aggregate single heatmap.
+
+    Keyword Arguments:
+        conn: The database connection
+        date_key: The DW smart key for the date to apply aggregation
+        query: The aggregation query
+        cell_size: The size of the cells the heatmap is created from
+    """
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, query, {'DATE_KEY': date_key})
+    )
+
+    # Audit log the information
+    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
+    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:

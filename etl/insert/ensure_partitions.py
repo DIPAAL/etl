@@ -12,7 +12,8 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
     """
     date_partitioned_table_names = [
         "fact_trajectory",
-        "dim_trajectory"
+        "dim_trajectory",
+        "fact_cell_heatmap"
     ]
     CELL_SIZES = get_cell_hierarchy()
     for size in CELL_SIZES:
