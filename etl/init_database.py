@@ -56,7 +56,7 @@ def setup_master(config):
 
 def setup_cell_configurations(config):
     """
-    Sets up the staging area in the data warehouse.
+    Run commands to setup cell hierarchy.
 
     Args:
         config: the application configuration
@@ -66,9 +66,9 @@ def setup_cell_configurations(config):
         run_sql_file_with_timings('etl/init/sql/cell/01_staging_cells.sql', config, format=dict(CELL_SIZE=cell_size))
         run_sql_file_with_timings('etl/init/sql/cell/02_dim_cell.sql', config, format=dict(CELL_SIZE=cell_size))
         if parent_cell_size:
-            run_sql_file_with_timings('etl/init/sql/cell/03_dim_cell_keys.sql', config, format=dict(CELL_SIZE=cell_size, PARENT_CELL_SIZE=parent_cell_size))
+            run_sql_file_with_timings('etl/init/sql/cell/03_dim_cell_keys.sql', config,
+                                      format=dict(CELL_SIZE=cell_size, PARENT_CELL_SIZE=parent_cell_size))
         run_sql_file_with_timings('etl/init/sql/cell/04_fact_cell.sql', config, format=dict(CELL_SIZE=cell_size))
-    
 
 
 def init_database(config):

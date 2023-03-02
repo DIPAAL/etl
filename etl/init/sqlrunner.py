@@ -14,7 +14,7 @@ def get_sql_files(folder):
     return files
 
 
-def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict=None):
+def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None):
     """
     Run a single sql file with timings for every statement.
 
@@ -39,7 +39,7 @@ def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict=None):
         wrap_with_timings(f"Executing query: {query_short}", lambda: conn.cursor().execute(query))
 
 
-def run_sql_folder_with_timings(folder: str, config, conn=None, format: Dict=None) -> None:
+def run_sql_folder_with_timings(folder: str, config, conn=None, format: Dict = None) -> None:
     """
     Run all sql files in a folder.
 

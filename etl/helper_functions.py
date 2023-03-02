@@ -149,7 +149,9 @@ def extract_date_from_smart_date_id(smart_date_id: int) -> datetime:
     return datetime.strptime(str(smart_date_id), '%Y%m%d')
 
 
-config = None # Global configuration variable
+config = None  # Global configuration variable
+
+
 def get_config():
     """Get the application configuration."""
     global config
@@ -165,8 +167,6 @@ def get_config():
 
 
 def get_cell_hierarchy() -> List[int]:
-    """
-    Get the cell heirarchy from the config.
-    """
+    """Get the cell heirarchy from the config."""
     config = get_config()
     return [int(size) for size in config['Database']['cell_hierarchy_meter'].split(',')]
