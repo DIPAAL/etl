@@ -16,7 +16,8 @@ CREATE TABLE fact_cell_50m (
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
-    -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
+    infer_stopped boolean NOT NULL,
+    -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
     PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
@@ -46,7 +47,8 @@ CREATE TABLE fact_cell_200m (
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
-    -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
+    infer_stopped boolean NOT NULL,
+    -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
     PRIMARY KEY (cell_x, cell_y, ship_id, trajectory_sub_id, entry_date_id, entry_time_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
@@ -76,7 +78,8 @@ CREATE TABLE fact_cell_1000m (
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
-    -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
+    infer_stopped boolean NOT NULL,
+    -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
     PRIMARY KEY (cell_x, cell_y, ship_id, trajectory_sub_id, entry_date_id, entry_time_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
@@ -106,7 +109,8 @@ CREATE TABLE fact_cell_5000m (
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
-    -- Padding: 2+2 = 4 bytes, so 4 bytes of padding to reach the MAXALIGN of 8 bytes
+    infer_stopped boolean NOT NULL,
+    -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
     PRIMARY KEY (cell_x, cell_y, ship_id, trajectory_sub_id, entry_date_id, entry_time_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
