@@ -1,5 +1,5 @@
--- Create {0[CELL_SIZE]} fact tables
-CREATE TABLE fact_cell_{0[CELL_SIZE]}m (
+-- Create {CELL_SIZE} fact tables
+CREATE TABLE fact_cell_{CELL_SIZE}m (
     st_bounding_box stbox NOT NULL,
 
     sog float NOT NULL,
@@ -27,6 +27,6 @@ CREATE TABLE fact_cell_{0[CELL_SIZE]}m (
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
     FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id)
 ) PARTITION BY RANGE (entry_date_id);
-CREATE INDEX fact_cell_{0[CELL_SIZE]}m_st_bounding_box_idx ON fact_cell_{0[CELL_SIZE]}m USING spgist (st_bounding_box);
+CREATE INDEX fact_cell_{CELL_SIZE}m_st_bounding_box_idx ON fact_cell_{CELL_SIZE}m USING spgist (st_bounding_box);
 
-SELECT create_distributed_table('fact_cell_{0[CELL_SIZE]}m', 'trajectory_sub_id', colocate_with=>'dim_trajectory');
+SELECT create_distributed_table('fact_cell_{CELL_SIZE}m', 'trajectory_sub_id', colocate_with=>'dim_trajectory');

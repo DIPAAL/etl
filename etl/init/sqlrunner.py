@@ -32,7 +32,7 @@ def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict=None):
     queries = [q.strip() for q in queries if q.strip() != '']
     for query in queries:
         if format:
-            query = query.format(format)
+            query = query.format(**format)
         # Replace query new lines with spaces, and max 40 characters
         query_short = query.replace('\n', ' ')
         query_short = query_short[:40] + '...' if len(query_short) > 40 else query_short
