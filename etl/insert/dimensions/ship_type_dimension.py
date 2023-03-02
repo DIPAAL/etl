@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.insert.bulk_inserter import BulkInserter
-from etl.constants import T_LOCATION_SYSTEM_TYPE_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
+from etl.constants import T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL
 
 
 class ShipTypeDimensionInserter(BulkInserter):
