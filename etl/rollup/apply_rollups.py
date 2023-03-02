@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
-    extract_smart_date_id_from_date, get_cell_hierarchy
+    extract_smart_date_id_from_date, get_staging_cell_sizes
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
@@ -68,7 +68,8 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         query_template = f.read()
 
     date_smart_key = extract_smart_date_id_from_date(date)
-    for size in CELL_SIZES:
+    staging_cell_sizes = get_staging_cell_sizes()
+    for size in staging_cell_sizes:
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(
             f'Creating heatmap for {size}m cells',
@@ -114,8 +115,9 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     gal[TIMINGS_KEY]["traj_split_5k"] = seconds_elapsed
     gal[ROWS_KEY]["traj_split_5k"] = rows
 
-    cell_sizes = get_cell_hierarchy()
-    for (cell_size, parent_cell_size) in reversed([*zip(cell_sizes, cell_sizes[1:]), (cell_sizes[-1], None)]):
+    staging_cell_sizes = get_staging_cell_sizes()
+    for (cell_size, parent_cell_size) in \
+            reversed([*zip(staging_cell_sizes, staging_cell_sizes[1:]), (staging_cell_sizes[-1], None)]):
         wrap_with_timings(
             f"Applying {cell_size}m cell fact rollup",
             lambda: apply_cell_fact_rollup(conn, date, cell_size, parent_cell_size)

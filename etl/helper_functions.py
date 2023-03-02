@@ -166,7 +166,7 @@ def get_config():
     return config
 
 
-def get_cell_hierarchy() -> List[int]:
-    """Get the cell heirarchy from the config."""
+def get_staging_cell_sizes() -> List[int]:
+    """Get the cell sizes to insert into staging area from config."""
     config = get_config()
-    return [int(size) for size in config['Database']['cell_hierarchy_meter'].split(',')]
+    return [int(size) for size in config['Database']['staging_cell_sizes_to_insert'].split(',')]
