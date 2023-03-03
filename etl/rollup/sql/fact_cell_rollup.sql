@@ -79,7 +79,14 @@ FROM (
                 trajectory_sub_id,
                 draught,
                 heading,
-                0 AS delta_cog,
+                (
+                    calculate_delta_upperbounded (
+                        (
+                            SELECT ARRAY_AGG(LOWER(delta))
+                            FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                        ),
+                        360)
+                ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
                 date_trunc('second', endTimestamp (crossing)) endTime
