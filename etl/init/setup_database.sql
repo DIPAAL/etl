@@ -1,1 +1,1 @@
-CREATE DATABASE dipaal_alex;
+CREATE DATABASE dipaal;
