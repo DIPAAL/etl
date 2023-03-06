@@ -27,7 +27,6 @@ CREATE TABLE fact_cell_5000m (
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
-    FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 ) PARTITION BY RANGE (entry_date_id);
 
@@ -62,7 +61,6 @@ CREATE TABLE fact_cell_1000m (
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
-    FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 ) PARTITION BY RANGE (entry_date_id);
 
@@ -97,7 +95,6 @@ CREATE TABLE fact_cell_200m (
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
-    FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 ) PARTITION BY RANGE (entry_date_id);
 
@@ -132,7 +129,6 @@ CREATE TABLE fact_cell_50m (
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
-    FOREIGN KEY (entry_date_id, trajectory_sub_id) REFERENCES dim_trajectory(date_id, trajectory_sub_id),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 ) PARTITION BY RANGE (entry_date_id);
 
