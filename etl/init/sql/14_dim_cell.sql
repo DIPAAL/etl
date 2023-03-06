@@ -7,7 +7,8 @@ CREATE TABLE dim_cell_5000m (
     partition_id SMALLINT NOT NULL,
     geom geometry NOT NULL,
 
-    PRIMARY KEY (x, y, partition_id)
+    UNIQUE (x, y),
+    PRIMARY KEY (x, y, partition_id),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 );
 
@@ -22,6 +23,7 @@ CREATE TABLE dim_cell_1000m (
     partition_id SMALLINT NOT NULL,
     geom geometry NOT NULL,
 
+    UNIQUE (x, y),
     PRIMARY KEY (x, y, partition_id),
     FOREIGN KEY (parent_x, parent_y) REFERENCES dim_cell_5000m(x,y),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
@@ -38,7 +40,8 @@ CREATE TABLE dim_cell_200m (
     partition_id SMALLINT NOT NULL,
     geom geometry NOT NULL,
 
-    PRIMARY KEY (x, y),
+    UNIQUE(x, y),
+    PRIMARY KEY (x, y, partition_id),
     FOREIGN KEY (parent_x, parent_y) REFERENCES dim_cell_1000m(x,y),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 );
@@ -54,7 +57,8 @@ CREATE TABLE dim_cell_50m (
     partition_id SMALLINT NOT NULL,
     geom geometry NOT NULL,
 
-    PRIMARY KEY (x, y),
+    UNIQUE (x, y),
+    PRIMARY KEY (x, y, partition_id),
     FOREIGN KEY (parent_x, parent_y) REFERENCES dim_cell_200m(x,y),
     FOREIGN KEY (partition_id) REFERENCES spatial_partition(partition_id)
 );
