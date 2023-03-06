@@ -1,15 +1,13 @@
 """The main module."""
 import sys
 import argparse
-import configparser
-import os
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Generator, Tuple
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
-from etl.helper_functions import wrap_with_timings, extract_date_from_smart_date_id
+from etl.helper_functions import wrap_with_timings, get_config, extract_date_from_smart_date_id
 from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
@@ -18,18 +16,6 @@ from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL, T_START_DATE_COL
-
-
-def get_config():
-    """Get the application configuration."""
-    path = './config.properties'
-    local_path = './config-local.properties'
-    if os.path.isfile(local_path):
-        path = local_path
-    config = configparser.ConfigParser()
-    config.read(path)
-
-    return config
 
 
 def configure_arguments():

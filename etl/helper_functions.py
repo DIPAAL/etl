@@ -5,6 +5,8 @@ from time import perf_counter
 
 import pandas as pd
 import psycopg2
+import configparser
+import os
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 from etl.constants import UNKNOWN_INT_VALUE
 
@@ -145,3 +147,26 @@ def extract_date_from_smart_date_id(smart_date_id: int) -> datetime:
         smart_date_id: the smart date id to extract the date from
     """
     return datetime.strptime(str(smart_date_id), '%Y%m%d')
+
+
+config = None  # Global configuration variable
+
+
+def get_config():
+    """Get the application configuration."""
+    global config
+    if config is None:
+        path = './config.properties'
+        local_path = './config-local.properties'
+        if os.path.isfile(local_path):
+            path = local_path
+        config = configparser.ConfigParser()
+        config.read(path)
+
+    return config
+
+
+def get_staging_cell_sizes() -> List[int]:
+    """Get the cell sizes to insert into staging area from config."""
+    config = get_config()
+    return [int(size) for size in config['Database']['staging_cell_sizes_to_insert'].split(',')]

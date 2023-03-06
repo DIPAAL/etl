@@ -11,10 +11,10 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         date_id: The smarte date id to ensure exists
     """
     date_partitioned_table_names = [
-        "fact_cell_50m",
-        "fact_cell_200m",
-        "fact_cell_1000m",
         "fact_cell_5000m",
+        "fact_cell_1000m",
+        "fact_cell_200m",
+        "fact_cell_50m",
         "fact_trajectory",
         "dim_trajectory",
         "fact_cell_heatmap"
