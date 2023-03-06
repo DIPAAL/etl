@@ -9,6 +9,7 @@ SELECT create_reference_table('dim_ship');
 -- And other references
 SELECT create_reference_table('spatial_partition');
 SELECT create_reference_table('reference_geometries');
+SELECT create_reference_table('dim_heatmap_type');
 
 -- Distribute the fact tables and trajectory dimension
 SELECT create_distributed_table('dim_trajectory', 'trajectory_sub_id');
@@ -16,6 +17,7 @@ SELECT create_distributed_table('fact_trajectory', 'trajectory_sub_id', colocate
 
 -- Spatial distribution
 SELECT create_distributed_table('fact_cell_5000m', 'partition_id', shard_count=>'1');
+-- Create the custom shards
 WITH parts AS (
     SELECT generate_series(1, 400) part_id
 ), hashes AS (
@@ -39,3 +41,5 @@ SELECT create_distributed_table('dim_cell_5000m', 'partition_id', colocate_with=
 SELECT create_distributed_table('dim_cell_1000m', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('dim_cell_200m', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('dim_cell_50m', 'partition_id', colocate_with=>'fact_cell_5000m');
+SELECT create_distributed_table('dim_raster', 'partition_id', colocate_with=>'fact_cell_5000m');
+SELECT create_distributed_table('fact_cell_heatmap', 'partition_id', colocate_with=>'fact_cell_5000m');
