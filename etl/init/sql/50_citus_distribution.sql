@@ -7,6 +7,7 @@ SELECT create_reference_table('dim_ship_type');
 SELECT create_reference_table('dim_ship');
 
 -- And other references
+SELECT create_reference_table('spatial_partition');
 SELECT create_reference_table('reference_geometries');
 SELECT create_reference_table('dim_cell_5000m');
 SELECT create_reference_table('dim_cell_1000m');
