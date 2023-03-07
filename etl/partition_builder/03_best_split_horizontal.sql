@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION binary_search_for_best_split_horizontal(geom geometry, min_x int, max_x int, points_less_than_x_min int, points_greater_than_x_max int)
 RETURNS int AS $$
 DECLARE
-    try_split int;
+    split int;
     geom_left geometry;
     geom_right geometry;
     points_left int;
@@ -17,10 +17,10 @@ BEGIN
     END IF;
 
     -- try to split the distance between min_x and max_x in half
-    try_split := (min_x + (max_x - min_x)/2) - (max_x - min_x)/2 % 5000;
+    split := (min_x + (max_x - min_x)/2) - (max_x - min_x)/2 % 5000;
 
-    geom_left := ST_MakeEnvelope(min_x, ST_YMin(geom), try_split, ST_YMax(geom), 3034);
-    geom_right := ST_MakeEnvelope(try_split, ST_YMin(geom), max_x, ST_YMax(geom), 3034);
+    geom_left := ST_MakeEnvelope(min_x, ST_YMin(geom), split, ST_YMax(geom), 3034);
+    geom_right := ST_MakeEnvelope(split, ST_YMin(geom), max_x, ST_YMax(geom), 3034);
 
     -- calculate the points on each side of the split
     points_left := (SELECT coalesce(sum(coalesce(value,0)),0) FROM staging.fivek_heatmap fk WHERE ST_Contains(geom_left, fk.geom)) + points_less_than_x_min;
@@ -28,11 +28,11 @@ BEGIN
 
     -- call recursively on the side with the most points, unless it is the same as the other side
     IF points_left = points_right THEN
-        RETURN try_split;
+        RETURN split;
     ELSEIF points_left > points_right THEN
-        RETURN binary_search_for_best_split_horizontal(geom, min_x, try_split, points_less_than_x_min, points_right);
+        RETURN binary_search_for_best_split_horizontal(geom, min_x, split, points_less_than_x_min, points_right);
     ELSE
-        RETURN binary_search_for_best_split_horizontal(geom, try_split, max_x, points_left, points_greater_than_x_max);
+        RETURN binary_search_for_best_split_horizontal(geom, split, max_x, points_left, points_greater_than_x_max);
     END IF;
 END;
 $$ LANGUAGE plpgsql;
