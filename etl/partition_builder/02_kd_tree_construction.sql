@@ -27,7 +27,6 @@ BEGIN
 
     -- get number of cell facts in the global domain
     SELECT sum(value) INTO STRICT maxPoints FROM staging.fivek_heatmap;
-    --     RAISE NOTICE 'maxPoints: %', maxPoints;
 
     -- put the global domain in the partitions table
     INSERT INTO temp_partitions (geom, numPoints, level) VALUES (gdgeom, maxPoints, 1);
