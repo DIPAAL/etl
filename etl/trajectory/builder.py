@@ -321,12 +321,17 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
     # Remove sequential duplicates, i.e. the values 1, 1, 1, 2, 1, 1 will become 1, 2, 1.
     df = dataframe[dataframe[float_column] != dataframe[float_column].shift()]
 
+    # Add the last row to the dataframe if the timestamp is not the same as the last row.
+    last_row = dataframe.iloc[[-1]]
+    if not last_row[TIMESTAMP_COL].equals(df.iloc[[-1]][TIMESTAMP_COL]):
+        df = pd.concat([df, last_row])
+
     # Make a new series of TFloatInsts based on the float and timestamp column.
     series = df.apply(
         lambda row: TFloatInst(str(row[float_column]) + '@' + row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)),
         axis=1
-    )
 
+    )
     return TFloatInstSet(series.tolist())
 
 
