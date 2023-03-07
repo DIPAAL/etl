@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION build_kd_tree(gdgeom geometry, maxNumPartitions int)
+CREATE OR REPLACE FUNCTION build_kd_tree(gdgeom geometry, numPartitions int)
     RETURNS TABLE
             (
                 partition_id bigint,
@@ -33,7 +33,7 @@ BEGIN
 
 
     -- while count of partitions is less than maxNumPartitions
-    WHILE (SELECT count(*) FROM temp_partitions) < maxNumPartitions
+    WHILE (SELECT count(*) FROM temp_partitions) < numPartitions
         LOOP
             -- print the amount of partitions currently.
             RAISE NOTICE 'partitions: %', (SELECT count(*) FROM temp_partitions);
