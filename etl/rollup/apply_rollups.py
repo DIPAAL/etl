@@ -15,8 +15,8 @@ def apply_rollups(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to apply the rollups for
     """
-    wrap_with_timings("Applying simplify rollup", lambda: apply_simplify_query(conn, date))
-    wrap_with_timings("Applying length calculation rollup", lambda: apply_calc_length_query(conn, date))
+    #wrap_with_timings("Applying simplify rollup", lambda: apply_simplify_query(conn, date))
+    #wrap_with_timings("Applying length calculation rollup", lambda: apply_calc_length_query(conn, date))
 
     # Commit the changes, this is neccessary as citus does not distribute the rollup query efficiently otherwise.
     conn.commit()
@@ -70,6 +70,8 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
 
     date_smart_key = extract_smart_date_id_from_date(date)
     for size in CELL_SIZES:
+        if size == 5000:
+            continue
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(
             f'Creating heatmap for {size}m cells',
@@ -116,6 +118,8 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     gal[ROWS_KEY]["traj_split_5k"] = rows
 
     for (cell_size, parent_cell_size) in reversed([*zip(CELL_SIZES, CELL_SIZES[1:]), (CELL_SIZES[-1], None)]):
+        if cell_size == 5000:
+            continue
         wrap_with_timings(
             f"Applying {cell_size}m cell fact rollup",
             lambda: apply_cell_fact_rollup(conn, date, cell_size, parent_cell_size)

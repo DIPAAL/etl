@@ -9,7 +9,7 @@ from typing import Generator, Tuple
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
-from etl.helper_functions import wrap_with_timings
+from etl.helper_functions import wrap_with_timings, get_connection
 from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
@@ -146,13 +146,14 @@ def load_data(data: pd.DataFrame, date: datetime, config) -> None:
         date: the date to insert
         config: the application config
     """
-    conn = wrap_with_timings("Inserting trajectories",
-                             lambda: TrajectoryInserter("fact_trajectory").persist(data, config),
-                             audit_etl_stage=ETL_STAGE_BULK)
+    # conn = wrap_with_timings("Inserting trajectories",
+    #                          lambda: TrajectoryInserter("fact_trajectory").persist(data, config),
+    #                          audit_etl_stage=ETL_STAGE_BULK)
+    conn = get_connection(config)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
 
-    wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
+    # wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
     gal.reset_log()  # reset the log for the next loop
 
     conn.commit()
