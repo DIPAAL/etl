@@ -16,7 +16,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- try to split the distance between min_x and max_x in half
+    -- try to split the distance between min_y and max_y in half
     split := (min_y + (max_y - min_y)/2) - (max_y - min_y)/2 % 5000;
 
     geom_upper := ST_MakeEnvelope(ST_XMin(geom), split, ST_XMax(geom), max_y, 3034);
