@@ -11,7 +11,9 @@ TRUNCATE TABLE staging.fivek_heatmap;
 INSERT INTO staging.fivek_heatmap (i, j, value, geom)
 SELECT cell_x i, cell_y j, count(*) as value, st_bounding_box::geometry
 FROM fact_cell_5000m
-GROUP BY cell_x, cell_y;
+GROUP BY cell_x, cell_y, st_bounding_box::geometry;
 
 -- create spgist index on geom
 CREATE INDEX ON staging.fivek_heatmap USING SPGIST (geom);
+
+SELECT create_reference_table('staging.fivek_heatmap');

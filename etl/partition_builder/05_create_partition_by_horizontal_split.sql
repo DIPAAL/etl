@@ -12,7 +12,7 @@ BEGIN
     SELECT (SELECT coalesce(sum(coalesce(value,0)),0) FROM staging.fivek_heatmap fk WHERE ST_Contains(geom_left, fk.geom)) INTO numPoints_left;
     SELECT (SELECT coalesce(sum(coalesce(value,0)),0) FROM staging.fivek_heatmap fk WHERE ST_Contains(geom_right, fk.geom)) INTO numPoints_right;
 
-    INSERT INTO staging.partitions (geom, numPoints, level) VALUES (geom_right, numPoints_right, level+1);
-    INSERT INTO staging.partitions (geom, numPoints, level) VALUES (geom_left, numPoints_left, level+1);
+    INSERT INTO temp_partitions (geom, numPoints, level) VALUES (geom_right, numPoints_right, level+1);
+    INSERT INTO temp_partitions (geom, numPoints, level) VALUES (geom_left, numPoints_left, level+1);
 END;
 $$ LANGUAGE plpgsql;
