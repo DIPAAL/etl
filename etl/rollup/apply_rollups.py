@@ -3,6 +3,7 @@ from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
     extract_smart_date_id_from_date, get_staging_cell_sizes
+from etl.constants import SPATIAL_PARTITIONS_NUM
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
@@ -73,11 +74,17 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(
             f'Creating heatmap for {size}m cells',
-            lambda: _apply_heatmap_aggregation(conn, date_smart_key, query, size)
+            lambda: _apply_heatmap_aggregation(conn,
+                                               date_smart_key,
+                                               query,
+                                               cell_size=size,
+                                               temporal_resolution=84600,
+                                               spatial_resolution=size)
         )
 
 
-def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) -> None:
+def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, temporal_resolution: int,
+                               spatial_resolution: int) -> None:
     """
     Pre-aggregate single heatmap.
 
@@ -86,14 +93,25 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int) 
         date_key: The DW smart key for the date to apply aggregation
         query: The aggregation query
         cell_size: The size of the cells the heatmap is created from
+        temporal_resolution: The temporal duration in seconds the heatmap spans
+        spatial_resolution: The spatial extend in meters of each pixel in the heatmap
     """
-    (rows, seconds_elapsed) = measure_time(
-        lambda: execute_insert_query_on_connection(conn, query, {'DATE_KEY': date_key})
-    )
+    sum_rows = 0
+    sum_seconds_elapsed = 0
+    for partition_id in range(1, SPATIAL_PARTITIONS_NUM + 1):
+        (rows, seconds_elapsed) = measure_time(
+            lambda: execute_insert_query_on_connection(conn, query,
+                                                       {'DATE_KEY': date_key,
+                                                        'TEMPORAL_RESOLUTION': temporal_resolution,
+                                                        'SPATIAL_RESOLUTION': spatial_resolution,
+                                                        'PARTITION_ID': partition_id})
+        )
+        sum_rows += rows
+        sum_seconds_elapsed += seconds_elapsed
 
     # Audit log the information
-    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
-    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
+    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = sum_seconds_elapsed
+    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = sum_rows
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:
