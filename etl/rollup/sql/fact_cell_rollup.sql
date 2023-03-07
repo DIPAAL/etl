@@ -95,7 +95,7 @@ FROM (
                 partition_id
             FROM (
                 SELECT
-                    unnest(sequences (atGeometry (fdt.trajectory, dc.geom))) crossing,
+                    unnest(sequences (atGeometry (SETSRID(fdt.trajectory, 3034), dc.geom))) crossing,
                     -- Create the 4 lines representing the cell edges
                     ST_SetSRID (
                         ST_MakeLine (
@@ -129,7 +129,7 @@ FROM (
                     fdt.heading heading,
                     fdt.partition_id
                 FROM staging.split_trajectories fdt
-                JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry)
+                JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, ST_SETSRID(fdt.trajectory::geometry, 3034)) OR ST_Contains(dc.geom, ST_SETSRID(fdt.trajectory::geometry, 3034))
             ) cj
         ) cid
     ) cif
