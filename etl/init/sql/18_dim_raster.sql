@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS dim_raster (
-    raster_id SERIAL NOT NULL,
+    raster_id uuid NOT NULL,
     partition_id SMALLINT NOT NULL,
     rast raster NOT NULL,
 

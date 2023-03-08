@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     cell_y INTEGER NOT NULL,
     date_id INTEGER NOT NULL,
     time_id INTEGER NOT NULL,
-    raster_id INTEGER NOT NULL,
+    raster_id uuid NOT NULL,
 
     -- Non-additive Measures
     temporal_resolution_sec INTEGER NOT NULL,
