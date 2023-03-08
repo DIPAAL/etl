@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import math
 from datetime import datetime
-from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst, TFloatSeq
+from mobilitydb import TGeomPointSeq, TFloatInst, TFloatSeq
 from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
