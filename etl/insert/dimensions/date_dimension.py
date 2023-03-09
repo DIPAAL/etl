@@ -34,13 +34,14 @@ class DateDimensionInserter:
             INSERT INTO dim_date (
                 date_id, date, day_of_week, day_of_month,
                 day_of_year, week_of_year, month_of_year, quarter_of_year, year,
-                day_name, month_name, weekday
+                day_name, month_name, weekday, season
             )
             SELECT
                 i1.*,
                 dm.day_name,
                 mm.month_name,
-                dm.weekday
+                dm.weekday,
+                mm.season
             FROM (
                      SELECT
                          -- create smart id such that 2022-09-01 gets id 20220901
@@ -57,7 +58,7 @@ class DateDimensionInserter:
                      FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
                  ) i1
             INNER JOIN day_num_map dm ON dm.day_num = i1.day_of_week
-            INNER JOIN month_num_to_month_name_map mm ON mm.month_num = i1.month_of_year
+            INNER JOIN month_num_map mm ON mm.month_num = i1.month_of_year
             ON CONFLICT DO NOTHING
         """
 

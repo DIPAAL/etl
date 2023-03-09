@@ -11,7 +11,8 @@ CREATE TABLE
         year int,
         day_name TEXT,
         month_name TEXT,
-        weekday TEXT
+        weekday TEXT,
+        season TEXT
         -- Padding: None. All attributes are the same type.
     );
 
