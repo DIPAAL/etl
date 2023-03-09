@@ -70,7 +70,7 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
 
     date_smart_key = extract_smart_date_id_from_date(date)
     for size in CELL_SIZES:
-        if size == 5000:
+        if size == 5000 or size == 1000:
             continue
         query = query_template.format(CELL_SIZE=size)
         wrap_with_timings(
@@ -118,7 +118,7 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     gal[ROWS_KEY]["traj_split_5k"] = rows
 
     for (cell_size, parent_cell_size) in reversed([*zip(CELL_SIZES, CELL_SIZES[1:]), (CELL_SIZES[-1], None)]):
-        if cell_size == 5000:
+        if cell_size == 5000 or cell_size == 1000:
             continue
         wrap_with_timings(
             f"Applying {cell_size}m cell fact rollup",
