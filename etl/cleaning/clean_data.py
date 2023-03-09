@@ -143,6 +143,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     >>> Remove where length >= 488
     >>> Remove where 99999999 =< MMSI >= 990000000
     >>> Remove where 112000000 < MMSI > 111000000
+    >>> Remove where Type of mobile is not 'Class A' or 'Class B'
     """
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
     dirty_dataframe = wrap_with_timings("Initial data filter", lambda: dirty_dataframe.query(expr=(
@@ -151,7 +152,8 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
                                 '(Length < 488) & '
                                 '(MMSI < 990000000) & '
                                 '(MMSI > 99999999) & '
-                                '(MMSI <= 111000000 | MMSI >= 112000000)'
+                                '(MMSI <= 111000000 | MMSI >= 112000000) & '
+                                '(`Type of mobile` == "Class A" | `Type of mobile` == "Class B")'
                                 )))
     print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
 
