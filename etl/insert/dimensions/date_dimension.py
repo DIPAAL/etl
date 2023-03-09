@@ -33,21 +33,27 @@ class DateDimensionInserter:
         query = """
             INSERT INTO dim_date (
                 date_id, date, day_of_week, day_of_month,
-                day_of_year, week_of_year, month_of_year, quarter_of_year, year
+                day_of_year, week_of_year, month_of_year, quarter_of_year, year, day_name
             )
             SELECT
-                -- create smart id such that 2022-09-01 gets id 20220901
-                (EXTRACT(YEAR FROM date) * 10000) + (EXTRACT(MONTH FROM date) * 100) + (EXTRACT(DAY FROM date))
-                    AS date_id,
-                date,
-                EXTRACT(DOW FROM date),
-                EXTRACT(DAY FROM date),
-                EXTRACT(DOY FROM date),
-                EXTRACT(WEEK FROM date),
-                EXTRACT(MONTH FROM date),
-                EXTRACT(QUARTER FROM date),
-                EXTRACT(YEAR FROM date)
-            FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
+                i1.*,
+                dm.day_name
+            FROM (
+                     SELECT
+                         -- create smart id such that 2022-09-01 gets id 20220901
+                         (EXTRACT(YEAR FROM date) * 10000) + (EXTRACT(MONTH FROM date) * 100) + (EXTRACT(DAY FROM date))
+                         AS date_id,
+                         date AS date,
+                         EXTRACT(DOW FROM date)     AS day_of_week,
+                         EXTRACT(DAY FROM date)     AS day_of_month,
+                         EXTRACT(DOY FROM date)     AS day_of_year,
+                         EXTRACT(WEEK FROM date)    AS week_of_year,
+                         EXTRACT(MONTH FROM date)   AS month_of_year,
+                         EXTRACT(QUARTER FROM date) AS quarter_of_year,
+                         EXTRACT(YEAR FROM date)    AS year
+                     FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
+                 ) i1
+            INNER JOIN day_num_to_day_name_map dm ON dm.day_num = i1.day_of_week
             ON CONFLICT DO NOTHING
         """
 
