@@ -10,7 +10,8 @@ CREATE TABLE
         quarter_of_year int,
         year int,
         day_name TEXT,
-        month_name TEXT
+        month_name TEXT,
+        weekday TEXT
         -- Padding: None. All attributes are the same type.
     );
 
