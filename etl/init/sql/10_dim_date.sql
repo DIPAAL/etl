@@ -9,7 +9,8 @@ CREATE TABLE
         month_of_year int,
         quarter_of_year int,
         year int,
-        day_name TEXT
+        day_name TEXT,
+        month_name TEXT
         -- Padding: None. All attributes are the same type.
     );
 
