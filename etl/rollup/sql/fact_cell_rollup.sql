@@ -41,7 +41,7 @@ FROM (
         nav_status_id,
         infer_stopped,
         trajectory_sub_id,
-        startValue (atPeriod (draught, crossing_period)) draught,
+        minValue(atPeriod (draught, crossing_period)) draught,
         atPeriod (heading, crossing_period) heading,
         startTime,
         endTime,
