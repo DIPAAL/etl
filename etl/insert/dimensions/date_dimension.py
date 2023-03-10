@@ -34,14 +34,25 @@ class DateDimensionInserter:
             INSERT INTO dim_date (
                 date_id, date, day_of_week, day_of_month,
                 day_of_year, week_of_year, month_of_year, quarter_of_year, year,
-                day_name, month_name, weekday, season
+                day_name, month_name, weekday, season, holiday
             )
             SELECT
                 i1.*,
                 dm.day_name,
                 mm.month_name,
                 dm.weekday,
-                mm.season
+                mm.season,
+                (CASE WHEN EXISTS (
+                    SELECT 1 FROM (
+                        SELECT fh.month, fh.day FROM fixed_holidays fh
+                        UNION
+                        SELECT eh.month, eh.day FROM calculate_easter_holidays(i1.year::SMALLINT) eh
+                    ) AS holidays
+                    WHERE holidays.month = i1.month_of_year
+                    AND holidays.day = i1.day_of_month)
+                THEN 'holiday'
+                ELSE 'non-holiday'
+                END) AS holiday
             FROM (
                      SELECT
                          -- create smart id such that 2022-09-01 gets id 20220901

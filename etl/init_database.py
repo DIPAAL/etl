@@ -67,6 +67,7 @@ def setup_staging_area(config):
     run_sql_file_with_timings('etl/init/sql/staging/02_staging_trajectory.sql', config)
     run_sql_file_with_timings('etl/init/sql/staging/03_staging_day_mapping.sql', config)
     run_sql_file_with_timings('etl/init/sql/staging/04_staging_month_mapping.sql', config)
+    run_sql_file_with_timings('etl/init/sql/staging/05_staging_fixed_holidays.sql', config)
 
 
 def init_database(config):

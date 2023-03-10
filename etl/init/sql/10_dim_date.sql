@@ -12,7 +12,8 @@ CREATE TABLE
         day_name TEXT,
         month_name TEXT,
         weekday TEXT,
-        season TEXT
+        season TEXT,
+        holiday TEXT
         -- Padding: None. All attributes are the same type.
     );
 
