@@ -5,11 +5,11 @@ CREATE SCHEMA IF NOT EXISTS staging;
 -- Ship stations found on: https://help.marinetraffic.com/hc/en-us/articles/360018392858-How-does-MarineTraffic-identify-a-vessel-s-country-and-flag-
 CREATE TABLE IF NOT EXISTS mid_map (
     mid SMALLINT NOT NULL,
-    ship_station TEXT NOT NULL,
-    country TEXT NOT NULL
+    region_flag TEXT NOT NULL,
+    flag_state TEXT NOT NULL
 );
 
-INSERT INTO mid_map (mid, ship_station, country) VALUES
+INSERT INTO mid_map (mid, region_flag, flag_state) VALUES
     (201, 'europe', 'Albania (Republic of)'),
     (202, 'europe', 'Andorra (Principality of)'),
     (203, 'europe', 'Austria'),
