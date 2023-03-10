@@ -12,6 +12,7 @@ CREATE TABLE fact_cell_5000m (
     ship_id integer NOT NULL,
     entry_date_id integer NOT NULL,
     entry_time_id integer NOT NULL,
+    exit_date_id INTEGER NOT NULL,
     exit_time_id integer NOT NULL,
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
@@ -19,10 +20,11 @@ CREATE TABLE fact_cell_5000m (
     infer_stopped boolean NOT NULL,
     -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (entry_time_id) REFERENCES dim_time(time_id),
+    FOREIGN KEY (exit_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
@@ -45,6 +47,7 @@ CREATE TABLE fact_cell_1000m (
     ship_id integer NOT NULL,
     entry_date_id integer NOT NULL,
     entry_time_id integer NOT NULL,
+    exit_date_id INTEGER NOT NULL,
     exit_time_id integer NOT NULL,
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
@@ -52,10 +55,11 @@ CREATE TABLE fact_cell_1000m (
     infer_stopped boolean NOT NULL,
     -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (entry_time_id) REFERENCES dim_time(time_id),
+    FOREIGN KEY (exit_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
@@ -78,6 +82,7 @@ CREATE TABLE fact_cell_200m (
     ship_id integer NOT NULL,
     entry_date_id integer NOT NULL,
     entry_time_id integer NOT NULL,
+    exit_date_id INTEGER NOT NULL,
     exit_time_id integer NOT NULL,
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
@@ -85,10 +90,11 @@ CREATE TABLE fact_cell_200m (
     infer_stopped boolean NOT NULL,
     -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (entry_time_id) REFERENCES dim_time(time_id),
+    FOREIGN KEY (exit_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),
@@ -111,6 +117,7 @@ CREATE TABLE fact_cell_50m (
     ship_id integer NOT NULL,
     entry_date_id integer NOT NULL,
     entry_time_id integer NOT NULL,
+    exit_date_id INTEGER NOT NULL,
     exit_time_id integer NOT NULL,
     trajectory_sub_id integer NOT NULL,
     direction_id smallint NOT NULL,
@@ -118,10 +125,11 @@ CREATE TABLE fact_cell_50m (
     infer_stopped boolean NOT NULL,
     -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
 
-    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
+    PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
     FOREIGN KEY (entry_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (entry_time_id) REFERENCES dim_time(time_id),
+    FOREIGN KEY (exit_date_id) REFERENCES dim_date(date_id),
     FOREIGN KEY (exit_time_id) REFERENCES dim_time(time_id),
     FOREIGN KEY (direction_id) REFERENCES dim_direction(direction_id),
     FOREIGN KEY (nav_status_id) REFERENCES dim_nav_status(nav_status_id),

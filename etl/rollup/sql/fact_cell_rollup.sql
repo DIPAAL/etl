@@ -1,6 +1,6 @@
 INSERT INTO fact_cell_{CELL_SIZE}m (
     cell_x, cell_y, ship_id,
-    entry_date_id, entry_time_id, exit_time_id,
+    entry_date_id, entry_time_id, exit_date_id, exit_time_id,
     direction_id, nav_status_id, infer_stopped, trajectory_sub_id,
     sog, delta_heading, draught, delta_cog, st_bounding_box
 )
@@ -10,6 +10,7 @@ SELECT
     ship_id,
     (EXTRACT(YEAR FROM startTime) * 10000) + (EXTRACT(MONTH FROM startTime) * 100) + (EXTRACT(DAY FROM startTime)) AS entry_date_id,
     (EXTRACT(HOUR FROM startTime) * 10000) + (EXTRACT(MINUTE FROM startTime) * 100) + (EXTRACT(SECOND FROM startTime)) AS entry_time_id,
+    (EXTRACT(YEAR FROM endTime) * 10000) + (EXTRACT(MONTH FROM endTime) * 100) + (EXTRACT(DAY FROM endTime)) AS exit_date_id,
     (EXTRACT(HOUR FROM endTime) * 10000) + (EXTRACT(MINUTE FROM endTime) * 100) + (EXTRACT(SECOND FROM endTime)) AS exit_time_id,
     (SELECT direction_id FROM dim_direction dd WHERE dd.from = entry_direction AND dd.to = exit_direction) AS direction_id,
     nav_status_id,
