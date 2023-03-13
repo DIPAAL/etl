@@ -1,4 +1,5 @@
 """Module handling trajectory construction and outlier detection."""
+
 from concurrent.futures import ProcessPoolExecutor
 import geopandas as gpd
 import numpy as np
