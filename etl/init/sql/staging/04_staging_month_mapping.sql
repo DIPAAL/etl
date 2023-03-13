@@ -1,12 +1,12 @@
 CREATE SCHEMA IF NOT EXISTS staging;
 
-CREATE TABLE IF NOT EXISTS month_num_map (
+CREATE TABLE IF NOT EXISTS staging.month_num_map (
     month_num SMALLINT PRIMARY KEY,
     month_name TEXT,
     season TEXT
 );
 
-INSERT INTO month_num_map (month_num, month_name, season) VALUES
+INSERT INTO staging.month_num_map (month_num, month_name, season) VALUES
     (1, 'january', 'winter'),
     (2, 'february', 'winter'),
     (3, 'march', 'spring'),
@@ -20,4 +20,4 @@ INSERT INTO month_num_map (month_num, month_name, season) VALUES
     (11, 'november', 'autumn'),
     (12, 'december', 'winter');
 
-SELECT create_reference_table('month_num_map');
+SELECT create_reference_table('staging.month_num_map');

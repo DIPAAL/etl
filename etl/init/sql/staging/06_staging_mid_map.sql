@@ -3,13 +3,13 @@ CREATE SCHEMA IF NOT EXISTS staging;
 -- Create map table for 'Maritime Identification Digit'
 -- Mapping found on: https://www.itu.int/en/ITU-R/terrestrial/fmd/Pages/mid.aspx
 -- Ship stations found on: https://help.marinetraffic.com/hc/en-us/articles/360018392858-How-does-MarineTraffic-identify-a-vessel-s-country-and-flag-
-CREATE TABLE IF NOT EXISTS mid_map (
+CREATE TABLE IF NOT EXISTS staging.mid_map (
     mid SMALLINT NOT NULL,
     region_flag TEXT NOT NULL,
     flag_state TEXT NOT NULL
 );
 
-INSERT INTO mid_map (mid, region_flag, flag_state) VALUES
+INSERT INTO staging.mid_map (mid, region_flag, flag_state) VALUES
     (201, 'europe', 'Albania (Republic of)'),
     (202, 'europe', 'Andorra (Principality of)'),
     (203, 'europe', 'Austria'),
@@ -306,4 +306,4 @@ INSERT INTO mid_map (mid, region_flag, flag_state) VALUES
     (775, 'south america', 'Venezuela (Bolivarian Republic of)')
 ;
 
-SELECT create_reference_table('mid_map');
+SELECT create_reference_table('staging.mid_map');
