@@ -33,7 +33,7 @@ class ShipDimensionInserter (BulkInserter):
 
         ships = df[unique_columns].drop_duplicates()
 
-        # Add the 'mid', 'region_flag', and 'flag_state' contextual attributes to the ship dataframe
+        # Add the 'mid', 'flag_region', and 'flag_state' contextual attributes to the ship dataframe
         map_query = """
             SELECT *
             FROM mid_map
@@ -50,18 +50,18 @@ class ShipDimensionInserter (BulkInserter):
 
         insert_query = """
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d,
-            ship_type_id, location_system_type, mid, region_flag, flag_state)
+            ship_type_id, location_system_type, mid, flag_region, flag_state)
             VALUES {}
             RETURNING ship_id, mmsi, imo, callsign ship_callsign,
-                name ship_name, a, b, c, d, ship_type_id, location_system_type, mid, region_flag, flag_state
+                name ship_name, a, b, c, d, ship_type_id, location_system_type, mid, flag_region, flag_state
         """
 
         select_query = """
             SELECT
                 ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d,
-                ship_type_id, location_system_type, mid, region_flag, flag_state
+                ship_type_id, location_system_type, mid, flag_region, flag_state
             FROM dim_ship
-            WHERE (mmsi, imo, name, callsign, a, b, c, d, ship_type_id, location_system_type, mid, region_flag,
+            WHERE (mmsi, imo, name, callsign, a, b, c, d, ship_type_id, location_system_type, mid, flag_region,
                    flag_state) IN {}
             """
 
