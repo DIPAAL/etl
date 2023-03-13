@@ -94,7 +94,7 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, 
         query: The aggregation query
         cell_size: The size of the cells the heatmap is created from
         temporal_resolution: The temporal duration in seconds the heatmap spans
-        spatial_resolution: The spatial extend in meters of each pixel in the heatmap
+        spatial_resolution: The spatial extend in units of the SRID per pixel in the heatmap
     """
     sum_rows = 0
     sum_seconds_elapsed = 0
