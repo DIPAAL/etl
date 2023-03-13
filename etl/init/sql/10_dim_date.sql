@@ -8,8 +8,15 @@ CREATE TABLE
         week_of_year int,
         month_of_year int,
         quarter_of_year int,
-        year int
-        -- Padding: None. All attributes are the same type.
+        year int,
+        -- 36 bytes = 4 bytes padding til 40 bytes
+        day_name TEXT, 
+        month_name TEXT,
+        weekday TEXT,
+        season TEXT,
+        holiday TEXT
+        -- 47 bytes = 1 bytes padding til 48 bytes
+        -- Padding: 4 + 1 = 5 bytes padding
     );
 
 -- Insert unknown date
