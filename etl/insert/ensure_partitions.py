@@ -11,26 +11,27 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         date_id: The smarte date id to ensure exists
     """
     date_partitioned_table_names = [
-        "fact_cell_5000m",
-        "fact_cell_1000m",
-        "fact_cell_200m",
-        "fact_cell_50m",
-        "fact_trajectory",
-        "dim_trajectory",
-        "fact_cell_heatmap"
+        ("fact_cell_5000m", 'heap'),
+        ("fact_cell_1000m", 'heap'),
+        ("fact_cell_200m", 'heap'),
+        ("fact_cell_50m", 'heap'),
+        ("fact_trajectory", 'heap'),
+        ("dim_trajectory", 'heap'),
+        ("fact_cell_heatmap", 'columnar')
     ]
 
-    for table_name in date_partitioned_table_names:
-        _ensure_partition_for_table(conn, table_name, date_id)
+    for table_name, access_method in date_partitioned_table_names:
+        _ensure_partition_for_table(conn, table_name, access_method, date_id)
 
 
-def _ensure_partition_for_table(conn, table_name: str, date_id: int):
+def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_id: int):
     """
     Ensure that a partition for the given date exists in the given table.
 
     Args:
         conn: The database connection
         table_name: The name of the table to ensure a partition exists for
+        access_method: The table access method to use 
         date_id: The smart date id to ensure exists
     """
     rounded_smart_date_id = date_id - (date_id % 100)
@@ -53,6 +54,7 @@ def _ensure_partition_for_table(conn, table_name: str, date_id: int):
             SET LOCAL citus.multi_shard_modify_mode TO 'sequential';
             CREATE TABLE {partition_name} PARTITION OF {table_name}
                 FOR VALUES FROM ({rounded_smart_date_id}) TO ({rounded_smart_date_id + 99})
+                USING {access_method}
         """
         cursor.execute(query)
         conn.commit()
