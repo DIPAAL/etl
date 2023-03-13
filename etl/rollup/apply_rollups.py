@@ -3,7 +3,6 @@ from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
     extract_smart_date_id_from_date, get_staging_cell_sizes
-from etl.constants import SPATIAL_PARTITIONS_NUM
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY, ROWS_KEY
 
 
