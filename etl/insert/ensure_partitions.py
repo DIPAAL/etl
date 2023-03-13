@@ -31,7 +31,7 @@ def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_
     Args:
         conn: The database connection
         table_name: The name of the table to ensure a partition exists for
-        access_method: The table access method to use 
+        access_method: The table access method to use
         date_id: The smart date id to ensure exists
     """
     rounded_smart_date_id = date_id - (date_id % 100)
