@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import math
 from datetime import datetime
-from mobilitydb import TGeomPointSeq, TFloatInstSet, TFloatInst
+from mobilitydb import TGeomPointSeq, TFloatInst, TFloatSeq
 from typing import Callable, Optional, List, Tuple
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_COL, TIMESTAMP_COL, SOG_COL, MMSI_COL, \
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
@@ -303,7 +303,7 @@ def _extract_time_smart_id(datetime: datetime) -> int:
     return (datetime.hour * 10000) + (datetime.minute * 100) + datetime.second
 
 
-def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remove_nan: bool = True) -> TFloatInstSet:
+def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remove_nan: bool = True) -> TFloatSeq | None:
     """
     Convert a geodataframe float64 column's values to a MobilityDB temporal float instant set.
 
@@ -321,13 +321,18 @@ def _tfloat_from_dataframe(dataframe: gpd.GeoDataFrame, float_column: str, remov
     # Remove sequential duplicates, i.e. the values 1, 1, 1, 2, 1, 1 will become 1, 2, 1.
     df = dataframe[dataframe[float_column] != dataframe[float_column].shift()]
 
+    # Add the last row to the dataframe if the timestamp is not the same as the last row.
+    last_row = dataframe.iloc[[-1]]
+    if not last_row[TIMESTAMP_COL].equals(df.iloc[[-1]][TIMESTAMP_COL]):
+        df = pd.concat([df, last_row])
+
     # Make a new series of TFloatInsts based on the float and timestamp column.
     series = df.apply(
         lambda row: TFloatInst(str(row[float_column]) + '@' + row[TIMESTAMP_COL].strftime(MOBILITYDB_TIMESTAMP_FORMAT)),
         axis=1
-    )
 
-    return TFloatInstSet(series.tolist())
+    )
+    return TFloatSeq(series.tolist(), lower_inc=True, upper_inc=True, interp='Stepwise')
 
 
 def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], drop_na: bool) -> pd.Series:

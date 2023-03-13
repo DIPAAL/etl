@@ -1,0 +1,2 @@
+# Attribution
+The data for creating the shapesfiles were obtained from [OpenStreetMaps](https://wiki.osmfoundation.org/wiki/Main_Page). The source was specifically [water polygons](https://osmdata.openstreetmap.de/data/water-polygons.html). The source was then cropped to the spatial domain of DIPAAL using [QGIS](https://www.qgis.org/)

@@ -3,7 +3,7 @@ import geopandas as gpd
 import dask.dataframe as dd
 import dask_geopandas as d_gpd
 import multiprocessing
-from etl.helper_functions import wrap_with_timings, get_first_query_in_file
+from etl.helper_functions import wrap_with_timings
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from sqlalchemy import create_engine
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
@@ -45,8 +45,8 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
         ais_file_path_csv: the absolute or relative file path to the AIS data csv file
     """
     # Use Geopandas and psycopg2 to get the Danish Waters geometry from the DB.
-    cleaning_boundary_gdf = wrap_with_timings('Fetch Cleaning Boundaries',
-                                              lambda: _get_cleaning_reference_boundary(config))
+    cleaning_boundary_gdf = wrap_with_timings('Load Cleaning Boundaries',
+                                              lambda: _get_cleaning_reference_boundary())
 
     # Read from georeferenced AIS dataframe from csv file
     dirty_geo_dataframe = wrap_with_timings(
@@ -71,18 +71,10 @@ def _clean_csv_data(config, ais_file_path_csv: str) -> gpd.GeoDataFrame:
     return clean_gdf
 
 
-def _get_cleaning_reference_boundary(config) -> d_gpd.GeoDataFrame:
-    """
-    Return cleaning geometry bounds from the DWH.
-
-    Keyword arguments:
-        config: the application configuration
-    """
-    conn = _create_pandas_postgresql_connection(config)
-
-    query = get_first_query_in_file(GEOMETRY_BOUNDS_QUERY)
-    temp_boundary = gpd.read_postgis(sql=query, con=conn)
-    return d_gpd.from_geopandas(data=temp_boundary, npartitions=1)
+def _get_cleaning_reference_boundary() -> d_gpd.GeoDataFrame:
+    """Return cleaning geometry bounds."""
+    boundary = gpd.read_file('./etl/cleaning/shapefiles/danish_water_dipaal.shp')
+    return d_gpd.from_geopandas(data=boundary, npartitions=1)
 
 
 def create_dirty_df_from_ais_csv(csv_path: str) -> dd.DataFrame:
@@ -143,6 +135,7 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
     >>> Remove where length >= 488
     >>> Remove where 99999999 =< MMSI >= 990000000
     >>> Remove where 112000000 < MMSI > 111000000
+    >>> Remove where Type of mobile is not 'Class A' or 'Class B'
     """
     print(f"Number of rows in dirty dataframe: {len(dirty_dataframe)}")
     dirty_dataframe = wrap_with_timings("Initial data filter", lambda: dirty_dataframe.query(expr=(
@@ -151,7 +144,8 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
                                 '(Length < 488) & '
                                 '(MMSI < 990000000) & '
                                 '(MMSI > 99999999) & '
-                                '(MMSI <= 111000000 | MMSI >= 112000000)'
+                                '(MMSI <= 111000000 | MMSI >= 112000000) & '
+                                '(`Type of mobile` == "Class A" | `Type of mobile` == "Class B")'
                                 )))
     print(f"Number of rows in initial cleaned dataframe: {len(dirty_dataframe)}")
 

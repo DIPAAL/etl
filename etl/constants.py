@@ -70,6 +70,7 @@ T_SHIP_TYPE_ID_COL = 'ship_type_id'
 # Other dataframe columns
 MBDB_TRAJECTORY_COL = 'tgeompoint'
 GEO_PANDAS_GEOMETRY_COL = 'geometry'
+MID_COL = 'mid'
 
 # Audit log constants - Valid ETL stage names
 ETL_STAGE_CLEAN = 'cleaning'

@@ -65,6 +65,10 @@ def setup_staging_area(config):
     for cell_size in STAGING_CELL_SIZES:
         run_sql_file_with_timings('etl/init/sql/staging/01_staging_cells.sql', config, format=dict(CELL_SIZE=cell_size))
     run_sql_file_with_timings('etl/init/sql/staging/02_staging_trajectory.sql', config)
+    run_sql_file_with_timings('etl/init/sql/staging/03_staging_day_mapping.sql', config)
+    run_sql_file_with_timings('etl/init/sql/staging/04_staging_month_mapping.sql', config)
+    run_sql_file_with_timings('etl/init/sql/staging/05_staging_fixed_holidays.sql', config)
+    run_sql_file_with_timings('etl/init/sql/staging/06_staging_mid_map.sql', config)
 
 
 def init_database(config):

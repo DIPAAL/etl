@@ -1,11 +1,7 @@
 -- Create schema staging
 CREATE SCHEMA IF NOT EXISTS staging;
 
--- Create reference grids for 50m, 200m, 1000m with spgist index on the geom
--- EPSG3034
--- UpperLeft = 3602375,3471675
--- LowerRight = 4392275,3055475
-
+-- Create reference grids with SP-GIST index.
 CREATE TABLE IF NOT EXISTS staging.cell_{CELL_SIZE}m (
     x integer NOT NULL,
     y integer NOT NULL,
@@ -19,7 +15,7 @@ SELECT
     j as y,
     geom
 FROM
-    ST_SquareGrid({CELL_SIZE}, ST_SetSRID(ST_MakeBox2D(ST_Point(3602375, 3055475), ST_Point(4392275, 3471675)), 3034)) AS geom;
+    ST_SquareGrid({CELL_SIZE}, (SELECT geom FROM reference_geometries WHERE type = 'spatial_domain')) AS geom;
 
 CREATE INDEX IF NOT EXISTS cell_{CELL_SIZE}m_geom_idx ON staging.cell_{CELL_SIZE}m USING SPGIST (geom);
 
