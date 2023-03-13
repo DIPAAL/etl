@@ -96,22 +96,15 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, 
         temporal_resolution: The temporal duration in seconds the heatmap spans
         spatial_resolution: The spatial extend in meters of each pixel in the heatmap
     """
-    sum_rows = 0
-    sum_seconds_elapsed = 0
-    for partition_id in range(1, SPATIAL_PARTITIONS_NUM + 1):
-        (rows, seconds_elapsed) = measure_time(
-            lambda: execute_insert_query_on_connection(conn, query,
-                                                       {'DATE_KEY': date_key,
-                                                        'TEMPORAL_RESOLUTION': temporal_resolution,
-                                                        'SPATIAL_RESOLUTION': spatial_resolution,
-                                                        'PARTITION_ID': partition_id})
-        )
-        sum_rows += rows
-        sum_seconds_elapsed += seconds_elapsed
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, query,
+                                                   {'DATE_KEY': date_key,
+                                                    'TEMPORAL_RESOLUTION': temporal_resolution,
+                                                    'SPATIAL_RESOLUTION': spatial_resolution}))
 
     # Audit log the information
-    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = sum_seconds_elapsed
-    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = sum_rows
+    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
+    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:

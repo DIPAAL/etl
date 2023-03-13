@@ -41,5 +41,4 @@ SELECT create_distributed_table('dim_cell_5000m', 'partition_id', colocate_with=
 SELECT create_distributed_table('dim_cell_1000m', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('dim_cell_200m', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('dim_cell_50m', 'partition_id', colocate_with=>'fact_cell_5000m');
-SELECT create_distributed_table('dim_raster', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('fact_cell_heatmap', 'partition_id', colocate_with=>'fact_cell_5000m');
