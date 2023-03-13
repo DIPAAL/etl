@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS fixed_holidays (
 
 INSERT INTO fixed_holidays (month, day) VALUES
     (1, 1), -- New Years Day 
-    (5, 15), -- Whit sunday (pinse)
+    (5, 15), -- Whit Sunday (pinse)
     (5, 16), -- Whit Monday
     (6, 5), -- Constitution Day
     (12, 24), -- Christmas Eve
