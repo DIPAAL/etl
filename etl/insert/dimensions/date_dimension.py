@@ -44,7 +44,7 @@ class DateDimensionInserter:
                 mm.season,
                 (CASE WHEN EXISTS (
                     SELECT 1 FROM (
-                        SELECT fh.month, fh.day FROM fixed_holidays fh
+                        SELECT fh.month, fh.day FROM staging.fixed_holidays fh
                         UNION
                         SELECT eh.month, eh.day FROM calculate_easter_holidays(i1.year::SMALLINT) eh
                     ) AS holidays
@@ -68,8 +68,8 @@ class DateDimensionInserter:
                          EXTRACT(YEAR FROM date)    AS year
                      FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
                  ) i1
-            INNER JOIN day_num_map dm ON dm.day_num = i1.day_of_week
-            INNER JOIN month_num_map mm ON mm.month_num = i1.month_of_year
+            INNER JOIN staging.day_num_map dm ON dm.day_num = i1.day_of_week
+            INNER JOIN staging.month_num_map mm ON mm.month_num = i1.month_of_year
             ON CONFLICT DO NOTHING
         """
 

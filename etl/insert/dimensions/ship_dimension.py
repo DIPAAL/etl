@@ -36,7 +36,7 @@ class ShipDimensionInserter (BulkInserter):
         # Add the 'mid', 'flag_region', and 'flag_state' contextual attributes to the ship dataframe
         map_query = """
             SELECT *
-            FROM mid_map
+            FROM staging.mid_map
         """
         mid_map_df = pd.read_sql_query(map_query, conn)
 
