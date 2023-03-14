@@ -40,6 +40,9 @@ class ShipDimensionInserter (BulkInserter):
         """
         mid_map_df = pd.read_sql_query(map_query, conn)
 
+        # drop duplicates in mid_map
+        mid_map_df = mid_map_df.drop_duplicates(subset=['mid'])
+
         # Extract mid from mmsi
         ships[MID_COL] = ships.apply(
             func=lambda row: int(str(row[T_MMSI_COL])[:3]),
@@ -47,6 +50,10 @@ class ShipDimensionInserter (BulkInserter):
         )
 
         ships = ships.merge(mid_map_df, on=[MID_COL], how='left')
+
+        # Set the flag_region and flag_state to 'Unknown' if the mid is not found in the mid_map
+        ships['flag_region'] = ships['flag_region'].fillna('Unknown')
+        ships['flag_state'] = ships['flag_state'].fillna('Unknown')
 
         insert_query = """
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d,

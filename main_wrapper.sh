@@ -20,7 +20,7 @@ while [ "$from_date" != "$to_date" ]; do
     echo "Running for $from_date"
 
     # run python and redirect stdout and stderr to stdout and stderr of this script
-    python3 -u main.py $args --from_date $from_date --to_date $from_date 1>&1 2>&1
+    python3 -u -W ignore::UserWarning main.py $args --from_date $from_date --to_date $from_date 1>&1 2>&1
 
     from_date=$(date -d "$from_date + 1 day" +%Y-%m-%d)
 done
