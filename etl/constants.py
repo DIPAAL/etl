@@ -6,6 +6,7 @@ COORDINATE_REFERENCE_SYSTEM = f'epsg:{TRAJECTORY_SRID}'
 CVS_TIMESTAMP_FORMAT = '%d/%m/%Y %H:%M:%S'  # 07/09/2021 00:00:00
 INT32_MAX = 2147483647
 UNKNOWN_INT_VALUE = -1
+UNKNOWN_STRING_VALUE = 'Unknown'
 
 # AIS data column names
 TIMESTAMP_COL = '# Timestamp'
@@ -78,3 +79,7 @@ ETL_STAGE_SPATIAL = 'spatial_join'
 ETL_STAGE_TRAJECTORY = 'trajectory'
 ETL_STAGE_CELL = 'cell_construct'
 ETL_STAGE_BULK = 'bulk_insert'
+
+# Database constants
+ACCESS_METHOD_HEAP = 'heap'
+ACCESS_METHOD_COLUMNAR = 'columnar'
