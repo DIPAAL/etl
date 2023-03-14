@@ -2,7 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_MMSI_COL, T_IMO_COL, T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_A_COL, T_B_COL, T_C_COL, \
-    T_D_COL, T_SHIP_TYPE_ID_COL, T_LOCATION_SYSTEM_TYPE_COL, MID_COL
+    T_D_COL, T_SHIP_TYPE_ID_COL, T_LOCATION_SYSTEM_TYPE_COL, MID_COL, UNKNOWN_STRING_VALUE
 from etl.insert.bulk_inserter import BulkInserter
 
 
@@ -49,11 +49,8 @@ class ShipDimensionInserter (BulkInserter):
             axis='columns'
         )
 
-        ships = ships.merge(mid_map_df, on=[MID_COL], how='left')
-
-        # Set the flag_region and flag_state to 'Unknown' if the mid is not found in the mid_map
-        ships['flag_region'] = ships['flag_region'].fillna('Unknown')
-        ships['flag_state'] = ships['flag_state'].fillna('Unknown')
+        ships = ships.merge(mid_map_df, on=[MID_COL], how='left') \
+            .fillna({'flag_region': UNKNOWN_STRING_VALUE, 'flag_state': UNKNOWN_STRING_VALUE})
 
         insert_query = """
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d,
