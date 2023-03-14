@@ -14,18 +14,20 @@ def get_sql_files(folder):
     return files
 
 
-def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None):
+def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None, set_autocommit: bool = True):
     """
     Run a single sql file with timings for every statement.
 
     Args:
         sql_file: The sql file to run
         config: The config to use
-        conn: The connection to use. If None, a new connection will be created
-        format: Optional formatting information for the query
+        conn: The connection to use. If None, a new connection will be created (Default: None)
+        format: Optional formatting information for the query (Default: None)
+        set_autocommit: Determines whether the connection is set to autocommit (Default: True)
     """
     conn = get_connection(config) if conn is None else conn
-    conn.set_session(autocommit=True)
+    if set_autocommit:
+        conn.set_session(autocommit=True)
 
     file_contents = open(sql_file, 'r').read()
     queries = file_contents.split(';')

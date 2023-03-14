@@ -46,7 +46,8 @@ class ShipDimensionInserter (BulkInserter):
             axis='columns'
         )
 
-        ships = ships.merge(mid_map_df, on=[MID_COL], how='left').fillna({'flag_region': UNKNOWN_STRING_VALUE, 'flag_state': UNKNOWN_STRING_VALUE})
+        ships = ships.merge(mid_map_df, on=[MID_COL], how='left') \
+            .fillna({'flag_region': UNKNOWN_STRING_VALUE, 'flag_state': UNKNOWN_STRING_VALUE})
 
         insert_query = """
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d,
