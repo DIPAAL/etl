@@ -4,10 +4,8 @@ import argparse
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Generator, Tuple
-import os
-
-# Use Shapely 2.0 instead of PyGEOS, as it is supposedly faster and stable now.
-os.environ['USE_PYGEOS'] = '0'
+from dotenv import load_dotenv
+load_dotenv()
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
