@@ -51,9 +51,7 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
 
     # https://gist.github.com/alexeygrigorev/79c97c1e9dd854562df9bbeea76fc5de
     # Build trajectories in parallel
-    mp.set_start_method('spawn', force=True)
-    # Restart the process after 10 tasks to avoid memory leaks.
-    with ProcessPoolExecutor(max_tasks_per_child=10) as pool:
+    with ProcessPoolExecutor(mp_context=mp.get_context('spawn')) as pool:
         with tqdm(total=len(grouped_data)) as progress:
             futures = []
 
