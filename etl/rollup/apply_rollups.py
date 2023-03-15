@@ -21,7 +21,7 @@ def apply_rollups(conn, date: datetime) -> None:
     conn.commit()
 
     wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
-    #wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
+    wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
 
 def apply_simplify_query(conn, date: datetime) -> None:
