@@ -40,9 +40,6 @@ class ShipDimensionInserter (BulkInserter):
         """
         mid_map_df = pd.read_sql_query(map_query, conn)
 
-        # drop duplicates in mid_map
-        mid_map_df = mid_map_df.drop_duplicates(subset=['mid'])
-
         # Extract mid from mmsi
         ships[MID_COL] = ships.apply(
             func=lambda row: int(str(row[T_MMSI_COL])[:3]),
