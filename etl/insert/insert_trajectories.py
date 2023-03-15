@@ -69,7 +69,7 @@ class TrajectoryInserter (BulkInserter):
         DateDimensionInserter().ensure(df, conn)
         df = ShipTypeDimensionInserter('dim_ship_type', bulk_size=self.bulk_size,
                                        id_col_name=T_SHIP_TYPE_ID_COL).ensure(df, conn)
-        df = ShipDimensionInserter("dim_ship", 500, id_col_name=T_SHIP_ID_COL).ensure(df, conn)
+        df = ShipDimensionInserter("dim_ship", bulk_size=500, id_col_name=T_SHIP_ID_COL).ensure(df, conn)
         df = NavigationalStatusDimensionInserter("dim_nav_status", bulk_size=self.bulk_size,
                                                  id_col_name="nav_status_id").ensure(df, conn)
         df = TrajectoryDimensionInserter("dim_trajectory", bulk_size=self.bulk_size).ensure(df, conn)
