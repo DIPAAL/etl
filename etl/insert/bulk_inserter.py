@@ -1,4 +1,6 @@
 """Class implementing bulk insertion of data into a database."""
+from math import ceil
+
 import pandas as pd
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 
@@ -38,7 +40,7 @@ class BulkInserter:
             insert_query: the query used to insert into the database
             select_query: the query used to select from the database
         """
-        num_batches = len(entries) // self.bulk_size + 1
+        num_batches = ceil(len(entries) / self.bulk_size)
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
         inserted_data = [self.__select_insert(batch, conn, insert_query, select_query) for batch in batches]
 
@@ -93,7 +95,7 @@ class BulkInserter:
             query: the query used to insert into the database
             fetch: whether to fetch the result from executing the query (default True)
         """
-        num_batches = len(entries) // self.bulk_size + 1
+        num_batches = ceil(len(entries) / self.bulk_size)
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
         fetched_dataframe = [self.__insert(batch, conn, query, fetch=fetch) for batch in batches]
 

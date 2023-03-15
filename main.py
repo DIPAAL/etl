@@ -4,6 +4,8 @@ import argparse
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Generator, Tuple
+from dotenv import load_dotenv
+load_dotenv()
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
