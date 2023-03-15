@@ -40,7 +40,7 @@ class BulkInserter:
             insert_query: the query used to insert into the database
             select_query: the query used to select from the database
         """
-        num_batches = ceil(len(entries) / (self.bulk_size*1.0))
+        num_batches = ceil(len(entries) / self.bulk_size)
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
         inserted_data = [self.__select_insert(batch, conn, insert_query, select_query) for batch in batches]
 
@@ -95,7 +95,7 @@ class BulkInserter:
             query: the query used to insert into the database
             fetch: whether to fetch the result from executing the query (default True)
         """
-        num_batches = ceil(len(entries) / (self.bulk_size*1.0))
+        num_batches = ceil(len(entries) / self.bulk_size)
         batches = [entries[i * self.bulk_size:(i + 1) * self.bulk_size] for i in range(num_batches)]
         fetched_dataframe = [self.__insert(batch, conn, query, fetch=fetch) for batch in batches]
 
