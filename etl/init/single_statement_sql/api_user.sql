@@ -1,3 +1,4 @@
+-- Create user API if not exists. This is required as no CREATE USER IF NOT EXISTS exists in PostgreSQL 15.
 do
 $body$
 declare
