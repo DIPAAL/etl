@@ -10,7 +10,7 @@ begin
    WHERE usename = 'api'; -- No this is not a typo.
 
    IF num_users = 0 THEN
-      CREATE ROLE api;
+      CREATE USER api;
    END IF;
 end
 $body$
