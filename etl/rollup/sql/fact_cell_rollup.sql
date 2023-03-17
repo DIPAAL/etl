@@ -84,7 +84,7 @@ FROM (
                     calculate_delta_upperbounded (
                         (
                             SELECT ARRAY_AGG(LOWER(delta))
-                            FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                            FROM UNNEST(GETVALUES(AZIMUTH(crossing))) AS delta
                         ),
                         2*PI())
                 ) AS delta_cog,
