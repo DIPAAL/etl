@@ -24,7 +24,7 @@ SELECT
     ELSE
         calculate_delta_upperbounded ((
             SELECT
-                ARRAY_AGG(head)
+                ARRAY_AGG(LOWER(head))
             FROM UNNEST(GETVALUES (heading)) AS head), 360)
     END delta_heading,
     draught,
@@ -42,8 +42,8 @@ FROM (
         nav_status_id,
         infer_stopped,
         trajectory_sub_id,
-        minValue(atTime (draught, crossing_period)) draught,
-        atTime (heading, crossing_period) heading,
+        minValue(atPeriod (draught, crossing_period)) draught,
+        atPeriod (heading, crossing_period) heading,
         startTime,
         endTime,
         delta_cog,
@@ -52,7 +52,7 @@ FROM (
     FROM (
         SELECT
             *,
-            span (cid.startTime, cid.endTime, TRUE, TRUE) crossing_period
+            period (cid.startTime, cid.endTime, TRUE, TRUE) crossing_period
         FROM (
             SELECT
                 -- Construct the JSON objects existing of direction key, and distance to the cell edge
@@ -83,7 +83,7 @@ FROM (
                 (
                     calculate_delta_upperbounded (
                         (
-                            SELECT ARRAY_AGG(delta)
+                            SELECT ARRAY_AGG(LOWER(delta))
                             FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
                         ),
                         360)
