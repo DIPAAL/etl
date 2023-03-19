@@ -5,7 +5,7 @@ import pandas as pd
 from etl.constants import T_SHIP_ID_COL, \
     T_SHIP_NAVIGATIONAL_STATUS_ID_COL, T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, \
     T_ETA_DATE_COL, T_ETA_TIME_COL, T_DURATION_COL, T_INFER_STOPPED_COL, T_TRAJECTORY_SUB_ID_COL, INT32_MAX, \
-    T_SHIP_TYPE_ID_COL
+    T_SHIP_TYPE_ID_COL, T_HEADING_COL, T_ROT_COL, T_DRAUGHT_COL
 from etl.helper_functions import get_connection
 from etl.insert.bulk_inserter import BulkInserter
 from etl.insert.ensure_partitions import ensure_partitions_for_partitioned_tables
@@ -61,6 +61,15 @@ class TrajectoryInserter (BulkInserter):
         df = df.reset_index()
         df[T_TRAJECTORY_SUB_ID_COL] = self.generate_unique_random_series(df, INT32_MAX)
 
+        # As of March 2023 we need to manually change the encoding of mobilitydb types.
+        # 1. Cast to string, but keep None as None
+        # 2. Replace Stepwise with step
+        # 3. Replace ' with nothing
+        # The columns ROT, HEADING and DRAUGHT are mobilitydb types
+        df[T_ROT_COL] = self.__serialize_mobilitydb_column(df[T_ROT_COL])
+        df[T_HEADING_COL] = self.__serialize_mobilitydb_column(df[T_HEADING_COL])
+        df[T_DRAUGHT_COL] = self.__serialize_mobilitydb_column(df[T_DRAUGHT_COL])
+
         conn = get_connection(config)
 
         # Ensure date id and partitions exists
@@ -111,3 +120,12 @@ class TrajectoryInserter (BulkInserter):
         ]
 
         self._bulk_insert(df[columns], conn, query, fetch=False)
+
+    def __serialize_mobilitydb_column(self, column: pd.Series) -> pd.Series:
+        """
+        Serialize a mobilitydb column.
+
+        Keyword arguments:
+            column: the mobilitydb column to serialize
+        """
+        return column.astype(str).str.replace('Stepwise', 'step').str.replace("'", "").replace('None', None)
