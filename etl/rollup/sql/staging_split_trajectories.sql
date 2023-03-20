@@ -25,3 +25,6 @@ FROM (
         WHERE ft.start_date_id = %s) t
     ) t2
 ;
+
+-- Updated srid because it is lost in during Citus repartitioning
+UPDATE staging.split_trajectories SET trajectory = SETSRID(trajectory, 3034);
