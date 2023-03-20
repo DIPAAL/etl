@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     -- Raster "special" measure
     rast raster NOT NULL,
 
-    PRIMARY KEY (cell_x, cell_y, date_id, time_id, ship_type_id, heatmap_type_id, partition_id, temporal_resolution_sec, spatial_resolution)
+    PRIMARY KEY (heatmap_type_id, spatial_resolution, temporal_resolution_sec, date_id, time_id, ship_type_id, cell_x, cell_y, heatmap_type_id, partition_id)
 ) PARTITION BY RANGE(date_id);
