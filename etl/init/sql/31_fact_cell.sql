@@ -19,7 +19,7 @@ CREATE TABLE fact_cell_5000m (
     direction_id smallint NOT NULL,
     nav_status_id smallint NOT NULL,
     infer_stopped boolean NOT NULL,
-    -- Padding: 2+2+1 = 5 bytes, so 3 bytes of padding to reach the MAXALIGN of 8 bytes
+    -- Padding: 2+2+2+1 = 7 bytes, so 1 byte of padding to reach the MAXALIGN of 8 bytes
 
     PRIMARY KEY (cell_x, cell_y, ship_id, entry_date_id, entry_time_id, exit_date_id, exit_time_id, direction_id, nav_status_id, trajectory_sub_id, partition_id),
     FOREIGN KEY (ship_id) REFERENCES dim_ship(ship_id),
