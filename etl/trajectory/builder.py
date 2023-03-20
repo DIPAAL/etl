@@ -1,5 +1,6 @@
 """Module handling trajectory construction and outlier detection."""
 from concurrent.futures import ProcessPoolExecutor
+import multiprocessing as mp
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -45,9 +46,12 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     """
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
+    # deallocate memory used by clean_sorted_ais
+    del clean_sorted_ais
+
     # https://gist.github.com/alexeygrigorev/79c97c1e9dd854562df9bbeea76fc5de
     # Build trajectories in parallel
-    with ProcessPoolExecutor() as pool:
+    with ProcessPoolExecutor(mp_context=mp.get_context('spawn')) as pool:
         with tqdm(total=len(grouped_data)) as progress:
             futures = []
 
