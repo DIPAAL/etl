@@ -34,7 +34,7 @@ FROM
                 cell_y,
                 dt.hour_of_day,
                 ds.ship_type_id,
-                ST_SETSRID(dc.geom, 3034) AS geom,
+                dc.geom AS geom,
                 fc.partition_id,
                 COUNT(*) cnt
             FROM fact_cell_{CELL_SIZE}m fc
