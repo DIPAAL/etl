@@ -16,7 +16,7 @@ from etl.insert.dimensions.trajectory_dimension import TrajectoryDimensionInsert
 from etl.insert.dimensions.ship_type_dimension import ShipTypeDimensionInserter
 
 
-class TrajectoryInserter (BulkInserter):
+class TrajectoryInserter(BulkInserter):
     """
     Class responsible for bulk inserting trajectories in a database.
 
@@ -64,7 +64,7 @@ class TrajectoryInserter (BulkInserter):
         conn = get_connection(config)
 
         # Ensure date id and partitions exists
-        ensure_partitions_for_partitioned_tables(conn,  int(df[T_START_DATE_COL].iloc[0]))
+        ensure_partitions_for_partitioned_tables(conn, int(df[T_START_DATE_COL].iloc[0]))
 
         DateDimensionInserter().ensure(df, conn)
         df = ShipTypeDimensionInserter('dim_ship_type', bulk_size=self.bulk_size,
