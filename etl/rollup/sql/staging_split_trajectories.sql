@@ -12,7 +12,7 @@ FROM (
         t.infer_stopped,
         (t.split).point point,
         -- This forces lower and upper bound inclusiveness in the trajectory segments created by spaceSplit and sets linear interpolation between the points (lower, upper, linear)
-        tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), true, true, true) AS trajectory, -- round to 1 milimeter, to avoid floating point errors
+        tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), 'linear', true, true) AS trajectory, -- round to 1 milimeter, to avoid floating point errors
         t.heading,
         t.draught
     FROM (
