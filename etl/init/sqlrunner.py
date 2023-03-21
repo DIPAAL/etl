@@ -81,8 +81,8 @@ def run_sql_file_with_timings_no_split(sql_file, config, conn=None):
         config: The config to use
         conn: The connection to use. If None, a new connection will be created
     """
-    conn.set_session(autocommit=True)
     conn = get_connection(config) if conn is None else conn
+    conn.set_session(autocommit=True)
 
     file_contents = open(sql_file, 'r').read()
     # Replace query new lines with spaces, and max 40 characters
