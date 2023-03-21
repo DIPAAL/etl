@@ -2,7 +2,7 @@ INSERT INTO fact_cell_{CELL_SIZE}m (
     cell_x, cell_y, ship_id,
     entry_date_id, entry_time_id, exit_date_id, exit_time_id,
     direction_id, nav_status_id, infer_stopped, trajectory_sub_id,
-    sog, delta_heading, draught, delta_cog, st_bounding_box
+    sog, delta_heading, draught, delta_cog, st_bounding_box, partition_id
 )
 SELECT
     cell_x,
@@ -24,12 +24,13 @@ SELECT
     ELSE
         calculate_delta_upperbounded ((
             SELECT
-                ARRAY_AGG(LOWER(head))
+                ARRAY_AGG(head)
             FROM UNNEST(GETVALUES (heading)) AS head), 360)
     END delta_heading,
     draught,
     delta_cog,
-    stbox (cell_geom, crossing_period) st_bounding_box
+    stbox (cell_geom, crossing_period) st_bounding_box,
+    partition_id
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -42,17 +43,18 @@ FROM (
         nav_status_id,
         infer_stopped,
         trajectory_sub_id,
-        minValue(atPeriod (draught, crossing_period)) draught,
-        atPeriod (heading, crossing_period) heading,
+        minValue(atTime (draught, crossing_period)) draught,
+        atTime (heading, crossing_period) heading,
         startTime,
         endTime,
         delta_cog,
         crossing_period,
-        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
+        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds,
+        partition_id
     FROM (
         SELECT
             *,
-            period (cid.startTime, cid.endTime, TRUE, TRUE) crossing_period
+            span (cid.startTime, cid.endTime, TRUE, TRUE) crossing_period
         FROM (
             SELECT
                 -- Construct the JSON objects existing of direction key, and distance to the cell edge
@@ -83,14 +85,15 @@ FROM (
                 (
                     calculate_delta_upperbounded (
                         (
-                            SELECT ARRAY_AGG(LOWER(delta))
+                            SELECT ARRAY_AGG(delta)
                             FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
                         ),
                         360)
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
-                date_trunc('second', endTimestamp (crossing)) endTime
+                date_trunc('second', endTimestamp (crossing)) endTime,
+                partition_id
             FROM (
                 SELECT
                     unnest(sequences (atGeometry (fdt.trajectory, dc.geom))) crossing,
@@ -124,7 +127,8 @@ FROM (
                     fdt.infer_stopped infer_stopped,
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
-                    fdt.heading heading
+                    fdt.heading heading,
+                    fdt.partition_id
                 FROM staging.split_trajectories fdt
                 JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry)
             ) cj

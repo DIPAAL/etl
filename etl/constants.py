@@ -79,3 +79,7 @@ ETL_STAGE_SPATIAL = 'spatial_join'
 ETL_STAGE_TRAJECTORY = 'trajectory'
 ETL_STAGE_CELL = 'cell_construct'
 ETL_STAGE_BULK = 'bulk_insert'
+
+# Database constants
+ACCESS_METHOD_HEAP = 'heap'
+ACCESS_METHOD_COLUMNAR = 'columnar'
