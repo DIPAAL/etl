@@ -1,1 +1,1 @@
-CREATE DATABASE dipaal;
+CREATE DATABASE dipaal_spatial_partitioned;
