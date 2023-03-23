@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS staging.cell_{CELL_SIZE}m (
     PRIMARY KEY (x, y)
 );
 
+SELECT create_reference_table('staging.cell_{CELL_SIZE}m');
+
 INSERT INTO staging.cell_{CELL_SIZE}m (x, y, geom)
 SELECT
     i as x,
@@ -19,4 +21,3 @@ FROM
 
 CREATE INDEX IF NOT EXISTS cell_{CELL_SIZE}m_geom_idx ON staging.cell_{CELL_SIZE}m USING SPGIST (geom);
 
-SELECT create_reference_table('staging.cell_{CELL_SIZE}m');
