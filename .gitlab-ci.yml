@@ -6,6 +6,8 @@ stages:
 variables:
   CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH
   DOCKER_BUILD_ENVFILE: .tmp/${CI_JOB_NAME}-build.env
+  NODE_NAME: dipaal1 # use ais-etl-worker if need for more ram, remember to change cluster as well
+  CLUSTER_DEPLOY_TARGET: dipaal-cluster # use ais-pg-db for old cluster
 
 .build:
   stage: build
@@ -44,7 +46,7 @@ build:
   before_script:
     - export JOB_ID=$(date +%F-%H-%M-%S)
     - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
-    - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
+    - kubectl config use-context shipquerymasters/kubernetes-dashboard:${CLUSTER_DEPLOY_TARGET}
   when: manual
 
 init:
