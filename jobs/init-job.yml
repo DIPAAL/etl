@@ -14,9 +14,6 @@ spec:
       - name: init-etl-${JOB_ID}
         image: ${IMAGE_NAME}
         command: ["python", "-u", "main.py", "--init"]
-        resources:
-          limits:
-            memory: "25G"
       restartPolicy: Never
       affinity:
         nodeAffinity:
