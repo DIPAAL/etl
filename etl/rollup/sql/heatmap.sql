@@ -7,7 +7,7 @@ SELECT
     (i2.hour_of_day || '0000')::int AS time_id,
     i2.ship_type_id,
     i2.rast,
-    (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count') AS heatmap_type_id,
+    (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = 'count') AS heatmap_type_id,
     %(SPATIAL_RESOLUTION)s AS spatial_resolution,
     %(TEMPORAL_RESOLUTION)s AS temporal_resolution_sec,
     i2.partition_id
@@ -17,7 +17,7 @@ FROM
             ST_Union(
                 ST_AsRaster(
                     i1.geom,
-                    ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, 1000, 1000, 0, 0, 3034),
+                    ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, {CELL_SIZE}, {CELL_SIZE}, 0, 0, 3034),
                     '32BUI'::text,
                     cnt::int
                 )
