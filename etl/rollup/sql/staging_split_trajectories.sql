@@ -22,6 +22,3 @@ FROM (
     WHERE ft.start_date_id = %s) t
 INNER JOIN spatial_partition sp ON ST_Contains(sp.geom, (t.split).tpoint::GEOMETRY)
 ;
-
--- Updated srid because it is lost in during Citus repartitioning
-UPDATE staging.split_trajectories SET trajectory = SETSRID(trajectory, 3034);
