@@ -20,7 +20,8 @@ FROM
                     ST_MakeEmptyRaster (795000, 420000, 3600000, 3055000, {CELL_SIZE}, {CELL_SIZE}, 0, 0, 3034),
                     '32BUI'::text,
                     cnt::int
-                )
+                ),
+                'SUM'
             ) AS rast,
             i1.cell_x / (5000 / {CELL_SIZE}) AS cell_x,
             i1.cell_y / (5000 / {CELL_SIZE}) AS cell_y,
