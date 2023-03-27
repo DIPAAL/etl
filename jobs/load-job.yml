@@ -11,6 +11,10 @@ spec:
       imagePullSecrets:
         - name: regcred
       containers:
+      volumes:
+      - name: ais-raw
+        hostPath:
+          path: /home/dipaal/pickle
       - name: load-etl-${JOB_ID}
         image: ${IMAGE_NAME}
         volumeMounts:
@@ -27,13 +31,4 @@ spec:
                 operator: In
                 values:
                 - ${NODE_NAME}
-  volumeClaimTemplates:
-    - metadata:
-        name: pickle-local
-      spec:
-        storageClassName: local-storage
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 1Gi
   backoffLimit: 0
