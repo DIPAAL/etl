@@ -102,8 +102,8 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, 
                                                     'SPATIAL_RESOLUTION': spatial_resolution}))
 
     # Audit log the information
-    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
-    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
+    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
+    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:
