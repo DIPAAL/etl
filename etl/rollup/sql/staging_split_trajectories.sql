@@ -26,7 +26,7 @@ FROM (
             dt.draught draught
         FROM fact_trajectory ft
         JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
-        WHERE ft.start_date_id = % s
+        WHERE ft.start_date_id = %s
     ) t
 ) t2
 LEFT JOIN spatial_partition sp ON ST_Contains(sp.geom, t2.trajectory::geometry)
