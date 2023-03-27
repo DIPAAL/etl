@@ -2,7 +2,8 @@
 from math import ceil
 
 import pandas as pd
-from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
+from etl.audit.logger import global_audit_logger as gal, ROWS_KEY, TIMINGS_KEY
+from etl.helper_functions import measure_time
 
 
 class BulkInserter:
@@ -16,6 +17,30 @@ class BulkInserter:
     bulk_size: number of rows to insert in a single transaction
 
     """
+
+    def ensure_with_timings(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+        """
+        Ensure the existence of the entries in the dataframe, and log the time taken.
+
+        Keyword arguments:
+            df: dataframe containing dimension data
+            conn: database connection used for insertion
+        """
+        (result, seconds_elapsed) = measure_time(lambda: self.ensure(df, conn))
+        gal[TIMINGS_KEY][f"bulk_inserter_{self.dimension_name}"] = seconds_elapsed
+        return result
+
+    def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+        """
+        Ensure the existence of the entries in the dataframe.
+
+        Should be implemented by subclasses.
+
+        Keyword arguments:
+            df: dataframe containing dimension data
+            conn: database connection used for insertion
+        """
+        raise NotImplementedError  # Should be implemented by subclasses
 
     def __init__(self, dimension_name: str, bulk_size: int = 10000, id_col_name: str = None):
         """

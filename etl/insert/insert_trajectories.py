@@ -68,17 +68,17 @@ class TrajectoryInserter(BulkInserter):
 
         DateDimensionInserter().ensure(df, conn)
         df = ShipTypeDimensionInserter('dim_ship_type', bulk_size=self.bulk_size,
-                                       id_col_name=T_SHIP_TYPE_ID_COL).ensure(df, conn)
-        df = ShipDimensionInserter("dim_ship", bulk_size=500, id_col_name=T_SHIP_ID_COL).ensure(df, conn)
+                                       id_col_name=T_SHIP_TYPE_ID_COL).ensure_with_timings(df, conn)
+        df = ShipDimensionInserter("dim_ship", bulk_size=500, id_col_name=T_SHIP_ID_COL).ensure_with_timings(df, conn)
         df = NavigationalStatusDimensionInserter("dim_nav_status", bulk_size=self.bulk_size,
-                                                 id_col_name="nav_status_id").ensure(df, conn)
-        df = TrajectoryDimensionInserter("dim_trajectory", bulk_size=self.bulk_size).ensure(df, conn)
+                                                 id_col_name="nav_status_id").ensure_with_timings(df, conn)
+        df = TrajectoryDimensionInserter("dim_trajectory", bulk_size=self.bulk_size).ensure_with_timings(df, conn)
 
-        self._insert_trajectories(df, conn)
+        self.ensure_with_timings(df, conn)
 
         return conn
 
-    def _insert_trajectories(self, df: pd.DataFrame, conn):
+    def ensure(self, df: pd.DataFrame, conn):
         """
         Insert trajectories into database.
 
