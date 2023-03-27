@@ -30,9 +30,7 @@ FROM (
     ) t
 ) t2
 LEFT JOIN spatial_partition sp ON
-    ST_Contains(sp.geom, t2.trajectory::geometry) OR
-    ST_Covers(sp.geom, t2.trajectory::geometry) AND (
-        (ST_XMin(sp.geom) = ST_XMin(t2.trajectory::geometry) AND ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry)) OR
-        (ST_YMin(sp.geom) = ST_YMin(t2.trajectory::geometry) AND ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry))
-    )
+    ST_Covers(sp.geom, t2.trajectory::geometry) AND
+        ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry) AND
+        ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry)
 ;
