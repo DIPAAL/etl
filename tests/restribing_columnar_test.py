@@ -26,6 +26,7 @@ _get_partition_name_testdata = [
     ('test_2_table', datetime(2021, 4, 25), 'test_2_table_2021_04'),
 ]
 
+
 @pytest.mark.parametrize('table_name, cur_date, expected_result', _get_partition_name_testdata)
 def test_get_partition_name(table_name: str, cur_date: datetime, expected_result: str):
     assert expected_result == _get_partition_name(table_name, cur_date)

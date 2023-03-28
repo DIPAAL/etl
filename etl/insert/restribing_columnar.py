@@ -1,9 +1,9 @@
+"""Restribe columnar tables at the end of the month to get the largest stribes."""
 from datetime import datetime
 import calendar
 from etl.constants import COLUMNAR_TABLE_NAMES, ACCESS_METHOD_COLUMNAR, ACCESS_METHOD_HEAP
 from etl.helper_functions import wrap_with_timings, get_config
 from etl.init.sqlrunner import run_sql_file_with_timings
-
 
 
 def check_restribe(cur_date: datetime, conn) -> None:
@@ -17,7 +17,7 @@ def check_restribe(cur_date: datetime, conn) -> None:
     if not _is_last_day_of_month(cur_date):
         print(f'{cur_date} is not last day of month, no restribing will be done')
         return
-    
+
     print(f'{cur_date} is last day of month, restribing will commence')
 
     for table in COLUMNAR_TABLE_NAMES:
