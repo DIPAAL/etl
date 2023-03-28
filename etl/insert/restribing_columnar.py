@@ -9,6 +9,10 @@ from etl.init.sqlrunner import run_sql_file_with_timings
 def check_restribe(cur_date: datetime, conn) -> None:
     """
     Restribe columnar tables if currently loaded day is last of month.
+
+    Keyword Arguments:
+        cur_date: The date that is currently being loaded
+        conn: The database connection
     """
     if not _is_last_day_of_month(cur_date):
         print(f'{cur_date} is not last day of month, no restribing will be done')
@@ -23,6 +27,9 @@ def check_restribe(cur_date: datetime, conn) -> None:
 def _is_last_day_of_month(cur_date: datetime) -> bool:
     """
     Check if the current date is the last day of the current month.
+
+    Keyword Arguments:
+        cur_date: The date that is currently being loaded
     """
     _, num_days_month = calendar.monthrange(cur_date.year, cur_date.month)
     return cur_date.day == num_days_month
@@ -31,6 +38,11 @@ def _is_last_day_of_month(cur_date: datetime) -> bool:
 def restribe(table_name: str, cur_date: datetime, conn):
     """
     Perform restribing of a given columnar table.
+
+    Keyword Arguments:
+        table_name: The name of the columnar table to restribe
+        cur_date: The date that is currently being loaded
+        conn: The database connection
     """
     partition_name = _get_partition_name(table_name, cur_date)
     config = get_config()
@@ -55,5 +67,9 @@ def restribe(table_name: str, cur_date: datetime, conn):
 def _get_partition_name(table_name: str, cur_date: datetime) -> str:
     """
     Get the partition name of a table given a date.
+
+    Keyword Arguments:
+        table_name: The name of the table to find the partition name
+        cur_date: The date currently being loaded
     """
     return f'{table_name}_{cur_date.year}_{str(cur_date.month).zfill(2)}'
