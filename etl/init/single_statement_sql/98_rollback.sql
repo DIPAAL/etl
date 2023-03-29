@@ -10,6 +10,7 @@ BEGIN
     DELETE FROM fact_cell_200m WHERE entry_date_id = ANY(dateid);
     DELETE FROM fact_cell_50m WHERE entry_date_id = ANY(dateid);
 
+    -- Determine the partition name based on first entry in array
     partition_name := 'fact_cell_heatmap_' || substring(dateid[1]::text FROM 1 FOR 4) || '_' || substring(dateid[1]::text FROM 5 FOR 2);
     RAISE NOTICE 'Start converting % to row-major storage scheme', partition_name;
     PERFORM alter_table_set_access_method(partition_name, 'heap');
