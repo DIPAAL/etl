@@ -10,6 +10,10 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
+      volumes:
+      - name: ais-raw
+        hostPath:
+          path: /home/dipaal/pickle
       containers:
       - name: load-etl-${JOB_ID}
         image: ${IMAGE_NAME}
@@ -18,10 +22,6 @@ spec:
             mountPath: /data
         command: ["./main_wrapper.sh", "--load", "--from_date", "${FROM_DATE}", "--to_date", "${TO_DATE}"]
       restartPolicy: Never
-      volumes:
-        - name: ais-raw
-          persistentVolumeClaim:
-            claimName: ais-raw-pkl
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
