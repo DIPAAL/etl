@@ -25,7 +25,7 @@ def check_restribe(cur_date: datetime, conn) -> None:
         _, elapsed_seconds = wrap_with_timings(
             f'Restribe columnar table: {table}',
             lambda: measure_time(lambda: restribe(table, cur_date, conn)))
-        gal[TIMINGS_KEY][f'Restribing {table}'] = elapsed_seconds
+        gal[TIMINGS_KEY][f'restripe_end_of_month_{table}'] = elapsed_seconds
 
 
 def _is_last_day_of_month(cur_date: datetime) -> bool:
