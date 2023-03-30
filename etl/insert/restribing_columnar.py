@@ -22,7 +22,9 @@ def check_restribe(cur_date: datetime, conn) -> None:
     print(f'{cur_date} is last day of month, restribing will commence')
 
     for table in COLUMNAR_TABLE_NAMES:
-        _, elapsed_seconds = wrap_with_timings(f'Restribe columnar table: {table}', lambda: measure_time(lambda: restribe(table, cur_date, conn)))
+        _, elapsed_seconds = wrap_with_timings(
+            f'Restribe columnar table: {table}',
+            lambda: measure_time(lambda: restribe(table, cur_date, conn)))
         gal[TIMINGS_KEY][f'Restribing {table}'] = elapsed_seconds
 
 

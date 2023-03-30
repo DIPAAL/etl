@@ -142,7 +142,7 @@ def load_data(data: pd.DataFrame, config) -> None:
                              audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
-    
+
     wrap_with_timings('Restribing columnar tables', lambda: check_restribe(date, conn))
 
     wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
