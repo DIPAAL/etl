@@ -2,8 +2,9 @@
 from datetime import datetime
 import calendar
 from etl.constants import COLUMNAR_TABLE_NAMES, ACCESS_METHOD_COLUMNAR, ACCESS_METHOD_HEAP
-from etl.helper_functions import wrap_with_timings, get_config
+from etl.helper_functions import wrap_with_timings, measure_time, get_config
 from etl.init.sqlrunner import run_sql_file_with_timings
+from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 
 
 def check_restribe(cur_date: datetime, conn) -> None:
@@ -21,7 +22,8 @@ def check_restribe(cur_date: datetime, conn) -> None:
     print(f'{cur_date} is last day of month, restribing will commence')
 
     for table in COLUMNAR_TABLE_NAMES:
-        wrap_with_timings(f'Restribe columnar table: {table}', lambda: restribe(table, cur_date, conn))
+        _, elapsed_seconds = wrap_with_timings(f'Restribe columnar table: {table}', lambda: measure_time(lambda: restribe(table, cur_date, conn)))
+        gal[TIMINGS_KEY][f'Restribing {table}'] = elapsed_seconds
 
 
 def _is_last_day_of_month(cur_date: datetime) -> bool:
