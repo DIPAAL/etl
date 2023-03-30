@@ -18,6 +18,7 @@ from etl.rollup.apply_rollups import apply_rollups
 from etl.trajectory.builder import build_from_geopandas
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
 from etl.constants import ETL_STAGE_CLEAN, ETL_STAGE_TRAJECTORY, ETL_STAGE_BULK, ETL_STAGE_CELL, T_START_DATE_COL
+from etl.insert.restribing_columnar import check_restribe
 
 
 def configure_arguments():
@@ -141,6 +142,8 @@ def load_data(data: pd.DataFrame, config) -> None:
                              audit_etl_stage=ETL_STAGE_BULK)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
+
+    wrap_with_timings('Restribing columnar tables', lambda: check_restribe(date, conn))
 
     wrap_with_timings("Inserting audit", lambda: AuditInserter("audit_log").insert_audit(conn))
     gal.reset_log()  # reset the log for the next loop

@@ -1,8 +1,5 @@
 """Ensure that the date entry exists and partitions for the given date exists in partitioned tables."""
-import pandas as pd
-from datetime import datetime
-from etl.helper_functions import extract_date_from_smart_date_id, get_config
-from etl.init.sqlrunner import run_sql_file_with_timings
+from etl.helper_functions import extract_date_from_smart_date_id
 from etl.constants import ACCESS_METHOD_HEAP, ACCESS_METHOD_COLUMNAR
 
 
@@ -62,35 +59,3 @@ def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_
         """
         cursor.execute(query)
         conn.commit()
-
-        if access_method == ACCESS_METHOD_COLUMNAR:
-            _repartition_previous_columnar_partition(conn, exist_query, table_name, date)
-
-
-def _repartition_previous_columnar_partition(conn, exist_query: str, table_name: str, cur_date: datetime):
-    """
-    Repartition old columnar partitions to ensure best compression and largest stripes.
-
-    Keyword Arguments:
-        conn: The database connection
-        exist_query: Query to check for the existance of a table partition
-        table_name: The name of the table to repartition
-        cur_date: The current partition loaded
-    """
-    last_partition_date = cur_date - pd.DateOffset(months=1)
-    last_partition_name = f'{table_name}_{last_partition_date.year}_{str(last_partition_date.month).zfill(2)}'
-    with conn.cursor() as cursor:
-        cursor.execute(exist_query, {'relation_name': table_name, 'partition_name': last_partition_name})
-        if cursor.fetchone() is not None:
-            # Previous partition exists, repartition it
-            config = get_config()
-            run_sql_file_with_timings('etl/insert/sql/set_access_method.sql', config, conn,
-                                      format=dict(
-                                        TABLE_NAME=last_partition_name,
-                                        ACCESS_METHOD=ACCESS_METHOD_HEAP),
-                                      set_autocommit=False)
-            run_sql_file_with_timings('etl/insert/sql/set_access_method.sql', config, conn,
-                                      format=dict(
-                                        TABLE_NAME=last_partition_name,
-                                        ACCESS_METHOD=ACCESS_METHOD_COLUMNAR),
-                                      set_autocommit=False)
