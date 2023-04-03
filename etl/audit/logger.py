@@ -43,7 +43,6 @@ class AuditLogger:
         if not file_path.endswith('.pkl'):
             self[ROWS_KEY]['file'] = self._get_file_rows(file_path)
 
-
     def log_loaded_date(self, date_id: int):
         """
         Log the date loaded.
