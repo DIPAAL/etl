@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS fact_cell_heatmap (
     heatmap_type_id SMALLINT NOT NULL,
     partition_id SMALLINT NOT NULL,
 
+    infer_stopped BOOLEAN NOT NULL,
+
     -- Raster "special" measure
     rast raster NOT NULL,
 
