@@ -33,7 +33,7 @@ class DateDimensionInserter:
         query = """
             INSERT INTO dim_date (
                 date_id, date, day_of_week, day_of_month,
-                day_of_year, week_of_year, month_of_year, quarter_of_year, year,
+                day_of_year, week_of_year, month_of_year, quarter_of_year, year, iso_year,
                 day_name, month_name, weekday, season, holiday
             )
             SELECT
@@ -65,7 +65,8 @@ class DateDimensionInserter:
                          EXTRACT(WEEK FROM date)    AS week_of_year,
                          EXTRACT(MONTH FROM date)   AS month_of_year,
                          EXTRACT(QUARTER FROM date) AS quarter_of_year,
-                         EXTRACT(YEAR FROM date)    AS year
+                         EXTRACT(YEAR FROM date)    AS year,
+                         EXTRACT(ISOYEAR FROM date) AS iso_year
                      FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
                  ) i1
             INNER JOIN staging.day_num_map dm ON dm.day_num = i1.day_of_week

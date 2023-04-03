@@ -9,6 +9,7 @@ CREATE TABLE
         month_of_year int,
         quarter_of_year int,
         year int,
+        iso_year int,
         -- 36 bytes = 4 bytes padding til 40 bytes
         day_name TEXT, 
         month_name TEXT,
