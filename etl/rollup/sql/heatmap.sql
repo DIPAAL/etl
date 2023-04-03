@@ -38,7 +38,8 @@ FROM
                 ds.ship_type_id,
                 dc.geom AS geom,
                 fc.partition_id,
-                COUNT(*) cnt
+                COUNT(*) cnt,
+                fc.infer_stopped
             FROM fact_cell_{CELL_SIZE}m fc
             INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
             INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
