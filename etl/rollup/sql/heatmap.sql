@@ -1,5 +1,5 @@
 -- Insert 5000m density heatmap
-INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, rast, heatmap_type_id, spatial_resolution, temporal_resolution_sec, partition_id, infer_stopped)
+INSERT INTO fact_cell_heatmap (cell_x, cell_y, date_id, time_id, ship_type_id, rast, heatmap_type_id, spatial_resolution, temporal_resolution_sec, infer_stopped, partition_id)
 SELECT
     i2.cell_x,
     i2.cell_y,
@@ -10,8 +10,8 @@ SELECT
     (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = 'count') AS heatmap_type_id,
     %(SPATIAL_RESOLUTION)s AS spatial_resolution,
     %(TEMPORAL_RESOLUTION)s AS temporal_resolution_sec,
-    i2.partition_id,
-    i2.infer_stopped
+    i2.infer_stopped,
+    i2.partition_id
 FROM
     (
         SELECT
@@ -27,8 +27,8 @@ FROM
             i1.cell_y / (5000 / {CELL_SIZE}) AS cell_y,
             i1.hour_of_day,
             i1.ship_type_id,
-            i1.partition_id,
-            i1.infer_stopped
+            i1.infer_stopped,
+            i1.partition_id
         FROM
         (
             SELECT
@@ -37,9 +37,9 @@ FROM
                 dt.hour_of_day,
                 ds.ship_type_id,
                 dc.geom AS geom,
+                fc.infer_stopped,
                 fc.partition_id,
-                COUNT(*) cnt,
-                fc.infer_stopped
+                COUNT(*) cnt
             FROM fact_cell_{CELL_SIZE}m fc
             INNER JOIN dim_time dt ON dt.time_id = fc.entry_time_id
             INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
