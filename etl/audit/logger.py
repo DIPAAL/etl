@@ -43,6 +43,15 @@ class AuditLogger:
         if not file_path.endswith('.pkl'):
             self[ROWS_KEY]['file'] = self._get_file_rows(file_path)
 
+    def log_loaded_date(self, date_id: int):
+        """
+        Log the date loaded.
+
+        Keyword arguments:
+            date_id: The data warehouse ID of the loaded date
+        """
+        self._log_dict['date_id'] = date_id
+
     @staticmethod
     def _get_file_rows(file_path):
         """Return the number of rows of a given file.

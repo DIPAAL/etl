@@ -137,6 +137,7 @@ def load_data(data: pd.DataFrame, config) -> None:
     # Extract the date to rollup from the dataframe
     smart_date_key = data[T_START_DATE_COL].iat[0]
     date = extract_date_from_smart_date_id(smart_date_key)
+    gal.log_loaded_date(smart_date_key)
     conn = wrap_with_timings("Inserting trajectories",
                              lambda: TrajectoryInserter("fact_trajectory").persist(data, config),
                              audit_etl_stage=ETL_STAGE_BULK)

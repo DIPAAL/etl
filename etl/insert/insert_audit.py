@@ -19,12 +19,12 @@ class AuditInserter(BulkInserter):
         Keyword arguments:
             conn: database connection used for insertion
         """
-        df = gal.to_dataframe()
+        df = gal.to_dataframe().convert_dtypes()
 
         query = """
             INSERT INTO audit_log (
                 import_datetime, statistics, requirements, etl_version,
-                file_name, file_size, total_delta_time
+                file_name, file_size, date_id, total_delta_time
             )
             VALUES {}
             """
