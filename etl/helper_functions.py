@@ -12,6 +12,7 @@ from etl.constants import UNKNOWN_INT_VALUE, ISOLATION_LEVEL_AUTOCOMMIT
 
 ENGINE_DICT: Dict[str, Engine] = {}
 
+
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
     """
     Execute a given function and prints the time it took the function to execute.

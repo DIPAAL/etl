@@ -6,9 +6,9 @@ from time import perf_counter
 
 from typing import List
 
-from etl.constants import ISOLATION_LEVEL_AUTOCOMMIT
 from etl.helper_functions import get_connection, wrap_with_timings
 from sqlalchemy import text, Connection
+
 
 class BenchmarkRunner:
     """
@@ -64,7 +64,8 @@ class BenchmarkRunner:
                     self._run_random_garbage_queries()
 
                     start = perf_counter()
-                    result_cursor = wrap_with_timings(f'Running query {query_name} iteration {i}', lambda: self._conn.execute(text(query)))
+                    result_cursor = wrap_with_timings(f'Running query {query_name} iteration {i}',
+                                                      lambda: self._conn.execute(text(query)))
                     end = perf_counter()
                     time_taken_ms = int((end - start) * 1000)
 

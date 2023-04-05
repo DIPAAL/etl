@@ -180,7 +180,8 @@ def lazy_load_dim_cell(cell_size: int, conn, parent_cell_size: int, date_smart_k
         CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y
     )
     (rows, seconds_elapsed) = measure_time(
-        lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query, {'date_smart_key': date_smart_key}, fetch_count=True),
+        lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query,
+                                                   {'date_smart_key': date_smart_key}, fetch_count=True),
     )
     gal[TIMINGS_KEY][f"dim_cell_{cell_size}m_lazy"] = seconds_elapsed
     gal[ROWS_KEY][f"dim_cell_{cell_size}m_lazy"] = rows

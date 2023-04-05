@@ -4,7 +4,7 @@ from math import ceil
 import pandas as pd
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY, TIMINGS_KEY
 from etl.helper_functions import measure_time
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection
 
 
 class BulkInserter:
@@ -72,7 +72,8 @@ class BulkInserter:
 
         return pd.concat(inserted_data)
 
-    def __select_insert(self, batch: pd.DataFrame, conn: Connection, insert_query: str, select_query: str) -> pd.DataFrame:
+    def __select_insert(self, batch: pd.DataFrame, conn: Connection,
+                        insert_query: str, select_query: str) -> pd.DataFrame:
         """
         Select matches from batch to get their IDs, then insert the rest.
 
