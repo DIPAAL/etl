@@ -75,8 +75,8 @@ class BenchmarkRunner:
                     self._conn.execute(text("""
                             INSERT INTO benchmark_results
                             (test_run_id, query_name, iteration, explain, execution_time_ms)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """), (test_run_id, query_name, i, result, time_taken_ms))
+                            VALUES (:id, :name, :it, :result, :time)
+                        """), {'id': test_run_id, 'name': query_name, 'it': i, 'result': result, 'time': time_taken_ms})
                 break
             except Exception as e:
                 print(f'Exception thrown while running query, trying again: {e}')
