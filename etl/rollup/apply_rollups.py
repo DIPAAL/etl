@@ -65,11 +65,6 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to pre-aggregate heatmaps for
     """
-
-
-
-
-
     date_smart_key = extract_smart_date_id_from_date(date)
     staging_cell_sizes = get_staging_cell_sizes()
 
