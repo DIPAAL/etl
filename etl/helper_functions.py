@@ -1,8 +1,8 @@
 """Helper functions for the ETL process."""
 from datetime import datetime, timedelta
-from typing import List, Tuple, Callable, TypeVar
+from typing import List, Tuple, Callable, TypeVar, Dict
 from time import perf_counter
-from sqlalchemy import create_engine, Connection, text
+from sqlalchemy import create_engine, Connection, Engine, text
 
 import pandas as pd
 import configparser
@@ -10,6 +10,7 @@ import os
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 from etl.constants import UNKNOWN_INT_VALUE, ISOLATION_LEVEL_AUTOCOMMIT
 
+ENGINE_DICT: Dict[str, Engine] = {}
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
     """
@@ -60,30 +61,6 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     return result, end - start
 
 
-# def get_connection(config, database=None, host=None, user=None, password=None):
-#    """
-#    Return a connection to the database.
-#
-#    Keyword arguments:
-#        config: the application configuration
-#        database: the name of the database (default None)
-#        host: host and port of the database concatenated using ':' (default None)
-#        user: username for the database user to use (default None)
-#        password: password for the database user (defualt None)
-#    """
-#    host, port = host.split(':') if host is not None else config['Database']['host'].split(':')
-#    database = database if database is not None else config['Database']['database']
-#    user = user if user is not None else config['Database']['user']
-#    password = password if password is not None else config['Database']['password']
-#    return psycopg2.connect(
-#        host=host,
-#        database=database,
-#        user=user,
-#        password=password,
-#        port=port
-#    )
-
-
 def get_connection(config, auto_commit_connection: bool = False, database: str | None = None, host: str | None = None,
                    user: str | None = None, password: str | None = None) -> Connection:
     """
@@ -91,6 +68,7 @@ def get_connection(config, auto_commit_connection: bool = False, database: str |
 
     Keyword arguments:
         config: the application configuration
+        auto_commit_connection: whether the created connection should autocommit
         database: the name of the database (default None)
         host: host and port of the database concatenated using ':' (default None)
         user: username for the database user to use (default None)
@@ -101,7 +79,11 @@ def get_connection(config, auto_commit_connection: bool = False, database: str |
     user = user if user is not None else config['Database']['user']
     password = password if password is not None else config['Database']['password']
     connection_url = f'postgresql://{user}:{password}@{host}:{port}/{database}'
-    connection = create_engine(connection_url).connect()
+    if connection_url not in ENGINE_DICT.keys():
+        engine = create_engine(connection_url)
+        ENGINE_DICT[connection_url] = engine
+
+    connection = ENGINE_DICT[connection_url].connect()
     if auto_commit_connection:
         connection.execution_options(isolation_level=ISOLATION_LEVEL_AUTOCOMMIT)
     return connection
