@@ -4,7 +4,7 @@ import os
 from etl.helper_functions import wrap_with_timings, get_connection
 from etl.constants import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import Dict
-from sqlalchemy import text
+from sqlalchemy import text, Connection
 
 
 def get_sql_files(folder):
@@ -16,7 +16,7 @@ def get_sql_files(folder):
     return files
 
 
-def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None, set_autocommit: bool = True):
+def run_sql_file_with_timings(sql_file: str, config, conn: Connection = None, format: Dict = None, set_autocommit: bool = True):
     """
     Run a single sql file with timings for every statement.
 
@@ -41,7 +41,7 @@ def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None, 
         wrap_with_timings(f"Executing query: {query_short}", lambda: conn.execute(text(query)))
 
 
-def run_sql_folder_with_timings(folder: str, config, conn=None, format: Dict = None) -> None:
+def run_sql_folder_with_timings(folder: str, config, conn: Connection = None, format: Dict = None) -> None:
     """
     Run all sql files in a folder.
 
@@ -57,7 +57,7 @@ def run_sql_folder_with_timings(folder: str, config, conn=None, format: Dict = N
         run_sql_file_with_timings(sql_file, config, conn, format)
 
 
-def run_single_statement_sql_files_in_folder(folder, config, conn=None):
+def run_single_statement_sql_files_in_folder(folder:str , config, conn: Connection = None):
     """
     Run all sql files in a folder, but without splitting statements by ;.
 
@@ -66,13 +66,13 @@ def run_single_statement_sql_files_in_folder(folder, config, conn=None):
         config: The config to use
         conn: The connection to use. If None, a new connection will be created
     """
-    conn = get_connection(config) if conn is None else conn
+    conn = get_connection(config, auto_commit_connection=True) if conn is None else conn
 
     for sql_file in get_sql_files(folder):
         run_sql_file_with_timings_no_split(sql_file, config, conn)
 
 
-def run_sql_file_with_timings_no_split(sql_file, config, conn=None):
+def run_sql_file_with_timings_no_split(sql_file: str, config, conn: Connection = None):
     """
     Run a single sql file with timings for every statement, but without splitting by ;.
 
