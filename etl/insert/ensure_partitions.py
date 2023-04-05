@@ -42,14 +42,14 @@ def _ensure_partition_for_table(conn: Connection, table_name: str, access_method
         SELECT 1 FROM pg_inherits
         JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
         JOIN pg_class child             ON pg_inherits.inhrelid  = child.oid
-        WHERE parent.relname = %(relation_name)s
-        AND child.relname = %(partition_name)s
+        WHERE parent.relname = :relation_name
+        AND child.relname = :partition_name
     """
     # Partition name is the year and month of the smart date id. The month is 0 padded to 2 digits.
     date = extract_date_from_smart_date_id(date_id)
     partition_name = f"{table_name}_{date.year}_{str(date.month).zfill(2)}"
 
-    cursor = conn.execute(text(exist_query), {"relation_name": table_name, "partition_name": partition_name})
+    cursor = conn.execute(text(exist_query), parameters={"relation_name": table_name, "partition_name": partition_name})
     if cursor.fetchone() is None:
         query = f"""
             SET LOCAL citus.multi_shard_modify_mode TO 'sequential';

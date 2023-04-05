@@ -72,7 +72,7 @@ class BulkInserter:
 
         return pd.concat(inserted_data)
 
-    def __select_insert(self, batch: pd.DataFrame, conn, insert_query: str, select_query: str) -> pd.DataFrame:
+    def __select_insert(self, batch: pd.DataFrame, conn: Connection, insert_query: str, select_query: str) -> pd.DataFrame:
         """
         Select matches from batch to get their IDs, then insert the rest.
 
@@ -89,7 +89,7 @@ class BulkInserter:
         placeholders = f"({','.join([prepared_row] * len(batch))})"
         select_query = select_query.format(placeholders)
 
-        result = pd.read_sql_query(select_query, conn, params=batch.values.flatten())
+        result = pd.read_sql_query(select_query, conn, params=tuple(batch.values.flatten()))
 
         # Use the result dataframe to figure out which rows need to be inserted.
         # Merge by the columns in the batch dataframe.
@@ -148,9 +148,9 @@ class BulkInserter:
 
         result = None
         if fetch:
-            result = pd.read_sql_query(query, conn, params=batch.values.flatten())
+            result = pd.read_sql_query(query, conn, params=tuple(batch.values.flatten()))
         else:
-            conn.execute(text(query), batch.values.flatten())
+            conn.exec_driver_sql(query, tuple(batch.values.flatten()))
 
         # Log the number of rows inserted in the GAL
         if self.dimension_name not in gal[ROWS_KEY]:

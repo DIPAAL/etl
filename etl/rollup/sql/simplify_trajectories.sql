@@ -3,4 +3,4 @@ SET trajectory = transform(douglasPeuckerSimplify(transform(setSrid(trajectory, 
 FROM fact_trajectory ft
 WHERE ft.trajectory_sub_id = dt.trajectory_sub_id AND
       ft.start_date_id = dt.date_id AND
-    ft.start_date_id = %s;
+    ft.start_date_id = :date_smart_key;

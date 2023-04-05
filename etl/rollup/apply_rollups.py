@@ -37,7 +37,7 @@ def apply_simplify_query(conn: Connection, date: datetime) -> None:
         query = f.read()
 
     date_smart_key = extract_smart_date_id_from_date(date)
-    conn.execute(text(query), (date_smart_key,))
+    conn.execute(text(query), {'date_smart_key': date_smart_key})
 
 
 def apply_calc_length_query(conn: Connection, date: datetime) -> None:
@@ -52,7 +52,7 @@ def apply_calc_length_query(conn: Connection, date: datetime) -> None:
         query = f.read()
 
     date_smart_key = extract_smart_date_id_from_date(date)
-    conn.execute(text(query), (date_smart_key,))
+    conn.execute(text(query), {'date_smart_key': date_smart_key})
 
 
 def apply_heatmap_aggregations(conn, date: datetime) -> None:
@@ -119,7 +119,7 @@ def apply_cell_fact_rollups(conn, date: datetime) -> None:
     date_smart_key = extract_smart_date_id_from_date(date)
 
     (rows, seconds_elapsed) = measure_time(
-        lambda: execute_insert_query_on_connection(conn, query, (date_smart_key,))
+        lambda: execute_insert_query_on_connection(conn, query, {'date_smart_key': date_smart_key})
     )
     gal[TIMINGS_KEY]["traj_split_5k"] = seconds_elapsed
     gal[ROWS_KEY]["traj_split_5k"] = rows
@@ -151,7 +151,7 @@ def apply_cell_fact_rollup(conn, date: datetime, cell_size: int, parent_cell_siz
     date_smart_key = extract_smart_date_id_from_date(date)
 
     (rows, seconds_elapsed) = measure_time(
-        lambda: execute_insert_query_on_connection(conn, cell_fact_rollup_query, (date_smart_key,))
+        lambda: execute_insert_query_on_connection(conn, cell_fact_rollup_query)
     )
     gal[TIMINGS_KEY][f"fact_cell_{cell_size}m_rollup"] = seconds_elapsed
     gal[ROWS_KEY][f"fact_cell_{cell_size}m_rollup"] = rows
@@ -180,7 +180,7 @@ def lazy_load_dim_cell(cell_size: int, conn, parent_cell_size: int, date_smart_k
         CELL_SIZE=cell_size, PARENT_FORMULA_X=parent_formula_x, PARENT_FORMULA_Y=parent_formula_y
     )
     (rows, seconds_elapsed) = measure_time(
-        lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query, (date_smart_key,), fetch_count=True),
+        lambda: execute_insert_query_on_connection(conn, lazy_dim_cell_query, {'date_smart_key': date_smart_key}, fetch_count=True),
     )
     gal[TIMINGS_KEY][f"dim_cell_{cell_size}m_lazy"] = seconds_elapsed
     gal[ROWS_KEY][f"dim_cell_{cell_size}m_lazy"] = rows

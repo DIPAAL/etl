@@ -68,7 +68,7 @@ class DateDimensionInserter:
                          EXTRACT(QUARTER FROM date) AS quarter_of_year,
                          EXTRACT(YEAR FROM date)    AS year,
                          EXTRACT(ISOYEAR FROM date) AS iso_year
-                     FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
+                     FROM (SELECT TO_DATE(unnest(:dates)::text, 'YYYYMMDD') AS date) sq
                  ) i1
             INNER JOIN staging.day_num_map dm ON dm.day_num = i1.day_of_week
             INNER JOIN staging.month_num_map mm ON mm.month_num = i1.month_of_year
