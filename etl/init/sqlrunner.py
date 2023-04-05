@@ -2,7 +2,9 @@
 import os
 
 from etl.helper_functions import wrap_with_timings, get_connection
+from etl.constants import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import Dict
+from sqlalchemy import text
 
 
 def get_sql_files(folder):
@@ -25,9 +27,7 @@ def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None, 
         format: Optional formatting information for the query (Default: None)
         set_autocommit: Determines whether the connection is set to autocommit (Default: True)
     """
-    conn = get_connection(config) if conn is None else conn
-    if set_autocommit:
-        conn.set_session(autocommit=True)
+    conn = get_connection(config, auto_commit_connection=set_autocommit) if conn is None else conn
 
     file_contents = open(sql_file, 'r').read()
     queries = file_contents.split(';')
@@ -38,7 +38,7 @@ def run_sql_file_with_timings(sql_file, config, conn=None, format: Dict = None, 
         # Replace query new lines with spaces, and max 40 characters
         query_short = query.replace('\n', ' ')
         query_short = query_short[:40] + '...' if len(query_short) > 40 else query_short
-        wrap_with_timings(f"Executing query: {query_short}", lambda: conn.cursor().execute(query))
+        wrap_with_timings(f"Executing query: {query_short}", lambda: conn.execute(text(query)))
 
 
 def run_sql_folder_with_timings(folder: str, config, conn=None, format: Dict = None) -> None:
@@ -81,11 +81,10 @@ def run_sql_file_with_timings_no_split(sql_file, config, conn=None):
         config: The config to use
         conn: The connection to use. If None, a new connection will be created
     """
-    conn = get_connection(config) if conn is None else conn
-    conn.set_session(autocommit=True)
+    conn = get_connection(config, auto_commit_connection=True) if conn is None else conn
 
     file_contents = open(sql_file, 'r').read()
     # Replace query new lines with spaces, and max 40 characters
     query_short = file_contents.replace('\n', ' ')
     query_short = query_short[:40] + '...' if len(query_short) > 40 else query_short
-    wrap_with_timings(f"Executing query: {query_short}", lambda: conn.cursor().execute(file_contents))
+    wrap_with_timings(f"Executing query: {query_short}", lambda: conn.execute(text(file_contents)))

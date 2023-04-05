@@ -25,6 +25,8 @@ SELECT create_distributed_table('dim_cell_200m', 'partition_id', colocate_with=>
 SELECT create_distributed_table('dim_cell_50m', 'partition_id', colocate_with=>'fact_cell_5000m');
 SELECT create_distributed_table('fact_cell_heatmap', 'partition_id', colocate_with=>'fact_cell_5000m');
 
+-- Need to commit before splitting shards, otherwise an error is thrown
+COMMIT;
 -- Create the custom shards
 -- Because we ensured colocation be splitting this is done for all colocated tables
 WITH parts AS (

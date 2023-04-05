@@ -4,6 +4,7 @@ from math import ceil
 import pandas as pd
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY, TIMINGS_KEY
 from etl.helper_functions import measure_time
+from sqlalchemy import Connection, text
 
 
 class BulkInserter:
@@ -129,7 +130,7 @@ class BulkInserter:
 
         return pd.concat(fetched_dataframe)
 
-    def __insert(self, batch: pd.DataFrame, conn, query: str, fetch: bool) -> pd.DataFrame:
+    def __insert(self, batch: pd.DataFrame, conn: Connection, query: str, fetch: bool) -> pd.DataFrame:
         """
         Insert a batch into the database and returns database IDs.
 
@@ -149,8 +150,7 @@ class BulkInserter:
         if fetch:
             result = pd.read_sql_query(query, conn, params=batch.values.flatten())
         else:
-            with conn.cursor() as cursor:
-                cursor.execute(query, batch.values.flatten())
+            conn.execute(text(query), batch.values.flatten())
 
         # Log the number of rows inserted in the GAL
         if self.dimension_name not in gal[ROWS_KEY]:

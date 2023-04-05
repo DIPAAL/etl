@@ -1,4 +1,4 @@
--- Based on: https://www.rmg.co.uk/stories/topics/when-easter#:~:text=The%20simple%20standard%20definition%20of,Easter%20is%20the%20next%20Sunday.
+-- Based on: https://www.rmg.co.uk/stories/topics/when-easter
 -- Works for years between 1900 and 2099
 CREATE OR REPLACE FUNCTION calculate_easter_holidays(cur_year SMALLINT) RETURNS TABLE (
     month SMALLINT,

@@ -2,13 +2,13 @@
 from datetime import datetime, timedelta
 from typing import List, Tuple, Callable, TypeVar
 from time import perf_counter
+from sqlalchemy import create_engine, Connection, text
 
 import pandas as pd
-import psycopg2
 import configparser
 import os
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
-from etl.constants import UNKNOWN_INT_VALUE
+from etl.constants import UNKNOWN_INT_VALUE, ISOLATION_LEVEL_AUTOCOMMIT
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -60,9 +60,34 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     return result, end - start
 
 
-def get_connection(config, database=None, host=None, user=None, password=None):
+# def get_connection(config, database=None, host=None, user=None, password=None):
+#    """
+#    Return a connection to the database.
+#
+#    Keyword arguments:
+#        config: the application configuration
+#        database: the name of the database (default None)
+#        host: host and port of the database concatenated using ':' (default None)
+#        user: username for the database user to use (default None)
+#        password: password for the database user (defualt None)
+#    """
+#    host, port = host.split(':') if host is not None else config['Database']['host'].split(':')
+#    database = database if database is not None else config['Database']['database']
+#    user = user if user is not None else config['Database']['user']
+#    password = password if password is not None else config['Database']['password']
+#    return psycopg2.connect(
+#        host=host,
+#        database=database,
+#        user=user,
+#        password=password,
+#        port=port
+#    )
+
+
+def get_connection(config, auto_commit_connection: bool = False, database: str | None = None, host: str | None = None,
+                   user: str | None = None, password: str | None = None) -> Connection:
     """
-    Return a connection to the database.
+    Return a connection to the database using SQLalchemy, as it is the only connection type supported by pandas.
 
     Keyword arguments:
         config: the application configuration
@@ -75,13 +100,11 @@ def get_connection(config, database=None, host=None, user=None, password=None):
     database = database if database is not None else config['Database']['database']
     user = user if user is not None else config['Database']['user']
     password = password if password is not None else config['Database']['password']
-    return psycopg2.connect(
-        host=host,
-        database=database,
-        user=user,
-        password=password,
-        port=port
-    )
+    connection_url = f'postgresql://{user}:{password}@{host}:{port}/{database}'
+    connection = create_engine(connection_url).connect()
+    if auto_commit_connection:
+        connection.execution_options(isolation_level=ISOLATION_LEVEL_AUTOCOMMIT)
+    return connection
 
 
 def get_first_query_in_file(file_path: str) -> str:
@@ -110,7 +133,7 @@ def get_queries_in_file(file_path: str) -> List[str]:
         return queries
 
 
-def execute_insert_query_on_connection(conn, query: str, params=None, fetch_count: bool = False) -> int:
+def execute_insert_query_on_connection(conn: Connection, query: str, params=None, fetch_count: bool = False) -> int:
     """
     Execute a query on a connection.
 
@@ -120,11 +143,10 @@ def execute_insert_query_on_connection(conn, query: str, params=None, fetch_coun
         params: The parameters to pass to the query
         fetch_count: If true, the return value will be using fetch instead of cursor row count.
     """
-    with conn.cursor() as cursor:
-        cursor.execute(query, params)
-        if fetch_count:
-            return cursor.fetchone()[0]
-        return cursor.rowcount
+    result = conn.execute(text(query), params)
+    if fetch_count:
+        return result.fetchone()[0]
+    return result.rowcount
 
 
 def extract_smart_date_id_from_date(date: datetime) -> int:

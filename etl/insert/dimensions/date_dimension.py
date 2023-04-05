@@ -2,6 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_ETA_DATE_COL, T_START_DATE_COL, T_END_DATE_COL
+from sqlalchemy import Connection, text
 
 
 class DateDimensionInserter:
@@ -13,7 +14,7 @@ class DateDimensionInserter:
     ensure(df, conn): ensure the existence of dates in the date dimension
     """
 
-    def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+    def ensure(self, df: pd.DataFrame, conn: Connection) -> pd.DataFrame:
         """
         Ensure the existence of ETA, start and end dates in the date dimension.
 
@@ -74,6 +75,5 @@ class DateDimensionInserter:
             ON CONFLICT DO NOTHING
         """
 
-        with conn.cursor() as cursor:
-            cursor.execute(query, dict(dates=dates))
-            conn.commit()
+        conn.execute(text(query), dict(dates=dates))
+        conn.commit()

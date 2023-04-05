@@ -1,6 +1,7 @@
 """Ensure that the date entry exists and partitions for the given date exists in partitioned tables."""
 from etl.helper_functions import extract_date_from_smart_date_id
 from etl.constants import ACCESS_METHOD_HEAP, ACCESS_METHOD_COLUMNAR
+from sqlalchemy import Connection, text
 
 
 def ensure_partitions_for_partitioned_tables(conn, date_id: int):
@@ -25,7 +26,7 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         _ensure_partition_for_table(conn, table_name, access_method, date_id)
 
 
-def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_id: int):
+def _ensure_partition_for_table(conn: Connection, table_name: str, access_method: str, date_id: int):
     """
     Ensure that a partition for the given date exists in the given table.
 
@@ -48,8 +49,7 @@ def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_
     date = extract_date_from_smart_date_id(date_id)
     partition_name = f"{table_name}_{date.year}_{str(date.month).zfill(2)}"
 
-    cursor = conn.cursor()
-    cursor.execute(exist_query, {"relation_name": table_name, "partition_name": partition_name})
+    cursor = conn.execute(text(exist_query), {"relation_name": table_name, "partition_name": partition_name})
     if cursor.fetchone() is None:
         query = f"""
             SET LOCAL citus.multi_shard_modify_mode TO 'sequential';
@@ -57,5 +57,5 @@ def _ensure_partition_for_table(conn, table_name: str, access_method: str, date_
                 FOR VALUES FROM ({rounded_smart_date_id}) TO ({rounded_smart_date_id + 99})
                 USING {access_method}
         """
-        cursor.execute(query)
+        conn.execute(text(query))
         conn.commit()
