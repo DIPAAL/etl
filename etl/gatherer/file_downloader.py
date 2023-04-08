@@ -167,7 +167,7 @@ def rename_extracted_files(config):
     """
     rename_regex = [
         # rename aisdk20070101.csv to aisdk-2007-01-01.csv
-        (r'aisdk(\d{4})(\d{2})(\d{2}).csv', r'aisdk-\1-\2-\3.csv'),
+        (r'aisdk_(\d{4})(\d{2})(\d{2}).csv', r'aisdk-\1-\2-\3.csv'),
     ]
 
     path = config['DataSource']['ais_path']
