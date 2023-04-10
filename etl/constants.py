@@ -86,9 +86,13 @@ ACCESS_METHOD_HEAP = 'heap'
 ACCESS_METHOD_COLUMNAR = 'columnar'
 COLUMNAR_TABLE_NAMES = ['fact_cell_heatmap']
 
+
 # Connection Constants
 class SqlalchemyIsolationLevel(Enum):
+    """Enum representing sqlalchemy connection isolation levels."""
+
     def __str__(self) -> str:
+        """Return value as string representation."""
         return self.value
 
     SERIALIZABLE = "SERIALIZABLE"
