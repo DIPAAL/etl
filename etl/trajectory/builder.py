@@ -316,8 +316,8 @@ def _get_dim_from_relative_positions(x: float, y: float) -> float:
     If both x and y are not UNKNOWN_FLOAT_VALUE, return the sum of x and y.
 
     Keyword arguments:
-        x: a value
-        y: b value
+        x: first relative position
+        y: second relative position
     """
     if x == UNKNOWN_FLOAT_VALUE and y == UNKNOWN_FLOAT_VALUE:
         return UNKNOWN_FLOAT_VALUE
