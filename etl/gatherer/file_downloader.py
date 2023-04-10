@@ -1,5 +1,6 @@
 """Module for download missing AIS files on demand."""
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 import wget
@@ -50,6 +51,7 @@ def ensure_file_for_date(date: datetime, config) -> str:
         date: the date to ensure the file for
         config: the application configuration
     """
+    rename_extracted_files(config)
     expected_filename = f'aisdk-{date.year}-{date.month:02d}-{date.day:02d}.csv'
     path = os.path.join(config['DataSource']['ais_path'], expected_filename)
 
@@ -150,6 +152,31 @@ def extract(file: AisFile, config):
             zip_ref.extractall(config['DataSource']['ais_path'])
     elif path.endswith('.rar'):
         patoolib.extract_archive(path, config['DataSource']['ais_path'])
+
+    rename_extracted_files(config)
+
+
+def rename_extracted_files(config):
+    """
+    Rename files using regex paterrns in the AIS data folder.
+
+    A rename regex should match groups for year month and day, and supply a replacement string.
+
+    Keyword arguments:
+        config: the application configuration
+    """
+    rename_regex = [
+        # rename aisdk20070101.csv to aisdk-2007-01-01.csv
+        (r'aisdk_(\d{4})(\d{2})(\d{2}).csv', r'aisdk-\1-\2-\3.csv'),
+    ]
+
+    path = config['DataSource']['ais_path']
+
+    for file in os.listdir(path):
+        for regex, repl in rename_regex:
+            if re.match(regex, file):
+                new_name = re.sub(regex, repl, file)
+                os.rename(os.path.join(path, file), os.path.join(path, new_name))
 
 
 def ensure_file(file: AisFile, config):

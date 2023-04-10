@@ -347,6 +347,9 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
         column_subset: list of column names that to find most recurring values for
         drop_na: indicates if pandas or numpy NA values should be included
     """
+    # if any of the columns in the subset are not in the dataframe, return an empty series
+    if not all(column in dataframe.columns for column in column_subset):
+        return pd.Series()
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 
