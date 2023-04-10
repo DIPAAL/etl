@@ -8,7 +8,7 @@ import pandas as pd
 import configparser
 import os
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
-from etl.constants import UNKNOWN_INT_VALUE, ISOLATION_LEVEL_AUTOCOMMIT
+from etl.constants import UNKNOWN_INT_VALUE, SqlalchemyIsolationLevel
 
 ENGINE_DICT: Dict[str, Engine] = {}
 
@@ -86,7 +86,7 @@ def get_connection(config, auto_commit_connection: bool = False, database: str |
 
     connection = ENGINE_DICT[connection_url].connect()
     if auto_commit_connection:
-        connection.execution_options(isolation_level=ISOLATION_LEVEL_AUTOCOMMIT)
+        connection.execution_options(isolation_level=SqlalchemyIsolationLevel.AUTOCOMMIT.value)
     return connection
 
 
