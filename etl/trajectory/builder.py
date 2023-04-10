@@ -264,10 +264,10 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[LENGTH_COL], drop_na=True)
-    length = most_recurring[LENGTH_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
+    length = most_recurring[LENGTH_COL].iloc[0] if most_recurring.size != 0 else _get_dim_from_relative_positions(a, b)
 
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[WIDTH_COL], drop_na=True)
-    width = most_recurring[WIDTH_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
+    width = most_recurring[WIDTH_COL].iloc[0] if most_recurring.size != 0 else _get_dim_from_relative_positions(c, d)
 
     return pd.concat([dataframe, _create_trajectory_db_df(dict={
         T_START_DATE_COL: start_date_id,
@@ -301,6 +301,31 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_LENGTH_COL: length,
         T_WIDTH_COL: width,
     })])
+
+
+def _get_dim_from_relative_positions(x: float, y: float) -> float:
+    """
+    Try to get the length from the a and b values.
+
+    If both x and y equals UNKNOWN_FLOAT_VALUE, return UNKNOWN_FLOAT_VALUE.
+
+    If x equals UNKNOWN_FLOAT_VALUE, return x.
+
+    If y equals UNKNOWN_FLOAT_VALUE, return y.
+
+    If both x and y are not UNKNOWN_FLOAT_VALUE, return the sum of x and y.
+
+    Keyword arguments:
+        x: a value
+        y: b value
+    """
+    if x == UNKNOWN_FLOAT_VALUE and y == UNKNOWN_FLOAT_VALUE:
+        return UNKNOWN_FLOAT_VALUE
+    if x == UNKNOWN_FLOAT_VALUE:
+        return y
+    if y == UNKNOWN_FLOAT_VALUE:
+        return x
+    return x + y
 
 
 def _extract_time_smart_id(datetime: datetime) -> int:
