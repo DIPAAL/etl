@@ -53,7 +53,7 @@ class ShipDimensionInserter (BulkInserter):
             INSERT INTO dim_ship (mmsi, imo, name, callsign, a, b, c, d, length, width,
             ship_type_id, location_system_type, mid, flag_region, flag_state)
             VALUES {}
-            RETURNING ship_id, mmsi, imo, callsign ship_callsign, name ship_name, a, b, c, d, length, width, 
+            RETURNING ship_id, mmsi, imo, callsign ship_callsign, name ship_name, a, b, c, d, length, width,
                 ship_type_id, location_system_type, mid, flag_region, flag_state
         """
 
@@ -62,7 +62,7 @@ class ShipDimensionInserter (BulkInserter):
                 ship_id, mmsi, imo, name ship_name, callsign ship_callsign, a, b, c, d, length, width,
                 ship_type_id, location_system_type, mid, flag_region, flag_state
             FROM dim_ship
-            WHERE (mmsi, imo, name, callsign, a, b, c, d, length, width, ship_type_id, location_system_type, mid, 
+            WHERE (mmsi, imo, name, callsign, a, b, c, d, length, width, ship_type_id, location_system_type, mid,
                 flag_region, flag_state) IN {}
             """
 
