@@ -51,7 +51,7 @@ def run_sql_folder_with_timings(folder: str, config, conn: Connection = None, fo
         conn: The connection to use. If None, a new connection will be created
         format: Optional formatting information for the query
     """
-    conn = get_connection(config) if conn is None else conn
+    conn = get_connection(config, auto_commit_connection=True) if conn is None else conn
 
     for sql_file in get_sql_files(folder):
         run_sql_file_with_timings(sql_file, config, conn, format)
