@@ -141,8 +141,7 @@ FROM
                         ) AS trajectory
                     FROM fact_trajectory ft
                     INNER JOIN dim_trajectory dt ON ft.start_date_id = dt.date_id AND ft.trajectory_sub_id = dt.trajectory_sub_id
-                    WHERE timestamp_from_date_time_id(ft.start_date_id, ft.start_time_id) >= timestamp_from_date_time_id(:start_date_id, :start_time_id)
-                      AND timestamp_from_date_time_id(ft.start_date_id, ft.start_time_id) <= timestamp_from_date_time_id(:end_date_id, :end_time_id)
+                    WHERE ft.start_date_id BETWEEN :start_date_id AND :end_date_id
                       AND ST_Intersects(
                         ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
                         ST_Transform(dt.trajectory::geometry, 3034)
