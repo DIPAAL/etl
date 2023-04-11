@@ -10,7 +10,8 @@ from etl.cleaning.clean_data import create_dirty_df_from_ais_csv
 from etl.trajectory.builder import build_from_geopandas, rebuild_to_geodataframe, _euclidian_dist, \
     _create_trajectory_db_df, _check_outlier, _extract_time_smart_id, _find_most_recurring, \
     POINTS_FOR_TRAJECTORY_THRESHOLD, _finalize_trajectory, _tfloat_from_dataframe, COORDINATE_REFERENCE_SYSTEM_METERS, \
-    _update_cannot_handle, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD
+    _update_cannot_handle, _constraint_time_difference, STOPPED_KNOTS_THRESHOLD, \
+    POINT_TIME_DIFFERENCE_SPLIT_THRESHOLD, UNKNOWN_FLOAT_VALUE, _get_dim_from_relative_positions
 from etl.constants import CVS_TIMESTAMP_FORMAT, LONGITUDE_COL, LATITUDE_COL, SOG_COL, TIMESTAMP_COL
 from etl.constants import T_START_DATE_COL, T_START_TIME_COL, T_END_DATE_COL, T_END_TIME_COL, T_ETA_DATE_COL, \
     T_ETA_TIME_COL, T_INFER_STOPPED_COL, T_A_COL, T_B_COL, T_C_COL, T_D_COL, T_IMO_COL, T_ROT_COL, T_MMSI_COL, \
@@ -314,4 +315,18 @@ def test_constraint_time_difference(time_str: str, seconds_to_add: int, expected
 
     result = _constraint_time_difference(cur, prev)
 
+    assert expected == result
+
+
+test_get_dimension_from_relative_positions_data = [
+    (1, 5, 6),
+    (2, UNKNOWN_FLOAT_VALUE, 2),
+    (UNKNOWN_FLOAT_VALUE, 3, 3),
+    (UNKNOWN_FLOAT_VALUE, UNKNOWN_FLOAT_VALUE, UNKNOWN_FLOAT_VALUE)
+]
+
+
+@pytest.mark.parametrize('x,y,expected', test_get_dimension_from_relative_positions_data)
+def test_get_dimension_from_relative_positions(x: float, y: float, expected: float):
+    result = _get_dim_from_relative_positions(x, y)
     assert expected == result

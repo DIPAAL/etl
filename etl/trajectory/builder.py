@@ -12,7 +12,8 @@ from etl.constants import COORDINATE_REFERENCE_SYSTEM, LONGITUDE_COL, LATITUDE_C
     ETA_COL, DESTINATION_COL, NAVIGATIONAL_STATUS_COL, DRAUGHT_COL, ROT_COL, HEADING_COL, IMO_COL, \
     POSITION_FIXING_DEVICE_COL, SHIP_TYPE_COL, NAME_COL, CALLSIGN_COL, A_COL, B_COL, C_COL, D_COL, \
     MBDB_TRAJECTORY_COL, GEO_PANDAS_GEOMETRY_COL, LOCATION_SYSTEM_TYPE_COL, T_LOCATION_SYSTEM_TYPE_COL, \
-    TRAJECTORY_SRID, MOBILE_TYPE_COL, T_POSITION_FIXING_DEVICE_COL, UNKNOWN_INT_VALUE, UNKNOWN_STRING_VALUE
+    TRAJECTORY_SRID, MOBILE_TYPE_COL, T_POSITION_FIXING_DEVICE_COL, UNKNOWN_INT_VALUE, UNKNOWN_STRING_VALUE, \
+    LENGTH_COL, WIDTH_COL, T_LENGTH_COL, T_WIDTH_COL
 from etl.constants import T_INFER_STOPPED_COL, T_DURATION_COL, T_C_COL, T_D_COL, T_TRAJECTORY_COL, T_DESTINATION_COL, \
     T_ROT_COL, T_HEADING_COL, T_MMSI_COL, T_IMO_COL, T_B_COL, T_A_COL, T_MOBILE_TYPE_COL, T_SHIP_TYPE_COL, \
     T_SHIP_NAME_COL, T_SHIP_CALLSIGN_COL, T_NAVIGATIONAL_STATUS_COL, T_DRAUGHT_COL, T_ETA_TIME_COL, T_ETA_DATE_COL, \
@@ -262,6 +263,12 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
     most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[D_COL], drop_na=True)
     d = most_recurring[D_COL].iloc[0] if most_recurring.size != 0 else UNKNOWN_FLOAT_VALUE
 
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[LENGTH_COL], drop_na=True)
+    length = most_recurring[LENGTH_COL].iloc[0] if most_recurring.size != 0 else _get_dim_from_relative_positions(a, b)
+
+    most_recurring = _find_most_recurring(dataframe=trajectory_dataframe, column_subset=[WIDTH_COL], drop_na=True)
+    width = most_recurring[WIDTH_COL].iloc[0] if most_recurring.size != 0 else _get_dim_from_relative_positions(c, d)
+
     return pd.concat([dataframe, _create_trajectory_db_df(dict={
         T_START_DATE_COL: start_date_id,
         T_START_TIME_COL: start_time_id,
@@ -291,7 +298,34 @@ def _finalize_trajectory(mmsi: int, trajectory_dataframe: gpd.GeoDataFrame, from
         T_B_COL: b,
         T_C_COL: c,
         T_D_COL: d,
+        T_LENGTH_COL: length,
+        T_WIDTH_COL: width,
     })])
+
+
+def _get_dim_from_relative_positions(x: float, y: float) -> float:
+    """
+    Try to get the length from the a and b values.
+
+    If both x and y equals UNKNOWN_FLOAT_VALUE, return UNKNOWN_FLOAT_VALUE.
+
+    If x equals UNKNOWN_FLOAT_VALUE, return y.
+
+    If y equals UNKNOWN_FLOAT_VALUE, return x.
+
+    If both x and y are not UNKNOWN_FLOAT_VALUE, return the sum of x and y.
+
+    Keyword arguments:
+        x: first relative position
+        y: second relative position
+    """
+    if x == UNKNOWN_FLOAT_VALUE and y == UNKNOWN_FLOAT_VALUE:
+        return UNKNOWN_FLOAT_VALUE
+    if x == UNKNOWN_FLOAT_VALUE:
+        return y
+    if y == UNKNOWN_FLOAT_VALUE:
+        return x
+    return x + y
 
 
 def _extract_time_smart_id(datetime: datetime) -> int:
@@ -349,7 +383,7 @@ def _find_most_recurring(dataframe: gpd.GeoDataFrame, column_subset: List[str], 
     """
     # if any of the columns in the subset are not in the dataframe, return an empty series
     if not all(column in dataframe.columns for column in column_subset):
-        return pd.Series()
+        return pd.Series(dtype=object)
     return dataframe.value_counts(subset=column_subset, sort=True, dropna=drop_na).index.to_frame()
 
 
@@ -549,4 +583,6 @@ def _create_trajectory_db_df(dict=None) -> pd.DataFrame:
         T_B_COL: pd.Series(dtype='float64', data=dict[T_B_COL] if T_B_COL in dict else []),
         T_C_COL: pd.Series(dtype='float64', data=dict[T_C_COL] if T_C_COL in dict else []),
         T_D_COL: pd.Series(dtype='float64', data=dict[T_D_COL] if T_D_COL in dict else []),
+        T_LENGTH_COL: pd.Series(dtype='float64', data=dict[T_LENGTH_COL] if T_LENGTH_COL in dict else []),
+        T_WIDTH_COL: pd.Series(dtype='float64', data=dict[T_WIDTH_COL] if T_WIDTH_COL in dict else []),
     })

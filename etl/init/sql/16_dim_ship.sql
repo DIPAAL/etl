@@ -3,6 +3,8 @@ CREATE TABLE dim_ship (
     b float,
     c float,
     d float,
+    width float, -- = C+D
+    length float, -- = A+B
     ship_id serial PRIMARY KEY,
     imo int NOT NULL,
     mmsi int NOT NULL,
