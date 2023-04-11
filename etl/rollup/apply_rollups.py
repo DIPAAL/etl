@@ -1,4 +1,5 @@
 """Module to apply rollups after inserting."""
+import os
 from datetime import datetime
 
 from etl.helper_functions import wrap_with_timings, measure_time, execute_insert_query_on_connection, \
@@ -63,22 +64,26 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
         conn: The database connection
         date: The date to pre-aggregate heatmaps for
     """
-    with open('etl/rollup/sql/heatmap.sql', 'r') as f:
-        query_template = f.read()
-
     date_smart_key = extract_smart_date_id_from_date(date)
     staging_cell_sizes = get_staging_cell_sizes()
-    for size in staging_cell_sizes:
-        query = query_template.format(CELL_SIZE=size)
-        wrap_with_timings(
-            f'Creating heatmap for {size}m cells',
-            lambda: _apply_heatmap_aggregation(conn,
-                                               date_smart_key,
-                                               query,
-                                               cell_size=size,
-                                               temporal_resolution=84600,
-                                               spatial_resolution=size)
-        )
+
+    files = os.listdir('etl/rollup/sql/heatmaps')
+    files.sort()
+
+    for file in files:
+        with open(f'etl/rollup/sql/heatmaps/{file}', 'r') as f:
+            query_template = f.read()
+        for size in staging_cell_sizes:
+            query = query_template.format(CELL_SIZE=size)
+            wrap_with_timings(
+                f'Creating {file} heatmap for {size}m cells',
+                lambda: _apply_heatmap_aggregation(conn,
+                                                   date_smart_key,
+                                                   query,
+                                                   cell_size=size,
+                                                   temporal_resolution=84600,
+                                                   spatial_resolution=size)
+            )
 
 
 def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, temporal_resolution: int,
