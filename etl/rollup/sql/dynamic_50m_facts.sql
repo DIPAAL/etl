@@ -148,7 +148,7 @@ FROM
                         ST_Transform(dt.trajectory::geometry, 3034)
                     )
                 ) i1
-                INNER JOIN staging.cell_5000m dc ON (ST_Crosses(dc.geom, i1.trajectory::geometry) OR ST_Contains(dc.geom, i1.trajectory::geometry))
+                INNER JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, i1.trajectory::geometry) OR ST_Contains(dc.geom, i1.trajectory::geometry))
                                                     AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
             ) i2
         ) i3
