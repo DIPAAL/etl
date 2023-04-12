@@ -4,7 +4,7 @@ import os
 import random
 from time import perf_counter
 
-from typing import List
+from typing import List, Dict
 
 from etl.helper_functions import get_connection, wrap_with_timings
 from sqlalchemy import text, Connection
@@ -94,9 +94,9 @@ class BenchmarkRunner:
                 except Exception as e:
                     print(f'Exception thrown while running garbage query, trying again: {e}')
 
-    def _get_queries_to_benchmark(self):
-        folder = 'benchmarks/queries'
-        return self._get_queries_in_folder(folder)
+    def _get_queries_to_benchmark(self) -> Dict[str, str]:
+        folder = 'benchmarks/queries/cell'
+        return self._get_queries_in_folder_and_subfolders(folder)
 
     def _get_garbage_queries(self) -> List[str]:
         folder = 'benchmarks/garbage_queries'
@@ -106,6 +106,18 @@ class BenchmarkRunner:
         files = [f for f in os.listdir(folder) if f.endswith('.sql')]
 
         # return contents as dict filename -> query
+        return {f: open(os.path.join(folder, f), 'r').read() for f in files}
+    
+    def _get_queries_in_folder_and_subfolders(self, folder: str) -> Dict[str, str]:
+        """
+        Recursively get all sql files in folder.
+
+        Arguments:
+            folder: The parent folder to recursively traverse
+        """
+        files = [f for _,_, f in os.walk(folder) if len(f) > 0]
+        files = [sql for sublist in files for sql in sublist if sql.endswith('.sql')]
+
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
 
     def _get_test_run_id(self, conn: Connection):
