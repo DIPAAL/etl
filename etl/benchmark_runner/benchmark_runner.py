@@ -107,7 +107,7 @@ class BenchmarkRunner:
 
         # return contents as dict filename -> query
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
-    
+
     def _get_queries_in_folder_and_subfolders(self, folder: str) -> Dict[str, str]:
         """
         Recursively get all sql files in folder.
@@ -115,7 +115,7 @@ class BenchmarkRunner:
         Arguments:
             folder: The parent folder to recursively traverse
         """
-        files = [f for _,_, f in os.walk(folder) if len(f) > 0]
+        files = [f for _, _, f in os.walk(folder) if len(f) > 0]
         files = [sql for sublist in files for sql in sublist if sql.endswith('.sql')]
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
