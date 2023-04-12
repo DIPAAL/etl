@@ -130,10 +130,7 @@ FROM (
                     fdt.heading heading,
                     fdt.partition_id
                 FROM staging.split_trajectories fdt
-                JOIN staging.cell_{CELL_SIZE}m dc ON
-                    ST_Covers(dc.geom, fdt.trajectory::geometry) AND
-                        ST_YMax(dc.geom) != ST_YMin(fdt.trajectory::geometry) AND
-                        ST_XMax(dc.geom) != ST_XMin(fdt.trajectory::geometry)
+                JOIN staging.cell_{CELL_SIZE}m dc ON ST_Intersects(dc.geom, fdt.trajectory::geometry)
             ) cj
         ) cid
     ) cif
