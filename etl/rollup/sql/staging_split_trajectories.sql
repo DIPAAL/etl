@@ -26,7 +26,7 @@ FROM (
             dt.draught draught
         FROM fact_trajectory ft
         JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
-        WHERE ft.start_date_id = %s
+        WHERE ft.start_date_id = :date_smart_key
     ) t
 ) t2
 INNER JOIN spatial_partition sp ON

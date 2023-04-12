@@ -1,4 +1,5 @@
 """Exports constants used in the project."""
+from enum import Enum
 
 # Common constants
 TRAJECTORY_SRID = 4326
@@ -88,3 +89,18 @@ ETL_STAGE_BULK = 'bulk_insert'
 ACCESS_METHOD_HEAP = 'heap'
 ACCESS_METHOD_COLUMNAR = 'columnar'
 COLUMNAR_TABLE_NAMES = ['fact_cell_heatmap']
+
+
+# Connection Constants
+class SqlalchemyIsolationLevel(Enum):
+    """Enum representing sqlalchemy connection isolation levels."""
+
+    def __str__(self) -> str:
+        """Return value as string representation."""
+        return self.value
+
+    SERIALIZABLE = "SERIALIZABLE"
+    REPEATABLE_READ = "REPEATABLE READ"
+    READ_COMMITTED = "READ COMMITTED"
+    READ_UNCOMMITTED = "READ UNCOMMITTED"
+    AUTOCOMMIT = "AUTOCOMMIT"

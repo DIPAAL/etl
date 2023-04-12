@@ -5,7 +5,6 @@ import dask_geopandas as d_gpd
 import multiprocessing
 from etl.helper_functions import wrap_with_timings
 from etl.audit.logger import global_audit_logger as gal, ROWS_KEY
-from sqlalchemy import create_engine
 from etl.constants import COORDINATE_REFERENCE_SYSTEM, CVS_TIMESTAMP_FORMAT, TIMESTAMP_COL, ETA_COL, LONGITUDE_COL, \
     LATITUDE_COL, CARGO_TYPE_COL, DESTINATION_COL, CALLSIGN_COL, NAME_COL, A_COL, B_COL, C_COL, D_COL, WIDTH_COL, \
     SOG_COL, ROT_COL, MMSI_COL, LENGTH_COL, HEADING_COL, DRAUGHT_COL, IMO_COL, COG_COL, SHIP_TYPE_COL, \
@@ -158,18 +157,3 @@ def _ais_df_initial_cleaning(dirty_dataframe: dd.DataFrame) -> dd.DataFrame:
             )
         ).set_crs(COORDINATE_REFERENCE_SYSTEM)
     )
-
-
-def _create_pandas_postgresql_connection(config):
-    """
-    Return a connection to the database using SQLalchemy, as it is the only connection type supported by pandas.
-
-    Keyword arguments:
-        config: the application configuration
-    """
-    host, port = config['Database']['host'].split(':')
-    user = config['Database']['user']
-    password = config['Database']['password']
-    database = config['Database']['database']
-    connection_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-    return create_engine(connection_url)

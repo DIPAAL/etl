@@ -2,6 +2,7 @@
 import pandas as pd
 
 from etl.constants import T_ETA_DATE_COL, T_START_DATE_COL, T_END_DATE_COL
+from sqlalchemy import Connection, text
 
 
 class DateDimensionInserter:
@@ -13,7 +14,7 @@ class DateDimensionInserter:
     ensure(df, conn): ensure the existence of dates in the date dimension
     """
 
-    def ensure(self, df: pd.DataFrame, conn) -> pd.DataFrame:
+    def ensure(self, df: pd.DataFrame, conn: Connection) -> pd.DataFrame:
         """
         Ensure the existence of ETA, start and end dates in the date dimension.
 
@@ -67,13 +68,12 @@ class DateDimensionInserter:
                          EXTRACT(QUARTER FROM date) AS quarter_of_year,
                          EXTRACT(YEAR FROM date)    AS year,
                          EXTRACT(ISOYEAR FROM date) AS iso_year
-                     FROM (SELECT TO_DATE(unnest(%(dates)s)::text, 'YYYYMMDD') AS date) sq
+                     FROM (SELECT TO_DATE(unnest(:dates)::text, 'YYYYMMDD') AS date) sq
                  ) i1
             INNER JOIN staging.day_num_map dm ON dm.day_num = i1.day_of_week
             INNER JOIN staging.month_num_map mm ON mm.month_num = i1.month_of_year
             ON CONFLICT DO NOTHING
         """
 
-        with conn.cursor() as cursor:
-            cursor.execute(query, dict(dates=dates))
-            conn.commit()
+        conn.execute(text(query), dict(dates=dates))
+        conn.commit()
