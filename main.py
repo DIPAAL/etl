@@ -9,7 +9,8 @@ load_dotenv()
 
 from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
-from etl.helper_functions import wrap_with_timings, get_config, extract_date_from_smart_date_id
+from etl.helper_functions import wrap_with_timings, get_config, extract_date_from_smart_date_id, get_connection, \
+    extract_smart_date_id_from_date
 from etl.init_database import init_database
 from etl.cleaning.clean_data import clean_data
 from etl.insert.insert_trajectories import TrajectoryInserter
@@ -52,9 +53,9 @@ def main(argv):  # noqa: C901
         wrap_with_timings("Database init", lambda: init_database(config))
 
     if args.clean_standalone or args.load:
-        ais_gen = clean_range(date_from, date_to, config, args.clean_standalone)
-        for _, ais_data in ais_gen:
-            load_data(ais_data, config) if args.load else None
+        while date_from <= date_to:
+            load_data(date_from, config) if args.load else None
+            date_from += timedelta(days=1)
 
     if args.querybenchmark:
         BenchmarkRunner(config).run_benchmark()
@@ -126,7 +127,7 @@ def clean_date(date: datetime, config, standalone: bool = False) -> pd.DataFrame
     return trajectories
 
 
-def load_data(data: pd.DataFrame, config) -> None:
+def load_data(data: datetime, config) -> None:
     """
     Insert and rollup the data into the DW.
 
@@ -135,12 +136,10 @@ def load_data(data: pd.DataFrame, config) -> None:
         config: the application config
     """
     # Extract the date to rollup from the dataframe
-    smart_date_key = data[T_START_DATE_COL].iat[0]
-    date = extract_date_from_smart_date_id(smart_date_key)
+    date = data
+    smart_date_key = extract_smart_date_id_from_date(date)
     gal.log_loaded_date(smart_date_key)
-    conn = wrap_with_timings("Inserting trajectories",
-                             lambda: TrajectoryInserter("fact_trajectory").persist(data, config),
-                             audit_etl_stage=ETL_STAGE_BULK)
+    conn = get_connection(config)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
 
