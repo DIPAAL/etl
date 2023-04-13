@@ -138,9 +138,9 @@ def load_data(data: datetime, config) -> None:
     # Extract the date to rollup from the dataframe
     date = data
     smart_date_key = extract_smart_date_id_from_date(date)
-    gal.log_loaded_date(smart_date_key)
     gal._log_dict['file_name'] = "only rollups"
     gal._log_dict['file_size'] = 0
+    gal.log_loaded_date(smart_date_key)
     conn = get_connection(config)
     wrap_with_timings("Applying rollups", lambda: apply_rollups(conn, date),
                       audit_etl_stage=ETL_STAGE_CELL)
