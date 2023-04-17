@@ -134,6 +134,9 @@ def load_data(data: pd.DataFrame, config) -> None:
         data: the dataframe containing the data
         config: the application config
     """
+    if data.empty:
+        print('No data to load')
+        return
     # Extract the date to rollup from the dataframe
     smart_date_key = data[T_START_DATE_COL].iat[0]
     date = extract_date_from_smart_date_id(smart_date_key)
