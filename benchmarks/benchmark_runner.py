@@ -49,7 +49,7 @@ class AbstractBenchmarkRunner(ABC):
         for name, executable in benchmarks.items():
             for i in range(self.iterations):
                 result  = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
-                wrap_with_timings(f'Storing result for benchmar <{name}> iteration <{i+1}>', lambda: self._store_result(i+1, result))
+                wrap_with_timings(f'Storing result for benchmark <{name}> iteration <{i+1}>', lambda: self._store_result(i+1, result))
 
 
     @abstractmethod
