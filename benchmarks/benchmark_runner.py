@@ -1,11 +1,13 @@
 """"""
 import os
 import json
+import time
+import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Tuple, Callable, TypeVar
 from etl.helper_functions import get_connection, get_config, wrap_with_timings
-from sqlalchemy import text, CursorResult, TextClause
+from sqlalchemy import text, CursorResult, TextClause, Connection
 
 
 QRT = TypeVar('QRT')
@@ -32,10 +34,11 @@ class AbstractBenchmarkRunner(ABC):
     """"""
     def __init__(self, garbage_queries_folder: str, garbage_queries_per_iteration: int = 10, iterations: int = 10) -> None:
         self.config = get_config()
-        self._conn = get_connection(self.config, auto_commit_connection=True)
+        self.__setup_benchmark_connection()
         self.garbage_queries_per_iteration = garbage_queries_per_iteration
         self.iterations = iterations
         self.garbage_queries_folder = garbage_queries_folder
+        self._local_run = True if os.getenv('tag', 'local_dev') == 'local_dev' else False
 
 
     @abstractmethod
@@ -48,8 +51,39 @@ class AbstractBenchmarkRunner(ABC):
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
             for i in range(self.iterations):
+                wrap_with_timings('Cache prewarming', lambda: self.__prewarm_cache())
                 result  = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
                 wrap_with_timings(f'Storing result for benchmark <{name}> iteration <{i+1}>', lambda: self._store_result(i+1, result))
+
+
+    def __prewarm_cache(self):
+        """"""
+        if not self._local_run:
+            wrap_with_timings('Clearing os cache', lambda: self.__clear_cache())
+        
+        print(f'Running {self.garbage_queries_per_iteration} garbage queries before next iteration')
+        garbage_queries = self._get_queries_in_folder(self.garbage_queries_folder)
+        random_queries = random.choices(list(garbage_queries.values()), k=self.garbage_queries_per_iteration)
+        for query in random_queries:
+            self._execute(text(query))
+        print(f'Finished running garbage queries')
+
+    def __clear_cache(self):
+        """"""
+        while True:
+            try:
+                self._conn.close()
+                exit_code = os.system('bash benchmarks/clear_cache.sh')
+                if exit_code != 0:
+                    raise Exception('Clearing cache failed!')
+                
+                self.__setup_benchmark_connection()
+
+                break
+            except Exception as e:
+                print(f'Exception throun while clearing cache, trying again in 5 seconds <{e}>')
+                time.sleep(5)
+                continue
 
 
     @abstractmethod
@@ -86,6 +120,13 @@ class AbstractBenchmarkRunner(ABC):
         files = [sql for sublist in files for sql in sublist if sql.endswith('.sql')]
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
+
+
+    def __setup_benchmark_connection(self) -> Connection:
+        """"""
+        self._conn = get_connection(self.config, auto_commit_connection=True)
+        # Enable explaining all tasks if not already set.
+        self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
 
 
 class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
