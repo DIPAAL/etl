@@ -5,7 +5,7 @@ WITH
             SetSRID(STBox(
                 enc.geom,
                 (
-                    SELECT period(t.start_time, t.start_time+interval '10 days') FROM (
+                    SELECT span(t.start_time, t.start_time+interval '10 days') FROM (
                         SELECT '2022-01-01T00:00:00Z'::timestamptz + random() * ('2022-03-31T00:00:00Z'::timestamptz - '2022-01-01T00:00:00Z'::timestamptz) AS start_time
                     ) AS t
                 )
@@ -14,8 +14,8 @@ WITH
     )
 SELECT distinct(ds.*)
 FROM q_window q
-INNER JOIN fact_cell fc ON fc.st_bounding_box && q.box
+INNER JOIN fact_cell_5000m fc ON fc.st_bounding_box && q.box
 INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
-INNER JOIN dim_ship_junk dsj ON dsj.ship_junk_id = fc.ship_junk_id
-WHERE fc.entry_date_id BETWEEN 20220101 AND 20220331 AND dsj.ship_type = 'Fishing'
+INNER JOIN dim_ship_type dst ON dst.ship_type_id = ds.ship_type_id
+WHERE fc.entry_date_id BETWEEN 20220101 AND 20220331 AND dst.ship_type = 'Fishing'
 ;
