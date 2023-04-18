@@ -79,15 +79,17 @@ class AbstractBenchmarkRunner(ABC):
 
         NOTE: This method should never be run locally.
         """
+        self._conn.close()
+        cache_cleared = False
         while True:
             try:
-                self._conn.close()
-                exit_code = os.system('bash benchmarks/clear_cache.sh')
-                if exit_code != 0:
-                    raise RuntimeError(f'Clearing cache failed! with exit code <{exit_code}>')
+                if not cache_cleared:
+                    exit_code = os.system('bash benchmarks/clear_cache.sh')
+                    if exit_code != 0:
+                        raise RuntimeError(f'Clearing cache failed! with exit code <{exit_code}>')
+                    cache_cleared = True
 
                 self.__setup_benchmark_connection()
-
                 break
             except Exception as e:
                 print(f'Exception thrown while clearing cache and setting up connection, trying again in 5 seconds <{e}>')
