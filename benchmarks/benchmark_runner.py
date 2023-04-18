@@ -147,7 +147,7 @@ class AbstractBenchmarkRunner(ABC):
             folder: The parent folder to recursively traverse
         """
         files = [f for _, _, f in os.walk(folder) if len(f) > 0]
-        files = [sql for sublist in files for sql in sublist if sql.endswith('.sql')]
+        files = [sql_file_name for sub_folder_list in files for sql_file_name in sub_folder_list if sql_file_name.endswith('.sql')]
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
 
