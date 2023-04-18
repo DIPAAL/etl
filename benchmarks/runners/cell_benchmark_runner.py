@@ -130,7 +130,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             benchmark_query = config.format_query(query)
             benchmark_query = f'{self.QUERY_PREFIX} \n{benchmark_query}'
 
-            # Default parameters to avoid copy be reference in lambda
+            # Default parameters to avoid copy by reference in lambda
             configured_benchmarks[name] = \
                 lambda benchmark_id=benchmark_id, params=params, benchmark_query=benchmark_query, name=name: \
                 RuntimeBenchmarkResult(
