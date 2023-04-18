@@ -104,7 +104,7 @@ class AbstractBenchmarkRunner(ABC):
 
                 break
             except Exception as e:
-                print(f'Exception throun while clearing cache, trying again in 5 seconds <{e}>')
+                print(f'Exception thrown while clearing cache, trying again in 5 seconds <{e}>')
                 time.sleep(5)
                 continue
 
