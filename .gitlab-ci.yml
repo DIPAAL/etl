@@ -62,7 +62,7 @@ load:
 benchmark:
   extends: .kube-job
   script:
-    - envsubst < jobs/query-benchmark-job.yml | kubectl apply -f -
+    - envsubst < jobs/benchmark-job.yml | kubectl apply -f -
 
 clean_standalone:
   extends: .kube-job
