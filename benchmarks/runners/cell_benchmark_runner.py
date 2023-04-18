@@ -90,14 +90,12 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def __configure_benchmark(self, configurations: Dict[str, CellBenchmarkConfiguration], query: str) -> Dict[str, Callable[[], RuntimeBenchmarkResult]]:
         configured_benchmarks = {}
         for name, config in configurations.items():
-            benchmark_id = self._get_next_test_id()
             params = config.get_parameters()
             benchmark_query = config.format_query(query)
             benchmark_query = f'{self.QUERY_PREFIX} \n{benchmark_query}'
 
-            configured_benchmarks[name] = lambda benchmark_id=benchmark_id, params=params, benchmark_query=benchmark_query, name=name: RuntimeBenchmarkResult(
+            configured_benchmarks[name] = lambda params=params, benchmark_query=benchmark_query, name=name: RuntimeBenchmarkResult(
                 *measure_time(lambda: (self._execute(text(benchmark_query), params=params))),
-                benchmark_id,
                 name
             )
         return configured_benchmarks
