@@ -22,17 +22,19 @@ class RuntimeBenchmarkResult:
     time_taken: float
     benchmark_name: str
 
-    def __init__(self, result: CursorResult, time_taken: float, benchmark_name: str) -> None:
+    def __init__(self, result: CursorResult, time_taken: float, benchmark_id: int, benchmark_name: str) -> None:
         """
         Initialize a runtime benchmark result.
 
         Arguments:
             result: the result retrieved from the data warehouse
             time_taken: the time taken to run the benchmark in ms
+            benchmark_id: data warehouse ID of the benchmark
             benchmark_name: the name of the benchmark
         """
         self.result = result
         self.time_taken = time_taken
+        self.benchmark_id = benchmark_id
         self.benchmark_name = benchmark_name
 
 
@@ -81,8 +83,8 @@ class AbstractBenchmarkRunner(ABC):
         print(f'Running {self.garbage_queries_per_iteration} garbage queries before next iteration')
         garbage_queries = self._get_queries_in_folder(self.garbage_queries_folder)
         random_queries = random.choices(list(garbage_queries.values()), k=self.garbage_queries_per_iteration)
-        for query in random_queries:
-            self._execute(text(query))
+        for i in range(len(random_queries)):
+            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._execute(text(random_queries[i])))
         print('Finished running garbage queries')
 
     def __clear_cache(self) -> None:
@@ -182,7 +184,6 @@ class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
             iteration: the iteration of the benchmark
             result: all the results of running the particular benchmark
         """
-        dw_id = self._get_next_test_id()
         json_result = result.result.fetchone()[0][0]
         data = json.dumps(json_result)
 
@@ -192,5 +193,5 @@ class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
                 (test_run_id, query_name, iteration, explain, execution_time_ms)
                 VALUES (:id, :name, :it, :result, :time)
             """),
-            {'id': dw_id, 'name': result.benchmark_name, 'it': iteration, 'result': data, 'time': result.time_taken}
+            {'id': result.benchmark_id, 'name': result.benchmark_name, 'it': iteration, 'result': data, 'time': result.time_taken}
         )
