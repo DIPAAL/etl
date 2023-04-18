@@ -20,22 +20,8 @@ class RuntimeBenchmarkResult:
 
     result: CursorResult
     time_taken: float
+    benchmark_id: int
     benchmark_name: str
-
-    def __init__(self, result: CursorResult, time_taken: float, benchmark_id: int, benchmark_name: str) -> None:
-        """
-        Initialize a runtime benchmark result.
-
-        Arguments:
-            result: the result retrieved from the data warehouse
-            time_taken: the time taken to run the benchmark in ms
-            benchmark_id: data warehouse ID of the benchmark
-            benchmark_name: the name of the benchmark
-        """
-        self.result = result
-        self.time_taken = time_taken
-        self.benchmark_id = benchmark_id
-        self.benchmark_name = benchmark_name
 
 
 class AbstractBenchmarkRunner(ABC):
