@@ -1,17 +1,19 @@
+"""Module for running benchmarks."""
 import argparse
 import sys
 from enum import Enum
 from benchmarks.runners.cell_benchmark_runner import CellBenchmarkRunner
 
+
 class BenchmarkType(Enum):
-    """"""
+    """Enumeration defining available benchmarks."""
 
     ALL = 'ALL'
     CELL = 'CELL'
 
     def __str__(self) -> str:
+        """Return enumeration value as string representation."""
         return self.value
-
 
 
 def configure_arguments() -> argparse.Namespace:
@@ -23,6 +25,12 @@ def configure_arguments() -> argparse.Namespace:
 
 
 def run_benchmark(args: argparse.Namespace) -> None:
+    """
+    Run benchmarks based on arguments.
+
+    Arguments:
+        args: program arguments
+    """
     if args.benchmark == BenchmarkType.ALL:
         CellBenchmarkRunner().run_benchmark()
         # Add new benchmark runners here
@@ -30,7 +38,9 @@ def run_benchmark(args: argparse.Namespace) -> None:
         CellBenchmarkRunner().run_benchmark()
     # Add new benchmark runners to the chain
 
+
 def main(argv) -> None:
+    """Entry point for running benchmarks."""
     args = configure_arguments()
     run_benchmark(args)
 
