@@ -24,8 +24,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """Initialize a cell benchmark runner."""
         super().__init__(
             garbage_queries_folder='benchmarks/garbage_queries/cell',
-            garbage_queries_per_iteration=1,
-            iterations=1
+            garbage_queries_per_iteration=10,
+            iterations=10
         )
         self.queries_folder = 'benchmarks/queries/cell'
 
