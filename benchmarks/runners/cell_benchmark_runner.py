@@ -95,7 +95,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         ship_types = ['Cargo']
         configurations = {}
 
-        configurations.update(self.__create_cell_configurations(duration_map, areas_from_resolution, area_id_to_name, ship_types))
+        configurations.update(self.__create_cell_configurations(duration_map, areas_from_resolution,
+                                                                area_id_to_name, ship_types))
         configurations.update(self.__create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
         return configurations
 

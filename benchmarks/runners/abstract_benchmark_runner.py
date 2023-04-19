@@ -5,8 +5,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Dict, Callable, TypeVar
 from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes
-from sqlalchemy import text, TextClause, CursorResult
 from benchmarks.errors.cache_clearing_error import CacheClearingError
+from sqlalchemy import text
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
