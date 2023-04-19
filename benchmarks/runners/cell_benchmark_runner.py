@@ -3,6 +3,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
 from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchmarkConfigurationType
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
+from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, Callable
 from etl.helper_functions import measure_time
 from sqlalchemy import text
@@ -13,6 +14,7 @@ MEDIUM_AREA_ID = 137
 LARGE_AREA_ID = 148
 
 
+@benchmark_class(name='CELL')
 class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     """Benchmark runner to measure the runtime of cell benchmark queries."""
 
