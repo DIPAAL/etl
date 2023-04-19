@@ -1,9 +1,9 @@
 """Module consisting of wrappers for dynamically adding runable benchmarks to the program."""
 from benchmarks.runners.abstract_benchmark_runner import AbstractBenchmarkRunner
-from typing import Type, List, Dict
+from typing import Type, List, Dict, Callable
 
 
-registered_benchmarks = {}
+registered_benchmarks: Dict[str, Callable[[], None]] = {}
 ALL_BENCHMARKS_KEY = 'ALL'
 
 
@@ -44,7 +44,7 @@ def run_benchmark(benchmark: str) -> None:
         benchmark: registered name of the benchmark to run
     """
     if benchmark == ALL_BENCHMARKS_KEY:
-        for _, benchmark_exec in registered_benchmarks:
+        for _, benchmark_exec in registered_benchmarks.items():
             benchmark_exec()
     else:
         benchmark_exec = registered_benchmarks[benchmark]
