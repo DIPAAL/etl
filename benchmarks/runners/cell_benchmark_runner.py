@@ -4,8 +4,8 @@ from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResu
 from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchmarkConfigurationType
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
-from typing import Dict, Callable
-from etl.helper_functions import measure_time
+from typing import Dict, List, Tuple, Callable
+from etl.helper_functions import measure_time, get_staging_cell_sizes
 from sqlalchemy import text
 
 SINGLE_PARTITION_ID = 152
@@ -24,8 +24,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """Initialize a cell benchmark runner."""
         super().__init__(
             garbage_queries_folder='benchmarks/garbage_queries/cell',
-            garbage_queries_per_iteration=10,
-            iterations=10
+            garbage_queries_per_iteration=1,
+            iterations=1
         )
         self.queries_folder = 'benchmarks/queries/cell'
 
@@ -75,105 +75,96 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:
         """Get all configurations for this benchmark."""
-        return {  # start_id, end_id, spatial_resolution, enc_id, ship_types
-            'cell_1_day_50m_single_partition_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_1_day_200m_single_partition_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_1_day_1000m_single_partition_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_1_day_50m_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_1_day_200m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_1_day_1000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_1_day_5000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 5000),
-            'cell_1_day_5000m_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, LARGE_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 5000),
-            'cell_30_day_50m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_30_day_50m_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_30_day_200m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_30_day_200m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_30_day_1000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_30_day_1000m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_30_day_5000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 5000),
-            'cell_30_day_5000m_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, LARGE_AREA_ID,
-                                       ['Cargp'], CellBenchmarkConfigurationType.CELL, 5000),
-            'cell_90_day_50m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_90_day_50m_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 50),
-            'cell_90_day_200m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_90_day_200m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 200),
-            'cell_90_day_1000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_90_day_1000m_single_partition_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, SINGLE_PARTITION_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 1000),
-            'cell_90_day_5000m_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, LARGE_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 5000),
-            'cell_90_day_5000m_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.CELL, 5000),
-
-            'traj_1_day_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, LARGE_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_1_day_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_1_day_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220110, 20220110, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_30_day_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, LARGE_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_30_day_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_30_day_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220126, 20220224, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_90_day_large_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, LARGE_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_90_day_medium_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, MEDIUM_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
-            'traj_90_day_small_area_unique_cargo_ships': \
-            CellBenchmarkConfiguration(20220101, 20220331, SMALL_AREA_ID,
-                                       ['Cargo'], CellBenchmarkConfigurationType.TRAJECTORY),
+        available_resolutions = get_staging_cell_sizes()
+        duration_map = {
+            '1_day': (20220110, 20220110),
+            '30_day': (20220126, 20220224),
+            '90_day': (20220101, 20220331)
         }
+        areas_from_resolution = {
+            50: [SINGLE_PARTITION_ID, SMALL_AREA_ID],
+            200: [SINGLE_PARTITION_ID, MEDIUM_AREA_ID],
+            1000: [SINGLE_PARTITION_ID, MEDIUM_AREA_ID, LARGE_AREA_ID],
+            5000: [MEDIUM_AREA_ID, LARGE_AREA_ID]
+        }
+        area_id_to_name = {
+            SINGLE_PARTITION_ID: 'single_partition',
+            SMALL_AREA_ID: 'small_area',
+            MEDIUM_AREA_ID: 'medium_area',
+            LARGE_AREA_ID: 'large_area'
+        }
+        ship_types = ['Cargo']
+        configurations = {}
+
+        configurations.update(self.__create_cell_configurations(available_resolutions, duration_map,
+                                                                areas_from_resolution, area_id_to_name, ship_types))
+        configurations.update(self.__create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
+        return configurations
+
+    def __calc_configuration_name(self, conf_type: str, duration: str, area: str, ship_types: List[str]) -> str:
+        """
+        Calculate the name of the configuration.
+
+        Arguments:
+            conf_type: the type of configuration the name is created for
+            duration: representation of the temporal span the configuration benchmarks
+            area: the name of the area used for the configuration
+            ship_types: the list of types used when benchmarking the configuration
+        """
+        ship_str = ''
+        for type in ship_types:
+            ship_str += f'_{type}'
+        return f'{conf_type}_{duration}_{area}_unique{ship_str}_ships'
+
+    def __create_cell_configurations(self,
+                                     available_resolutions: List[int],
+                                     duration_map: Dict[str, Tuple[int, int]],
+                                     areas_from_resolution: Dict[int, List[int]],
+                                     area_id_to_name: Dict[int, str],
+                                     ship_types: List[str]) \
+            -> Dict[str, CellBenchmarkConfiguration]:
+        """
+        Create cell configurations.
+
+        Arguments:
+            available_resolutions: the resolution available in the data warehouse
+            duration_map: maps duration representations to start and end date values
+            areas_from_resolution: maps spatial resolution to benchmarked area ids
+            area_id_to_name: maps of area id to area name
+            ship_types: the list of types used when benchmarking the configuration
+        """
+        cell_configurations = {}
+        for duration_name, (start_date_id, end_date_id) in duration_map.items():
+            for s_resulution in available_resolutions:
+                for area_id in areas_from_resolution[s_resulution]:
+                    area_name = area_id_to_name[area_id]
+                    conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,
+                                                               area_name, ship_types)
+                    cell_configurations[conf_name] = \
+                        CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
+                                                   CellBenchmarkConfigurationType.CELL, s_resulution)
+        return cell_configurations
+
+    def __create_trajectory_configurations(self,
+                                           duration_map: Dict[str, Tuple[int, int]],
+                                           area_id_to_name: Dict[int, str],
+                                           ship_types: List[str]) \
+            -> Dict[str, CellBenchmarkConfiguration]:
+        """
+        Create trajectory configurations.
+
+        Arguments:
+            duration_map: maps duration representations to start and end date values
+            area_id_to_name: maps of area id to area name
+            ship_types: the list of types used when benchmarking the configuration
+        """
+        trajectory_configurations = {}
+        for duration_name, (start_date_id, end_date_id) in duration_map.items():
+            for area_id, area_name in area_id_to_name.items():
+                conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY, duration_name,
+                                                           area_name, ship_types)
+                trajectory_configurations[conf_name] = \
+                    CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
+                                               CellBenchmarkConfigurationType.TRAJECTORY)
+
+        return trajectory_configurations
