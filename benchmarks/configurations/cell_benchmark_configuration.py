@@ -1,12 +1,11 @@
 """Module defining cell benchmark configurations."""
 from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchmarkConfigurationType
 from typing import List, Dict
+from etl.helper_functions import get_staging_cell_sizes
 
 
 class CellBenchmarkConfiguration:
     """Class defining how a cell benchmark should be run."""
-
-    VALID_RESOLUTIONS = [5000, 1000, 200, 50]
 
     def __init__(self, start_date_id: int, end_date_id: int, enc_cell_id: int, ship_types: List[str],
                  configuration_type: CellBenchmarkConfigurationType, spatial_resolution: int | None = None) -> None:
@@ -37,7 +36,7 @@ class CellBenchmarkConfiguration:
             resolution: the given spatial resolution
         """
         if CellBenchmarkConfigurationType.CELL == self.type \
-                and resolution not in self.VALID_RESOLUTIONS:
+                and resolution not in get_staging_cell_sizes():
             raise ValueError(f'Invalid spatial resolution <{resolution}> provided for CellBenchmarkConfiguration. '
                              'Only <{self.VALID_RESOLUTIONS}> are supported')
 
