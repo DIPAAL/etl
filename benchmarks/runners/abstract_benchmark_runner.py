@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Callable, TypeVar
 from etl.helper_functions import get_config, wrap_with_timings, get_connection
 from sqlalchemy import text, TextClause, CursorResult
+from benchmarks.errors.cache_clearing_error import CacheClearingError
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
@@ -72,12 +73,12 @@ class AbstractBenchmarkRunner(ABC):
             try:
                 exit_code = os.system('bash benchmarks/clear_cache.sh')
                 if exit_code != 0:
-                    raise RuntimeError(f'Clearing cache failed! with exit code <{exit_code}>')
+                    raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
 
                 self.__setup_benchmark_connection()
                 break
-            except Exception as e:
-                print('Exception thrown while clearing cache'
+            except CacheClearingError as e:
+                print('Exception raised while clearing cache'
                       f' trying again in 5 seconds <{e}>')
                 time.sleep(5)
                 continue
