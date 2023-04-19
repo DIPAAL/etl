@@ -101,7 +101,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         configurations.update(self.__create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
         return configurations
 
-    def __calc_configuration_name(self, conf_type: str, duration: str, area: str, ship_types: List[str]) -> str:
+    def __calc_configuration_name(self, conf_type: str, duration: str, area: str,
+                                  ship_types: List[str], resolution: int = None) -> str:
         """
         Calculate the name of the configuration.
 
@@ -110,11 +111,13 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             duration: representation of the temporal span the configuration benchmarks
             area: the name of the area used for the configuration
             ship_types: the list of types used when benchmarking the configuration
+            resolution: the spatial resolution for the configuration (default: None)
         """
         ship_str = ''
         for type in ship_types:
             ship_str += f'_{type}'
-        return f'{conf_type}_{duration}_{area}_unique{ship_str}_ships'
+        resolution_str = '' if resolution is None else f'_{resolution}m'
+        return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
 
     def __create_cell_configurations(self,
                                      available_resolutions: List[int],
@@ -135,14 +138,14 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """
         cell_configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
-            for s_resulution in available_resolutions:
-                for area_id in areas_from_resolution[s_resulution]:
+            for s_resolution in available_resolutions:
+                for area_id in areas_from_resolution[s_resolution]:
                     area_name = area_id_to_name[area_id]
                     conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,
-                                                               area_name, ship_types)
+                                                               area_name, ship_types, s_resolution)
                     cell_configurations[conf_name] = \
                         CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
-                                                   CellBenchmarkConfigurationType.CELL, s_resulution)
+                                                   CellBenchmarkConfigurationType.CELL, s_resolution)
         return cell_configurations
 
     def __create_trajectory_configurations(self,
