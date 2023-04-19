@@ -5,7 +5,7 @@ from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchm
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time, get_staging_cell_sizes
+from etl.helper_functions import measure_time
 from sqlalchemy import text
 
 SINGLE_PARTITION_ID = 152
@@ -75,7 +75,6 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:
         """Get all configurations for this benchmark."""
-        available_resolutions = get_staging_cell_sizes()
         duration_map = {
             '1_day': (20220110, 20220110),
             '30_day': (20220126, 20220224),
@@ -96,8 +95,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         ship_types = ['Cargo']
         configurations = {}
 
-        configurations.update(self.__create_cell_configurations(available_resolutions, duration_map,
-                                                                areas_from_resolution, area_id_to_name, ship_types))
+        configurations.update(self.__create_cell_configurations(duration_map, areas_from_resolution, area_id_to_name, ship_types))
         configurations.update(self.__create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
         return configurations
 
@@ -120,7 +118,6 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
 
     def __create_cell_configurations(self,
-                                     available_resolutions: List[int],
                                      duration_map: Dict[str, Tuple[int, int]],
                                      areas_from_resolution: Dict[int, List[int]],
                                      area_id_to_name: Dict[int, str],
@@ -130,7 +127,6 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         Create cell configurations.
 
         Arguments:
-            available_resolutions: the resolution available in the data warehouse
             duration_map: maps duration representations to start and end date values
             areas_from_resolution: maps spatial resolution to benchmarked area ids
             area_id_to_name: maps of area id to area name
@@ -138,7 +134,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """
         cell_configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
-            for s_resolution in available_resolutions:
+            for s_resolution in self.available_resolutions:
                 for area_id in areas_from_resolution[s_resolution]:
                     area_name = area_id_to_name[area_id]
                     conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,

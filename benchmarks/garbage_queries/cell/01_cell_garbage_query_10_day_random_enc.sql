@@ -14,7 +14,7 @@ WITH
     )
 SELECT distinct(ds.*)
 FROM q_window q
-INNER JOIN fact_cell_5000m fc ON fc.st_bounding_box && q.box
+INNER JOIN fact_cell_{CELL_SIZE}m fc ON fc.st_bounding_box && q.box
 INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
 INNER JOIN dim_ship_type dst ON dst.ship_type_id = ds.ship_type_id
 WHERE fc.entry_date_id BETWEEN 20220101 AND 20220331

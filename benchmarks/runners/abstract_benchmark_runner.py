@@ -4,7 +4,7 @@ import random
 import time
 from abc import ABC, abstractmethod
 from typing import Dict, Callable, TypeVar
-from etl.helper_functions import get_config, wrap_with_timings, get_connection
+from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes
 from sqlalchemy import text, TextClause, CursorResult
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 
@@ -32,6 +32,7 @@ class AbstractBenchmarkRunner(ABC):
         self.iterations = iterations
         self.garbage_queries_folder = garbage_queries_folder
         self._local_run = True if os.getenv('tag', 'local_dev') == 'local_dev' else False
+        self.available_resolutions = get_staging_cell_sizes()
 
     @abstractmethod
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
@@ -59,7 +60,9 @@ class AbstractBenchmarkRunner(ABC):
         garbage_queries = self._get_queries_in_folder(self.garbage_queries_folder)
         random_queries = random.choices(list(garbage_queries.values()), k=self.garbage_queries_per_iteration)
         for i in range(len(random_queries)):
-            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._execute(text(random_queries[i])))
+            random_resolution = random.choice(self.available_resolutions)
+            query = random_queries[i].format(CELL_SIZE=random_resolution)
+            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._execute(text(query)))
         print('Finished running garbage queries')
 
     def __clear_cache(self) -> None:
