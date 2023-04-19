@@ -62,7 +62,7 @@ class AbstractBenchmarkRunner(ABC):
         for i in range(len(random_queries)):
             random_resolution = random.choice(self.available_resolutions)
             query = random_queries[i].format(CELL_SIZE=random_resolution)
-            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._execute(text(query)))
+            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._conn.execute(text(query)))
         print('Finished running garbage queries')
 
     def __clear_cache(self) -> None:
@@ -96,16 +96,6 @@ class AbstractBenchmarkRunner(ABC):
         """Fetch the next benchmark id from data warehouse."""
         result_cursor = self._conn.execute(text("SELECT nextval('benchmark_results_id_seq');"))
         return result_cursor.fetchone()[0]
-
-    def _execute(self, query: TextClause, params: Dict[str, any] = {}) -> CursorResult:
-        """
-        Execute queries with parameters.
-
-        Arguments:
-            query: the query to execute
-            params: dictionary containing key-value pairs defining the parameters for the query (default: {})
-        """
-        return self._conn.execute(query, parameters=params)
 
     def _get_queries_in_folder(self, folder: str) -> Dict[str, str]:
         """
