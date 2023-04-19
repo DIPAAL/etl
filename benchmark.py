@@ -2,7 +2,8 @@
 import argparse
 import sys
 from enum import Enum
-from benchmarks.runners.cell_benchmark_runner import CellBenchmarkRunner
+from benchmarks.decorators.benchmark import get_registered_benchmarks, run_benchmark as rb
+from benchmarks.runners import *  # noqa: F403,F401
 
 
 class BenchmarkType(Enum):
@@ -19,7 +20,8 @@ class BenchmarkType(Enum):
 def configure_arguments() -> argparse.Namespace:
     """Configure the program argument parser."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--benchmark', help='Run specified benchmark', type=BenchmarkType, choices=list(BenchmarkType))
+    parser.add_argument('--benchmark', help='Run specified benchmark', required=True,
+                        type=str, choices=get_registered_benchmarks())
 
     return parser.parse_args()
 
@@ -31,12 +33,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     Arguments:
         args: program arguments
     """
-    if args.benchmark == BenchmarkType.ALL:
-        CellBenchmarkRunner().run_benchmark()
-        # Add new benchmark runners here
-    elif args.benchmark == BenchmarkType.CELL:
-        CellBenchmarkRunner().run_benchmark()
-    # Add new benchmark runners to the chain
+    rb(args.benchmark)
 
 
 def main(argv) -> None:
