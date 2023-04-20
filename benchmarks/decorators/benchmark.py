@@ -21,7 +21,7 @@ def benchmark_class(cls: Type[AbstractBenchmarkRunner] = None, *, name: str,
     def wrap(cls: Type[AbstractBenchmarkRunner]):
         runner = cls.__new__(cls)
         runner.__init__(
-            *([] if init_args is None else init_args), 
+            *([] if init_args is None else init_args),
             **({} if init_kwargs is None else init_kwargs)
         )
         registered_benchmarks[name.upper()] = runner.run_benchmark
