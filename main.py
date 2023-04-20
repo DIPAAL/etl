@@ -7,7 +7,6 @@ from typing import Generator, Tuple
 from dotenv import load_dotenv
 load_dotenv()
 
-from etl.benchmark_runner.benchmark_runner import BenchmarkRunner
 from etl.gatherer.file_downloader import ensure_file_for_date
 from etl.helper_functions import wrap_with_timings, get_config, extract_date_from_smart_date_id
 from etl.init_database import init_database
@@ -29,7 +28,6 @@ def configure_arguments():
     parser.add_argument('--clean_standalone',
                         help='Standalone clean AIS data and construct trajectories which are stored as .pkl files',
                         action='store_true')
-    parser.add_argument('--querybenchmark', help='Perform query benchmark', action='store_true')
     parser.add_argument('--ensure_files', help='Runs the file downloader for a given date range.', action='store_true')
     parser.add_argument('--from_date',
                         help='The date to load from, in the format YYYY-MM-DD, for example 2022-12-31', type=str)
@@ -55,9 +53,6 @@ def main(argv):  # noqa: C901
         ais_gen = clean_range(date_from, date_to, config, args.clean_standalone)
         for _, ais_data in ais_gen:
             load_data(ais_data, config) if args.load else None
-
-    if args.querybenchmark:
-        BenchmarkRunner(config).run_benchmark()
 
     if args.ensure_files:
         ensure_files_for_range(date_from, date_to, config)
