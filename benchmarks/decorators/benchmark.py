@@ -18,7 +18,7 @@ def benchmark_class(cls: Type[AbstractBenchmarkRunner] = None, *, name: str,
         init_args: positional arguments for the benchmark runner constructor (default: [])
         init_kwargs: keyword arguments for the benchmark runner constructor (default: {})
     """
-    def wrap(cls: Type[AbstractBenchmarkRunner]):
+    def wrap(cls: Type[AbstractBenchmarkRunner]) -> Type[AbstractBenchmarkRunner]:
         runner = cls.__new__(cls)
         runner.__init__(
             *([] if init_args is None else init_args),
