@@ -9,9 +9,6 @@ from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResu
 class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
     """Abstract superclass that all runtime benchmark runners should inherit from."""
 
-    QUERY_NAME_KEY = 'name'
-    BENCHMARK_ID_KEY = 'id'
-
     def __init__(self, garbage_queries_folder: str, garbage_queries_per_iteration: int = 10, iterations: int = 10) \
             -> None:
         """
