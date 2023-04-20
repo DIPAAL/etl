@@ -175,3 +175,11 @@ def get_staging_cell_sizes() -> List[int]:
     """Get the cell sizes to insert into staging area from config."""
     config = get_config()
     return [int(size) for size in config['Database']['staging_cell_sizes_to_insert'].split(',')]
+
+
+def flatten_string_list(lst: List[str], separator: str = '_') -> str:
+    """"""
+    lst_str = ''
+    for elm in lst:
+        lst_str += f'{separator}{elm.lower().replace(" ", separator)}'
+    return lst_str

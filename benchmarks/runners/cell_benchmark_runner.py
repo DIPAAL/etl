@@ -5,7 +5,7 @@ from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchm
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time
+from etl.helper_functions import measure_time, flatten_string_list
 from sqlalchemy import text
 
 SINGLE_PARTITION_ID = 152
@@ -17,8 +17,6 @@ LARGE_AREA_ID = 148
 @benchmark_class(name='CELL')
 class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     """Benchmark runner to measure the runtime of cell benchmark queries."""
-
-    QUERY_PREFIX = 'explain (analyze, timing, format json, verbose, buffers, settings)'
 
     def __init__(self) -> None:
         """Initialize a cell benchmark runner."""
@@ -61,7 +59,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             params = config.get_parameters()
             benchmark_id = self._get_next_test_id()
             benchmark_query = config.format_query(query)
-            benchmark_query = f'{self.QUERY_PREFIX} \n{benchmark_query}'
+            benchmark_query = f'{self._query_prefix} \n{benchmark_query}'
 
             # Default parameters to avoid copy by reference in lambda
             configured_benchmarks[name] = \
@@ -112,9 +110,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             ship_types: the list of types used when benchmarking the configuration
             resolution: the spatial resolution for the configuration (default: None)
         """
-        ship_str = ''
-        for type in ship_types:
-            ship_str += f'_{type}'
+        ship_str = flatten_string_list(ship_types)
         resolution_str = '' if resolution is None else f'_{resolution}m'
         return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
 
