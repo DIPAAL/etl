@@ -178,7 +178,13 @@ def get_staging_cell_sizes() -> List[int]:
 
 
 def flatten_string_list(lst: List[str], separator: str = '_') -> str:
-    """"""
+    """
+    Flatten list of strings to a single string with separated values.
+
+    Arguments:
+        lst: list of string values to flatten
+        separator: separator used to separate the flattened values (default: '_')
+    """
     lst_str = ''
     for elm in lst:
         lst_str += f'{separator}{elm.lower().replace(" ", separator)}'

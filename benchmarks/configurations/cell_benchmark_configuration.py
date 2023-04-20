@@ -13,7 +13,7 @@ class CellBenchmarkConfiguration:
         Initialize a cell benchmark configuration.
 
         Arguments:
-            start_date_id: the data warehouse date smart ID for the start date used in benchmar queries
+            start_date_id: the data warehouse date smart ID for the start date used in benchmark queries
             end_date_id: the data warehouse date smart ID for the end date used in benchmark queries
             enc_cell_id: the ID of the enc cell determining the spatial area of the benchmark queries
             ship_types: a list of ship types used to filter the benchmark queries
