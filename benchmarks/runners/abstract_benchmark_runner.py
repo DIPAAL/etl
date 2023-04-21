@@ -94,7 +94,7 @@ class AbstractBenchmarkRunner(ABC):
 
     def _get_next_test_id(self) -> int:
         """Fetch the next benchmark id from data warehouse."""
-        result_cursor = self._conn.execute(text("SELECT nextval('benchmark_results_id_seq');"))
+        result_cursor = self._conn.execute(text("SELECT nextval('test_run_id_seq');"))
         return result_cursor.fetchone()[0]
 
     def _get_queries_in_folder(self, folder: str) -> Dict[str, str]:
