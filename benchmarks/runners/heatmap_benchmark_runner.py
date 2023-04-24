@@ -44,9 +44,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         for conf_name, config in configurations.items():
             benchmark_id = self._get_next_test_id()
             params = config.get_parameters()
-            benchmark_query = f'{self._query_prefix} \n{query}'
             configured_benchmarks[conf_name] = \
-                lambda id=benchmark_id, params=params, benchmark_query=benchmark_query, benchmark_name=conf_name: \
+                lambda id=benchmark_id, params=params, benchmark_query=query, benchmark_name=conf_name: \
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: self._conn.execute(text(benchmark_query), parameters=params)),
                     id,
@@ -101,3 +100,22 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         ship_str = flatten_string_list(ship_types)
         mobile_str = flatten_string_list(mobile_types)
         return f'{duration}_{area}_{resolution}{ship_str}{mobile_str}_{type}_heatmap'
+
+    def _store_result(self, iteration: int, result: RuntimeBenchmarkResult) -> None:
+        """
+        Store the result of running the benchmark.
+
+        Arguments:
+            iteration: the iteration of the benchmark
+            result: all the results of running the particular benchmark
+        """
+        data = f'{{"Runtime_ms": {result.time_taken}}}'
+        self._conn.execute(
+            text("""
+                INSERT INTO benchmark_results
+                (test_run_id, query_name, iteration, explain, execution_time_ms)
+                VALUES (:id, :name, :it, :result, :time)
+            """),
+            {'id': result.benchmark_id, 'name': result.benchmark_name,
+             'it': iteration, 'result': data, 'time': result.time_taken}
+        )
