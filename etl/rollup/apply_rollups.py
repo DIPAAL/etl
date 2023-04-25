@@ -75,18 +75,20 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
             query_template = f.read()
         for size in staging_cell_sizes:
             query = query_template.format(CELL_SIZE=size)
-            wrap_with_timings(
+            rows, seconds_elapsed = wrap_with_timings(
                 f'Creating {file} heatmap for {size}m cells',
                 lambda: _apply_heatmap_aggregation(conn,
                                                    date_smart_key,
                                                    query,
-                                                   cell_size=size,
                                                    temporal_resolution=84600,
                                                    spatial_resolution=size)
             )
+            # Audit log the information
+            gal[TIMINGS_KEY][f'heatmap_{file[3:-4]}_{size}m_aggregation'] = seconds_elapsed
+            gal[ROWS_KEY][f'heatmap_{file[3:-4]}_{size}m_aggregation'] = rows
 
 
-def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, temporal_resolution: int,
+def _apply_heatmap_aggregation(conn, date_key: int, query: str, temporal_resolution: int,
                                spatial_resolution: int) -> None:
     """
     Pre-aggregate single heatmap.
@@ -95,19 +97,14 @@ def _apply_heatmap_aggregation(conn, date_key: int, query: str, cell_size: int, 
         conn: The database connection
         date_key: The DW smart key for the date to apply aggregation
         query: The aggregation query
-        cell_size: The size of the cells the heatmap is created from
         temporal_resolution: The temporal duration in seconds the heatmap spans
         spatial_resolution: The spatial extend in units of the SRID per pixel in the heatmap
     """
-    (rows, seconds_elapsed) = measure_time(
+    return measure_time(
         lambda: execute_insert_query_on_connection(conn, query,
                                                    {'DATE_KEY': date_key,
                                                     'TEMPORAL_RESOLUTION': temporal_resolution,
                                                     'SPATIAL_RESOLUTION': spatial_resolution}))
-
-    # Audit log the information
-    gal[TIMINGS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = seconds_elapsed
-    gal[ROWS_KEY][f'fact_cell_heatmap_{cell_size}m_aggregation'] = rows
 
 
 def apply_cell_fact_rollups(conn, date: datetime) -> None:
