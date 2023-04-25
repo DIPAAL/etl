@@ -5,7 +5,7 @@ from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchm
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time, flatten_string_list
+from etl.helper_functions import measure_time
 from sqlalchemy import text
 
 SINGLE_PARTITION_ID = 152
@@ -110,9 +110,10 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             ship_types: the list of types used when benchmarking the configuration
             resolution: the spatial resolution for the configuration (default: None)
         """
-        ship_str = flatten_string_list(ship_types)
-        resolution_str = '' if resolution is None else f'_{resolution}m'
-        return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
+        separator = '_'
+        ship_str = separator.join(ship_types).lower().replace(' ', separator)
+        resolution_str = '' if resolution is None else f'{resolution}m'
+        return f'{conf_type}_{duration}_{resolution_str}_{area}_unique_{ship_str}_ships'
 
     def _create_cell_configurations(self,
                                     duration_map: Dict[str, Tuple[int, int]],

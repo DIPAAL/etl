@@ -3,7 +3,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, flatten_string_list
+from etl.helper_functions import measure_time
 from typing import Dict, List, Callable
 from sqlalchemy import text
 from benchmarks.decorators.benchmark import benchmark_class
@@ -18,7 +18,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         super().__init__(
             garbage_queries_folder='benchmarks/garbage_queries/heatmap',
             garbage_queries_per_iteration=10,
-            iterations=10)
+            iterations=10
+        )
         self._query_folder = 'benchmarks/queries/heatmap'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
@@ -103,9 +104,10 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             ship_types: the ship types used when benchmarking the configuration
             mobile_types: the mobile types used when benchmarking the configuration
         """
-        ship_str = flatten_string_list(ship_types)
-        mobile_str = flatten_string_list(mobile_types)
-        return f'{duration}_{area}_{resolution}{ship_str}{mobile_str}_{type}_heatmap'
+        separator = '_'
+        ship_str = separator.join(ship_types).lower().replace(' ', separator)
+        mobile_str = separator.join(mobile_types).lower().replace(' ', separator)
+        return f'{duration}_{area}_{resolution}_{ship_str}_{mobile_str}_{type}_heatmap'
 
     def _store_result(self, iteration: int, result: RuntimeBenchmarkResult) -> None:
         """
