@@ -54,7 +54,12 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         return configured_benchmarks
 
     def _get_configurations(self, query_file_name: str) -> Dict[str, HeatmapBenchmarkConfiguration]:  # noqa: C901
-        """Get all configurations for this benchmark."""
+        """
+        Get all configurations for this benchmark.
+        
+        Arguments:
+            query_file_name: the file name of the query to configure
+        """
         duration_map = {
             '1_day': (20220228, 20220228),
             '1_month': (20220601, 20220630),
