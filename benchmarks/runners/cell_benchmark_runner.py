@@ -94,12 +94,12 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         configurations = {}
 
         configurations.update(self._create_cell_configurations(duration_map, areas_from_resolution,
-                                                                area_id_to_name, ship_types))
+                                                               area_id_to_name, ship_types))
         configurations.update(self._create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
         return configurations
 
     def _calc_configuration_name(self, conf_type: str, duration: str, area: str,
-                                  ship_types: List[str], resolution: int = None) -> str:
+                                 ship_types: List[str], resolution: int = None) -> str:
         """
         Calculate the name of the configuration.
 
@@ -115,10 +115,10 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
 
     def _create_cell_configurations(self,
-                                     duration_map: Dict[str, Tuple[int, int]],
-                                     areas_from_resolution: Dict[int, List[int]],
-                                     area_id_to_name: Dict[int, str],
-                                     ship_types: List[str]) \
+                                    duration_map: Dict[str, Tuple[int, int]],
+                                    areas_from_resolution: Dict[int, List[int]],
+                                    area_id_to_name: Dict[int, str],
+                                    ship_types: List[str]) \
             -> Dict[str, CellBenchmarkConfiguration]:
         """
         Create cell configurations.
@@ -135,16 +135,16 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 for area_id in areas_from_resolution[s_resolution]:
                     area_name = area_id_to_name[area_id]
                     conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,
-                                                               area_name, ship_types, s_resolution)
+                                                              area_name, ship_types, s_resolution)
                     cell_configurations[conf_name] = \
                         CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
                                                    CellBenchmarkConfigurationType.CELL, s_resolution)
         return cell_configurations
 
     def _create_trajectory_configurations(self,
-                                           duration_map: Dict[str, Tuple[int, int]],
-                                           area_id_to_name: Dict[int, str],
-                                           ship_types: List[str]) \
+                                          duration_map: Dict[str, Tuple[int, int]],
+                                          area_id_to_name: Dict[int, str],
+                                          ship_types: List[str]) \
             -> Dict[str, CellBenchmarkConfiguration]:
         """
         Create trajectory configurations.
@@ -158,7 +158,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
             for area_id, area_name in area_id_to_name.items():
                 conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY, duration_name,
-                                                           area_name, ship_types)
+                                                          area_name, ship_types)
                 trajectory_configurations[conf_name] = \
                     CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
                                                CellBenchmarkConfigurationType.TRAJECTORY)
