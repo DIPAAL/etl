@@ -27,9 +27,9 @@ class HeatmapBenchmarkConfiguration:
         self.heatmap_type = heatmap_type
         self.ship_types = ship_types
         self.mobile_types = mobile_types
-        self.__validate_spatial_resolution()
+        self._validate_spatial_resolution()
 
-    def __validate_spatial_resolution(self) -> None:
+    def _validate_spatial_resolution(self) -> None:
         """Validate the spatial resolution of the configuration."""
         if self.resolution not in get_staging_cell_sizes():
             raise ValueError(f'Invalid spatial resolution <{self.resolution}> provided for CellBenchmarkConfiguration. '

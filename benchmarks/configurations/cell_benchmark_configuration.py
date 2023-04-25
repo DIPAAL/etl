@@ -26,9 +26,9 @@ class CellBenchmarkConfiguration:
         self.enc_cell_id = enc_cell_id
         self.ship_types = ship_types
         self.type = configuration_type
-        self.__validate_spatial_resolution(spatial_resolution)
+        self._validate_spatial_resolution(spatial_resolution)
 
-    def __validate_spatial_resolution(self, resolution: int) -> None:
+    def _validate_spatial_resolution(self, resolution: int) -> None:
         """
         Validate the spatial resolution of the configuration.
 
