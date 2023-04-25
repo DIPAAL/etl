@@ -19,20 +19,20 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             garbage_queries_folder='benchmarks/garbage_queries/heatmap',
             garbage_queries_per_iteration=10,
             iterations=10)
-        self.query_folder = 'benchmarks/queries/heatmap'
+        self._query_folder = 'benchmarks/queries/heatmap'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
         """Create the cell benchmarks to run."""
         benchmarks = {}
-        queries = self._get_queries_in_folder(self.query_folder)
+        queries = self._get_queries_in_folder(self._query_folder)
         for query_file_name, query in queries.items():
             configurations = self._get_configurations(query_file_name)
             benchmarks.update(
-                self.__configure_benchmark(configurations, query)
+                self._configure_benchmark(configurations, query)
             )
         return benchmarks
 
-    def __configure_benchmark(self, configurations: Dict[str, HeatmapBenchmarkConfiguration], query: str) -> BRT:
+    def _configure_benchmark(self, configurations: Dict[str, HeatmapBenchmarkConfiguration], query: str) -> BRT:
         """
         Create benchmarks based on configurations.
 
