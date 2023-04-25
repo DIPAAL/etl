@@ -56,7 +56,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def _get_configurations(self, query_file_name: str) -> Dict[str, HeatmapBenchmarkConfiguration]:  # noqa: C901
         """
         Get all configurations for this benchmark.
-        
+
         Arguments:
             query_file_name: the file name of the query to configure
         """
