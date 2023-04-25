@@ -89,7 +89,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                                                                                       ship_type_list, mobile_type_list)
         return configurations
 
-    def _create_configuration_name(self, type: str, duration: str, resolution: str, area: str, ship_types: List[str],
+    @staticmethod
+    def _create_configuration_name(type: str, duration: str, resolution: str, area: str, ship_types: List[str],
                                    mobile_types: List[str]) -> str:
         """
         Create configuration name.
