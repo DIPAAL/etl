@@ -67,7 +67,10 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             '1_year': (20220101, 20221231)
         }
         resolutions = {
-            5000: 'low_resolution'
+            5000: 'very_low_resolution',
+            1000: 'low_resolution',
+            200: 'medium_resolution',
+            50: 'high_resolution'
         }
         areas = {
             117: 'denmark',
@@ -80,14 +83,15 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
             for resolution, resolution_name in resolutions.items():
-                for area_id, area_name in areas.items():
-                    for ship_type_list in ship_types:
-                        for mobile_type_list in mobile_types:
-                            conf_name = self._create_configuration_name(file_name, duration_name, resolution_name,
-                                                                        area_name, ship_type_list, mobile_type_list)
-                            configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id, end_date_id,
-                                                                                      resolution, area_id, 'count',
-                                                                                      ship_type_list, mobile_type_list)
+                if resolution in self._available_resolutions:
+                    for area_id, area_name in areas.items():
+                        for ship_type_list in ship_types:
+                            for mobile_type_list in mobile_types:
+                                conf_name = self._create_configuration_name(file_name, duration_name, resolution_name,
+                                                                            area_name, ship_type_list, mobile_type_list)
+                                configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id, end_date_id,
+                                                                                          resolution, area_id, 'count',
+                                                                                          ship_type_list, mobile_type_list)
         return configurations
 
     @staticmethod
