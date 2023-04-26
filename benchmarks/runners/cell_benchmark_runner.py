@@ -18,36 +18,32 @@ LARGE_AREA_ID = 148
 class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     """Benchmark runner to measure the runtime of cell benchmark queries."""
 
-    QUERY_PREFIX = 'explain (analyze, timing, format json, verbose, buffers, settings)'
-
     def __init__(self) -> None:
         """Initialize a cell benchmark runner."""
         super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/cell',
-            garbage_queries_per_iteration=10,
-            iterations=10
+            garbage_queries_folder='benchmarks/garbage_queries/cell'
         )
-        self.queries_folder = 'benchmarks/queries/cell'
+        self._queries_folder = 'benchmarks/queries/cell'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable]:
         """Create the cell benchmarks to run."""
         benchmarks = {}
-        queries = self._get_queries_in_folder(self.queries_folder)
-        configurations = self.__get_benchmark_configurations()
+        queries = self._get_queries_in_folder(self._queries_folder)
+        configurations = self._get_benchmark_configurations()
         for query_filename, query in queries.items():
             if query_filename.startswith('cell'):
                 cell_configurations = dict((k, v) for k, v in configurations.items()
                                            if v.type == CellBenchmarkConfigurationType.CELL)
-                benchmarks.update(self.__configure_benchmark(cell_configurations, query))
+                benchmarks.update(self._configure_benchmark(cell_configurations, query))
             elif query_filename.startswith('trajectory'):
                 trajectory_configurations = dict((k, v) for k, v in configurations.items()
                                                  if v.type == CellBenchmarkConfigurationType.TRAJECTORY)
-                benchmarks.update(self.__configure_benchmark(trajectory_configurations, query))
+                benchmarks.update(self._configure_benchmark(trajectory_configurations, query))
             else:
                 raise ValueError('Unkown query definition in CellBenchmarkRunner')
         return benchmarks
 
-    def __configure_benchmark(self, configurations: Dict[str, CellBenchmarkConfiguration], query: str) \
+    def _configure_benchmark(self, configurations: Dict[str, CellBenchmarkConfiguration], query: str) \
             -> Dict[str, Callable[[], RuntimeBenchmarkResult]]:
         """
         Create benchmarks based on configurations.
@@ -61,7 +57,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             params = config.get_parameters()
             benchmark_id = self._get_next_test_id()
             benchmark_query = config.format_query(query)
-            benchmark_query = f'{self.QUERY_PREFIX} \n{benchmark_query}'
+            benchmark_query = f'{self._query_prefix} \n{benchmark_query}'
 
             # Default parameters to avoid copy by reference in lambda
             configured_benchmarks[name] = \
@@ -73,7 +69,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 )
         return configured_benchmarks
 
-    def __get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:
+    def _get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:
         """Get all configurations for this benchmark."""
         duration_map = {
             '1_day': (20220110, 20220110),
@@ -95,13 +91,13 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         ship_types = ['Cargo']
         configurations = {}
 
-        configurations.update(self.__create_cell_configurations(duration_map, areas_from_resolution,
-                                                                area_id_to_name, ship_types))
-        configurations.update(self.__create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
+        configurations.update(self._create_cell_configurations(duration_map, areas_from_resolution,
+                                                               area_id_to_name, ship_types))
+        configurations.update(self._create_trajectory_configurations(duration_map, area_id_to_name, ship_types))
         return configurations
 
-    def __calc_configuration_name(self, conf_type: str, duration: str, area: str,
-                                  ship_types: List[str], resolution: int = None) -> str:
+    def _calc_configuration_name(self, conf_type: str, duration: str, area: str,
+                                 ship_types: List[str], resolution: int = None) -> str:
         """
         Calculate the name of the configuration.
 
@@ -112,17 +108,16 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             ship_types: the list of types used when benchmarking the configuration
             resolution: the spatial resolution for the configuration (default: None)
         """
-        ship_str = ''
-        for type in ship_types:
-            ship_str += f'_{type}'
-        resolution_str = '' if resolution is None else f'_{resolution}m'
-        return f'{conf_type}_{duration}{resolution_str}_{area}_unique{ship_str}_ships'
+        separator = '_'
+        ship_str = separator.join(ship_types).lower().replace(' ', separator)
+        resolution_str = '' if resolution is None else f'{resolution}m'
+        return f'{conf_type}_{duration}_{resolution_str}_{area}_unique_{ship_str}_ships'
 
-    def __create_cell_configurations(self,
-                                     duration_map: Dict[str, Tuple[int, int]],
-                                     areas_from_resolution: Dict[int, List[int]],
-                                     area_id_to_name: Dict[int, str],
-                                     ship_types: List[str]) \
+    def _create_cell_configurations(self,
+                                    duration_map: Dict[str, Tuple[int, int]],
+                                    areas_from_resolution: Dict[int, List[int]],
+                                    area_id_to_name: Dict[int, str],
+                                    ship_types: List[str]) \
             -> Dict[str, CellBenchmarkConfiguration]:
         """
         Create cell configurations.
@@ -135,20 +130,20 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """
         cell_configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
-            for s_resolution in self.available_resolutions:
+            for s_resolution in self._available_resolutions:
                 for area_id in areas_from_resolution[s_resolution]:
                     area_name = area_id_to_name[area_id]
-                    conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,
-                                                               area_name, ship_types, s_resolution)
+                    conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.CELL, duration_name,
+                                                              area_name, ship_types, s_resolution)
                     cell_configurations[conf_name] = \
                         CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
                                                    CellBenchmarkConfigurationType.CELL, s_resolution)
         return cell_configurations
 
-    def __create_trajectory_configurations(self,
-                                           duration_map: Dict[str, Tuple[int, int]],
-                                           area_id_to_name: Dict[int, str],
-                                           ship_types: List[str]) \
+    def _create_trajectory_configurations(self,
+                                          duration_map: Dict[str, Tuple[int, int]],
+                                          area_id_to_name: Dict[int, str],
+                                          ship_types: List[str]) \
             -> Dict[str, CellBenchmarkConfiguration]:
         """
         Create trajectory configurations.
@@ -161,8 +156,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         trajectory_configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
             for area_id, area_name in area_id_to_name.items():
-                conf_name = self.__calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY, duration_name,
-                                                           area_name, ship_types)
+                conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY, duration_name,
+                                                          area_name, ship_types)
                 trajectory_configurations[conf_name] = \
                     CellBenchmarkConfiguration(start_date_id, end_date_id, area_id, ship_types,
                                                CellBenchmarkConfigurationType.TRAJECTORY)

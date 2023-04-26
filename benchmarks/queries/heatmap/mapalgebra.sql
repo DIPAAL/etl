@@ -7,10 +7,10 @@ WITH spatial_bound (xmin, ymin, xmax, ymax, width, height) AS (
             (ST_XMax(rg.geom) - ST_XMin(rg.geom))::integer AS width,
             (ST_YMax(rg.geom) - ST_YMin(rg.geom))::integer AS height
     FROM reference_geometries rg
-    WHERE rg.id = 95
+    WHERE rg.id = :AREA_ID
 ), reference (rast) AS (
     SELECT ST_AddBand(
-        ST_MakeEmptyRaster (bound.width / 5000, bound.height / 5000, (bound.xmin - (bound.xmin % 5000)), (bound.ymin - (bound.ymin % 5000)), 5000, 5000, 0, 0, 3034),
+        ST_MakeEmptyRaster (bound.width / :SPATIAL_RESOLUTION, bound.height / :SPATIAL_RESOLUTION, (bound.xmin - (bound.xmin % :SPATIAL_RESOLUTION)), (bound.ymin - (bound.ymin % :SPATIAL_RESOLUTION)), :SPATIAL_RESOLUTION, :SPATIAL_RESOLUTION, 0, 0, 3034),
         '32BSI'::text,
         1,
         0
@@ -31,19 +31,20 @@ FROM (
                     q0.rast
                 END AS rast
             FROM (
-                SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = 'count')) AS rast
+                SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
                 FROM spatial_bound sb, fact_cell_heatmap fch
                 JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
-                WHERE fch.spatial_resolution = 5000
-                AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = 'count')
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(20221231, 235959) -- end_timestamp
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(20220101, 0) -- start_timestamp
-                AND dst.ship_type = 'Pleasure'
+                WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
+                AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
+                AND dst.ship_type = ANY(:SHIP_TYPES)
+                AND dst.mobile_type = ANY(:MOBILE_TYPES)
                 AND fch.cell_x >= sb.xmin / 5000 -- Always 5000
                 AND fch.cell_x < sb.xmax / 5000 -- Always 5000
                 AND fch.cell_y >= sb.ymin / 5000 -- Always 5000
                 AND fch.cell_y < sb.ymax / 5000 -- Always 5000
-                AND fch.date_id BETWEEN 20220101 AND 20221231
+                AND fch.date_id BETWEEN :START_ID AND :END_ID
                 GROUP BY fch.partition_id
             ) q0
         ) q1
@@ -60,19 +61,20 @@ FROM (
                     q0.rast
                 END AS rast
             FROM (
-                SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = 'count')) AS rast
+                SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
                 FROM spatial_bound sb, fact_cell_heatmap fch
                 JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
-                WHERE fch.spatial_resolution = 5000
-                AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = 'count')
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(20221231, 235959) -- end_timestamp
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(20220101, 0) -- start_timestamp
-                AND dst.ship_type = 'Pleasure'
+                WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
+                AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
+                AND dst.ship_type = ANY(:SHIP_TYPES)
+                AND dst.mobile_type = ANY(:MOBILE_TYPES)
                 AND fch.cell_x >= sb.xmin / 5000 -- Always 5000
                 AND fch.cell_x < sb.xmax / 5000 -- Always 5000
                 AND fch.cell_y >= sb.ymin / 5000 -- Always 5000
                 AND fch.cell_y < sb.ymax / 5000 -- Always 5000
-                AND fch.date_id BETWEEN 20220101 AND 20221231
+                AND fch.date_id BETWEEN :START_ID AND :END_ID
                 GROUP BY fch.partition_id
             ) q0
         ) q1

@@ -9,3 +9,8 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     explain JSONB NOT NULL,
     execution_time_ms INTEGER NOT NULL
 );
+
+CREATE SEQUENCE IF NOT EXISTS test_run_id_seq AS INTEGER
+  MINVALUE 0
+  START WITH 0
+  OWNED BY benchmark_results.test_run_id; 

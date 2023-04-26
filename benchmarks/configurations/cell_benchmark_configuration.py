@@ -13,7 +13,7 @@ class CellBenchmarkConfiguration:
         Initialize a cell benchmark configuration.
 
         Arguments:
-            start_date_id: the data warehouse date smart ID for the start date used in benchmar queries
+            start_date_id: the data warehouse date smart ID for the start date used in benchmark queries
             end_date_id: the data warehouse date smart ID for the end date used in benchmark queries
             enc_cell_id: the ID of the enc cell determining the spatial area of the benchmark queries
             ship_types: a list of ship types used to filter the benchmark queries
@@ -26,9 +26,9 @@ class CellBenchmarkConfiguration:
         self.enc_cell_id = enc_cell_id
         self.ship_types = ship_types
         self.type = configuration_type
-        self.__validate_spatial_resolution(spatial_resolution)
+        self._validate_spatial_resolution(spatial_resolution)
 
-    def __validate_spatial_resolution(self, resolution: int) -> None:
+    def _validate_spatial_resolution(self, resolution: int) -> None:
         """
         Validate the spatial resolution of the configuration.
 
@@ -38,7 +38,7 @@ class CellBenchmarkConfiguration:
         if CellBenchmarkConfigurationType.CELL == self.type \
                 and resolution not in get_staging_cell_sizes():
             raise ValueError(f'Invalid spatial resolution <{resolution}> provided for CellBenchmarkConfiguration. '
-                             'Only <{self.VALID_RESOLUTIONS}> are supported')
+                             f'Only <{get_staging_cell_sizes()}> are supported')
 
     def get_parameters(self) -> Dict[str, any]:
         """Return query parameters based on configuration."""
