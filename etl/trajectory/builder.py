@@ -45,6 +45,9 @@ def build_from_geopandas(clean_sorted_ais: gpd.GeoDataFrame) -> pd.DataFrame:
     Keyword arguments:
         clean_sorted_ais: A GeoDataFrame of cleaned and ascending timestamp sorted AIS data.
     """
+    if clean_sorted_ais.empty:
+        return _create_trajectory_db_df()
+
     grouped_data = clean_sorted_ais.groupby(by=MMSI_COL)
 
     # deallocate memory used by clean_sorted_ais
