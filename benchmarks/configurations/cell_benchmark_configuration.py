@@ -38,7 +38,7 @@ class CellBenchmarkConfiguration:
         if CellBenchmarkConfigurationType.CELL == self.type \
                 and resolution not in get_staging_cell_sizes():
             raise ValueError(f'Invalid spatial resolution <{resolution}> provided for CellBenchmarkConfiguration. '
-                             'Only <{self.VALID_RESOLUTIONS}> are supported')
+                             f'Only <{get_staging_cell_sizes()}> are supported')
 
     def get_parameters(self) -> Dict[str, any]:
         """Return query parameters based on configuration."""

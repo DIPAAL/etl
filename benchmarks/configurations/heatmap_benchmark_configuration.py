@@ -33,7 +33,7 @@ class HeatmapBenchmarkConfiguration:
         """Validate the spatial resolution of the configuration."""
         if self.resolution not in get_staging_cell_sizes():
             raise ValueError(f'Invalid spatial resolution <{self.resolution}> provided for CellBenchmarkConfiguration. '
-                             'Only <{self.VALID_RESOLUTIONS}> are supported')
+                             f'Only <{get_staging_cell_sizes()}> are supported')
 
     def get_parameters(self) -> Dict[str, Any]:
         """Return query parameters based on configuration."""
