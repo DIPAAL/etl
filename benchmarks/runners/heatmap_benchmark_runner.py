@@ -91,7 +91,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                                                                             area_name, ship_type_list, mobile_type_list)
                                 configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id, end_date_id,
                                                                                           resolution, area_id, 'count',
-                                                                                          ship_type_list, mobile_type_list)
+                                                                                          ship_type_list,
+                                                                                          mobile_type_list)
         return configurations
 
     @staticmethod
