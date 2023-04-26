@@ -16,9 +16,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def __init__(self) -> None:
         """Initialize cell benchmark runner."""
         super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/heatmap',
-            garbage_queries_per_iteration=10,
-            iterations=10
+            garbage_queries_folder='benchmarks/garbage_queries/heatmap'
         )
         self._query_folder = 'benchmarks/queries/heatmap'
 
