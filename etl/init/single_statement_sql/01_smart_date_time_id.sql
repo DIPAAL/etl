@@ -1,7 +1,5 @@
 CREATE OR REPLACE FUNCTION timestamp_from_date_time_id(date_id INT, time_id INT) RETURNS TIMESTAMP AS $$
-BEGIN
-    -- parse as strings
-    RETURN to_timestamp(
+    SELECT to_timestamp(
         concat(
             -- 0 pad date_id to 8 digits
             lpad(date_id::text, 8, '0'),
@@ -10,5 +8,4 @@ BEGIN
         ),
         'YYYYMMDDHH24MISS'
     );
-END;
-$$ language plpgsql IMMUTABLE;
+$$ language sql STABLE;
