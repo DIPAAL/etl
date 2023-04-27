@@ -23,3 +23,28 @@ SELECT
     EXTRACT(SECOND FROM time)
 FROM
     generate_series('2022-01-01T00:00:00Z'::timestamp, '2022-01-01T23:59:59Z'::timestamp, '1 second') AS time;
+
+-- Create 'dim_trajectory_start_time' role view
+CREATE OR REPLACE VIEW dim_trajectory_start_time
+    (start_time, start_time_id, start_hour_of_day, start_minute_of_hour, start_second_of_minute)
+    AS SELECT time, time_id, hour_of_day, minute_of_hour, second_of_minute FROM dim_time;
+
+-- Create 'dim_trajectory_end_time' role view
+CREATE OR REPLACE VIEW dim_trajectory_end_time
+    (end_time, end_time_id, end_hour_of_day, end_minute_of_hour, end_second_of_minute)
+    AS SELECT time, time_id, hour_of_day, minute_of_hour, second_of_minute FROM dim_time;
+
+-- Create 'dim_trajectory_eta_time' role view
+CREATE OR REPLACE VIEW dim_trajectory_eta_time
+    (eta_time, eta_time_id, eta_hour_of_day, eta_minute_of_hour, eta_second_of_minute)
+    AS SELECT time, time_id, hour_of_day, minute_of_hour, second_of_minute FROM dim_time;
+
+-- Create 'dim_cell_entry_time' role view
+CREATE OR REPLACE VIEW dim_cell_entry_time
+    (entry_time, entry_time_id, entry_hour_of_day, entry_minute_of_hour, entry_second_of_minute)
+    AS SELECT time, time_id, hour_of_day, minute_of_hour, second_of_minute FROM dim_time;
+
+-- Create 'dim_cell_exit_time' role view
+CREATE OR REPLACE VIEW dim_cell_exit_time
+    (exit_time, exit_time_id, exit_hour_of_day, exit_minute_of_hour, exit_second_of_minute)
+    AS SELECT time, time_id, hour_of_day, minute_of_hour, second_of_minute FROM dim_time;
