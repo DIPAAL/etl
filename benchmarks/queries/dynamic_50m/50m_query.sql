@@ -1,4 +1,5 @@
 -- Benchmarking query for evaluating the performance of lazy loading 50m cells.
+-- This benchmark query is based on the "fact_cell_rollup.sql" query.
 SELECT
     cell_x,
     cell_y,
