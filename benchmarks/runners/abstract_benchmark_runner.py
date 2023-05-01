@@ -79,8 +79,6 @@ class AbstractBenchmarkRunner(ABC):
                     raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
 
                 self._setup_benchmark_connection()
-                print('Wait 10 seconds to ensure all connections are re-established')
-                time.sleep(10)
                 break
             except CacheClearingError as e:
                 print('Exception raised while clearing cache'
@@ -136,13 +134,17 @@ class AbstractBenchmarkRunner(ABC):
                 worker_nodes = self._config['Database']['worker_connection_internal_hosts'].split(',')
                 for worker in worker_nodes:
                     # Test the connection to worker
+                    print(f'Attempting to connect to worker <{worker}>')
                     worker_conn = get_connection(self._config, host=worker)
                     worker_conn.execute(text('SELECT 1;'))
                     worker_conn.close()
+                    print('Success')
 
+                print('Attempting to connect to coordinator')
                 self._conn = get_connection(self._config, auto_commit_connection=True)
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
+                print('Success')
                 break
             except Exception as e:
                 fail_cnt += 1
