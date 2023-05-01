@@ -131,20 +131,11 @@ class AbstractBenchmarkRunner(ABC):
         fail_cnt = 0
         while True:
             try:
-                worker_nodes = self._config['Database']['worker_connection_internal_hosts'].split(',')
-                for worker in worker_nodes:
-                    # Test the connection to worker
-                    print(f'Attempting to connect to worker <{worker}>')
-                    worker_conn = get_connection(self._config, host=worker)
-                    worker_conn.execute(text('SELECT 1;')).fetchall()
-                    worker_conn.commit()
-                    print(f'Attempting to connect to worker <{worker}>: Success')
-
-                print('Attempting to connect to coordinator')
                 self._conn = get_connection(self._config, auto_commit_connection=True)
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
-                print('Attempting to connect to coordinator: Success')
+                # Run distributed query to check connection to all nodes
+                self._conn.execute(text("SELECT citus_table_size('dim_trajectory');"))
                 break
             except Exception as e:
                 fail_cnt += 1
