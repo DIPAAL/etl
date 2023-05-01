@@ -135,7 +135,7 @@ class AbstractBenchmarkRunner(ABC):
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
                 # Run distributed query to check connection to all nodes
-                self._conn.execute(text("SELECT citus_table_size('dim_trajectory');"))
+                self._conn.execute(text('SELECT run_command_on_workers($cmd$ SELECT 1; $cmd$);'))
                 break
             except Exception as e:
                 fail_cnt += 1
