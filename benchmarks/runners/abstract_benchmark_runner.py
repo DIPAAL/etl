@@ -136,15 +136,15 @@ class AbstractBenchmarkRunner(ABC):
                     # Test the connection to worker
                     print(f'Attempting to connect to worker <{worker}>')
                     worker_conn = get_connection(self._config, host=worker)
-                    worker_conn.execute(text('SELECT 1;'))
-                    worker_conn.close()
-                    print('Success')
+                    worker_conn.execute(text('SELECT 1;')).fetchall()
+                    worker_conn.commit()
+                    print(f'Attempting to connect to worker <{worker}>: Success')
 
                 print('Attempting to connect to coordinator')
                 self._conn = get_connection(self._config, auto_commit_connection=True)
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
-                print('Success')
+                print('Attempting to connect to coordinator: Success')
                 break
             except Exception as e:
                 fail_cnt += 1
