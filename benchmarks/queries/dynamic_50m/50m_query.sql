@@ -135,7 +135,7 @@ FROM (
                     fdt.heading heading,
                     fdt.partition_id
                 FROM staging.split_trajectories fdt
-                JOIN staging.cell_{CELL_SIZE}m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
+                JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
                     -- BENCHMARK: Spatial and temporal bounds
                     AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
                     AND STBOX(SPAN(
