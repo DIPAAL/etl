@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import List, Tuple, Callable, TypeVar, Dict
 from time import perf_counter
 from sqlalchemy import create_engine, Connection, Engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 import pandas as pd
 import configparser
@@ -83,8 +84,14 @@ def get_connection(config, auto_commit_connection: bool = False, database: str |
     if connection_url not in ENGINE_DICT.keys():
         engine = create_engine(connection_url)
         ENGINE_DICT[connection_url] = engine
-
-    connection = ENGINE_DICT[connection_url].connect()
+    
+    try:
+        connection = ENGINE_DICT[connection_url].connect()
+    except SQLAlchemyError as e:
+        print(f'Reconnect engine because of caught error: {e.__cause__}')
+        engine = create_engine(connection_url)
+        ENGINE_DICT[connection_url] = engine
+    
     if auto_commit_connection:
         connection.execution_options(isolation_level=SqlalchemyIsolationLevel.AUTOCOMMIT.value)
     return connection
