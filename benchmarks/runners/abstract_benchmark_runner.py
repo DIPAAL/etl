@@ -86,8 +86,6 @@ class AbstractBenchmarkRunner(ABC):
                 time.sleep(5)
                 continue
 
-        self._setup_benchmark_connection()
-
     @abstractmethod
     def _store_result(self, iteration: int, result: BRT) -> None:
         raise NotImplementedError  # To be implemented by subclasses
