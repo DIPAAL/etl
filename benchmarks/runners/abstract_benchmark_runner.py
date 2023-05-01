@@ -122,7 +122,7 @@ class AbstractBenchmarkRunner(ABC):
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
 
-    def _setup_benchmark_connection(self, retry_interval_sec: int = 5, max_num_retries: int = -1) -> None:
+    def _setup_benchmark_connection(self, retry_interval_sec: int = 5, max_num_retries: int = -1) -> None:  # noqa: C901
         """
         Set up connection for running benchmarks.
 
@@ -133,6 +133,13 @@ class AbstractBenchmarkRunner(ABC):
         fail_cnt = 0
         while True:
             try:
+                worker_nodes = self._config['Database']['worker_connection_internal_hosts'].split(',')
+                for worker in worker_nodes:
+                    # Test the connection to worker
+                    worker_conn = get_connection(self._config, host=worker)
+                    worker_conn.execute(text('SELECT 1;'))
+                    worker_conn.close()
+
                 self._conn = get_connection(self._config, auto_commit_connection=True)
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
