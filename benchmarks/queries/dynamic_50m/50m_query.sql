@@ -1,5 +1,5 @@
 -- Benchmarking query for evaluating the performance of lazy loading 50m cells.
--- This benchmark query is based on the "fact_cell_rollup.sql" query.
+-- This benchmark query is mainly based on the "fact_cell_rollup.sql", but also the "staging_split_trajectories.sql" query.
 SELECT
     cell_x,
     cell_y,
@@ -91,8 +91,7 @@ FROM (
             FROM (
                 SELECT
                     unnest(sequences (atGeometry (
-                        -- BENCHMARK: Temporal restriction on the trajectory
-                        atstbox(
+                        atstbox( -- BENCHMARK: Temporal bounding box of the trajectory
                             fdt.trajectory,
                             stbox(
                                     span(
@@ -134,7 +133,42 @@ FROM (
                     fdt.draught draught,
                     fdt.heading heading,
                     fdt.partition_id
-                FROM staging.split_trajectories fdt
+                FROM (SELECT -- Construction of split trajectories, as seen in "staging_trajectories_split.sql"
+                          t2.*,
+                          sp.partition_id
+                      FROM (SELECT
+                                t.trajectory_sub_id,
+                                t.ship_id,
+                                t.nav_status_id,
+                                t.infer_stopped,
+                                (t.split).point point,
+                                tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), 'linear', true, true) AS trajectory,
+                                t.heading,
+                                t.draught
+                            FROM (SELECT
+                                      ft.trajectory_sub_id,
+                                      ft.ship_id,
+                                      ft.nav_status_id,
+                                      ft.infer_stopped,
+                                      spaceSplit(transform(dt.trajectory, 3034), 5000, bitmatrix := false) split,
+                                      dt.heading heading,
+                                      dt.draught draught
+                                  FROM fact_trajectory ft
+                                  JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+                                  -- BENCHMARK: Spatial and temporal bounds
+                                  WHERE STBOX(
+                                      ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
+                                      SPAN(
+                                      timestamp_from_date_time_id(:start_date,:start_time),
+                                      timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)
+                                      ) && transform(dt.trajectory, 3034)
+                                  ) t
+                            ) t2
+                          INNER JOIN spatial_partition sp
+                              ON ST_Covers(sp.geom, t2.trajectory::geometry)
+                              AND ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry)
+                              AND ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry)
+                      ) as fdt
                 JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
                     -- BENCHMARK: Spatial and temporal bounds
                     AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
