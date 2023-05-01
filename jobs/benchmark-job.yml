@@ -23,5 +23,5 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - ais-etl-worker
+                - ${NODE_NAME}
   backoffLimit: 0
