@@ -17,10 +17,10 @@ WITH bounds (xmin, ymin, xmax, ymax, width, height) AS (
     FROM reference_geometries rg, (
         SELECT
             i1.start_time,
-            i1.start_time + random() * ('2022-12-31T00:00:00Z'::timestamptz - i1.start_time) AS end_time
+            i1.start_time + random() * ('2021-12-31T00:00:00Z'::timestamptz - i1.start_time) AS end_time
         FROM
         (
-            SELECT '2022-01-01T00:00:00Z'::timestamptz + random() * ('2022-12-31T00:00:00Z'::timestamptz - '2022-01-01T00:00:00Z'::timestamptz) AS start_time
+            SELECT '2021-01-01T00:00:00Z'::timestamptz + random() * ('2021-12-31T00:00:00Z'::timestamptz - '2021-01-01T00:00:00Z'::timestamptz) AS start_time
         ) i1
     ) i2
     WHERE rg.id = (SELECT id from reference_geometries WHERE type = 'enc' ORDER BY random() LIMIT 1)
@@ -72,7 +72,7 @@ FROM (
                 AND fch.cell_x < b.xmax / 5000 -- Always 5000
                 AND fch.cell_y >= b.ymin / 5000 -- Always 5000
                 AND fch.cell_y < b.ymax / 5000 -- Always 5000
-                AND fch.date_id BETWEEN 20220101 AND 20221231
+                AND fch.date_id BETWEEN 20210101 AND 20211231
                 GROUP BY fch.partition_id
             ) q0
         ) q1

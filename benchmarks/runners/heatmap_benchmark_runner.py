@@ -60,9 +60,9 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             query_file_name: the file name of the query to configure
         """
         duration_map = {
-            '1_day': (20220228, 20220228),
-            '1_month': (20220601, 20220630),
-            '1_year': (20220101, 20221231)
+            '1_day': (20210228, 20210228),
+            '1_month': (20210601, 20210630),
+            '1_year': (20210101, 20211231)
         }
         resolutions = {
             5000: 'very_low_resolution',

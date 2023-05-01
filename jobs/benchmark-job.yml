@@ -14,7 +14,14 @@ spec:
       - name: query-benchmark-${JOB_ID}
         image: ${IMAGE_NAME}
         command: ["python", "-u", "benchmark.py", "--benchmark", "${BENCHMARK}"]
+        volumeMounts:
+          - name: sshkey
+            mountPath: /ssh/
       restartPolicy: Never
+      volumes:
+        - name: sshkey
+          secret:
+            secretName: sshkey
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
