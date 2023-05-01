@@ -72,9 +72,9 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def _get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:
         """Get all configurations for this benchmark."""
         duration_map = {
-            '1_day': (20220110, 20220110),
-            '30_day': (20220126, 20220224),
-            '90_day': (20220101, 20220331)
+            '1_day': (20210110, 20210110),
+            '30_day': (20210126, 20210224),
+            '90_day': (20210101, 20210331)
         }
         areas_from_resolution = {
             50: [SINGLE_PARTITION_ID, SMALL_AREA_ID],
