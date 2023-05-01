@@ -79,6 +79,8 @@ class AbstractBenchmarkRunner(ABC):
                     raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
 
                 self._setup_benchmark_connection()
+                print('Wait 10 seconds to ensure all connections are re-established')
+                time.sleep(10)
                 break
             except CacheClearingError as e:
                 print('Exception raised while clearing cache'
