@@ -8,15 +8,20 @@ from etl.helper_functions import measure_time
 from sqlalchemy import text
 from datetime import datetime
 
+
 @benchmark_class(name='LAZY')
 class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
+    """Benchmark runner to measure the runtime of lazy 50m benchmark queries."""
+
     def __init__(self) -> None:
+        """Initialize lazy 50m benchmark runner."""
         super().__init__(
             'benchmarks/garbage_queries/dynamic_50m'
         )
         self._queries_folder = 'benchmarks/queries/dynamic_50m'
-    
+
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
+        """Create the cell benchmarks to run."""
         queries = self._get_queries_in_folder(self._queries_folder)
 
         benchmarks = {}
@@ -26,7 +31,8 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 run_id = self._get_next_test_id()
                 benchmark_query = f'{self._query_prefix}\n {query}'
                 q_parameters = configuration.get_parameters()
-                benchmarks[benchmark_name] = lambda id=run_id, name=benchmark_name, query=benchmark_query, param=q_parameters: \
+                benchmarks[benchmark_name] = \
+                    lambda id=run_id, name=benchmark_name, query=benchmark_query, param=q_parameters: \
                     RuntimeBenchmarkResult(
                         *measure_time(lambda: self._conn.execute(text(query), parameters=param)),
                         id,
@@ -35,10 +41,25 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
         return benchmarks
 
-    def _calculate_configuration_name(self, area: str, duration: str, query_name: str) -> str:
+    @staticmethod
+    def _calculate_configuration_name(area: str, duration: str, query_name: str) -> str:
+        """
+        Calculate the configuration name.
+
+        Arguments:
+            area: name of the area benchmarked
+            duration: text representation of the duration benchmarked
+            query_name: the filename of the query
+        """
         return f'{query_name}_{area}_{duration}'
 
     def _create_configurations(self, query_file_name: str) -> Dict[str, LazyBenchmarkConfiguration]:
+        """
+        Create lazy 50m benchmark configurations.
+
+        Arguments:
+            query_file_name: file name of the query that is being configured
+        """
         area_id_geom_map = {  # xmin, ymin, xmax, ymax
             111: (3990401.028030803, 3207418.9322399576, 4006203.35118328, 3218920.138335524),
             6: (4068764.0226458698, 3158829.822705281, 4070546.425170807, 3159780.700336136),
@@ -54,9 +75,12 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             38: 'hvide_sande'
         }
         duration_name_timestamp_map = {  # start, end
-            '1_day': (datetime(year=2021, month=5, day=4), datetime(year=2021, month=5, day=4, hour=23, minute=59, second=59)),
-            '1_week': (datetime(year=2021, month=6, day=21), datetime(year=2021, month=6, day=28, hour=23, minute=59, second=59)),
-            '1_month': (datetime(year=2021, month=10, day=1), datetime(year=2021, month=10, day=31, hour=23, minute=59, second=59))
+            '1_day': (datetime(year=2021, month=5, day=4),
+                      datetime(year=2021, month=5, day=4, hour=23, minute=59, second=59)),
+            '1_week': (datetime(year=2021, month=6, day=21),
+                       datetime(year=2021, month=6, day=28, hour=23, minute=59, second=59)),
+            '1_month': (datetime(year=2021, month=10, day=1),
+                        datetime(year=2021, month=10, day=31, hour=23, minute=59, second=59))
         }
 
         configurations = {}
