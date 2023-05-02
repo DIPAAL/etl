@@ -1,10 +1,10 @@
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntimeBenchmarkRunner
 from benchmarks.decorators.benchmark import benchmark_class
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.lazy_benchmark_configuration import LazyBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
+from etl.helper_functions import measure_time
 from sqlalchemy import text
 from datetime import datetime
 
@@ -71,17 +71,3 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                     xmin, ymin, xmax, ymax, start, end
                 )
         return configurations
-
-    def _parameterise_garbage(self) -> Dict[str, Any]:
-        parameter_randimization_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
-        start_timestamp = datetime(year=2021, month=1, day=1)
-        end_timestamp = datetime(year=2021, month=12, day=31)
-        result_row = self._conn.execute(text(parameter_randimization_query), parameters={
-            'period_start_timestamp': start_timestamp,
-            'period_end_timestamp': end_timestamp
-        }).fetchone()
-
-        return result_row._asdict() | {
-            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
-            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
-        }
