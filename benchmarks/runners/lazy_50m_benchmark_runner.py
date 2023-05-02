@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List
+"""Module containing the lazy 50m benchmark runner."""
+from typing import Any, Callable, Dict
 from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntimeBenchmarkRunner
 from benchmarks.decorators.benchmark import benchmark_class
 from benchmarks.runners.abstract_benchmark_runner import BRT
@@ -99,6 +100,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         return configurations
 
     def _parameterise_garbage(self) -> Dict[str, Any]:
+        """Create parameters for garbage query."""
         parameter_randimization_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
         start_timestamp = datetime(year=2021, month=1, day=1)
         end_timestamp = datetime(year=2021, month=12, day=31)
