@@ -88,3 +88,17 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                     xmin, ymin, xmax, ymax, start, end
                 )
         return configurations
+
+    def _parameterise_garbage(self) -> Dict[str, Any]:
+        parameter_randimization_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
+        start_timestamp = datetime(year=2021, month=1, day=1)
+        end_timestamp = datetime(year=2021, month=12, day=31)
+        result_row = self._conn.execute(text(parameter_randimization_query), parameters={
+            'period_start_timestamp': start_timestamp,
+            'period_end_timestamp': end_timestamp
+        }).fetchone()
+
+        return result_row._asdict() | {
+            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
+            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
+        }
