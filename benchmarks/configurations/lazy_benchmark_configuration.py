@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 """Module containing the configuration class for lazy 50m benchmarks."""
-=======
->>>>>>> Added new configuration type
 from datetime import datetime
 from etl.helper_functions import extract_smart_date_id_from_date, extract_smart_time_id_from_date
 from typing import Dict, Any
