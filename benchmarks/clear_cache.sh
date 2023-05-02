@@ -29,8 +29,8 @@ ssh -o "StrictHostKeyChecking=no" dipaal@s6.dipaal.dk 'sudo bash -c "sync; echo 
 #ais-citus-worker-3
 #ais-citus-worker-4
 
-ssh -o "StrictHostKeyChecking=no" dipaal@s1.dipaal.dk 'microk8s kubectl rollout restart statefulset ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4 ais-citus-worker-5 && microk8s kubectl rollout status statefulset ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4 ais-citus-worker-5'
-ssh -o "StrictHostKeyChecking=no" dipaal@s1.dipaal.dk 'microk8s kubectl rollout restart statefulset ais-citus-master && microk8s kubectl rollout status statefulset ais-citus-master'
+
+ssh -o "StrictHostKeyChecking=no" dipaal@s1.dipaal.dk 'microk8s kubectl rollout restart statefulset ais-citus-master ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4 ais-citus-worker-5 && microk8s kubectl rollout status statefulset ais-citus-master ais-citus-worker-1 ais-citus-worker-2 ais-citus-worker-3 ais-citus-worker-4 ais-citus-worker-5'
 # sleep 5 seconds to let it settle a bit.
 sleep 5
 
