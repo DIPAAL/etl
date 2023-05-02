@@ -133,7 +133,7 @@ FROM (
                     fdt.draught draught,
                     fdt.heading heading,
                     fdt.partition_id
-                FROM (SELECT -- Construction of split trajectories, as seen in "staging_trajectories_split.sql"
+                FROM (SELECT -- Construction of split trajectories, as seen in "staging_trajectory_split.sql"
                           t2.*,
                           sp.partition_id
                       FROM (SELECT
@@ -156,12 +156,13 @@ FROM (
                                   FROM fact_trajectory ft
                                   JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
                                   -- BENCHMARK: Spatial and temporal bounds
-                                  WHERE STBOX(
-                                      ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
-                                      SPAN(
-                                      timestamp_from_date_time_id(:start_date,:start_time),
-                                      timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)
-                                      ) && transform(dt.trajectory, 3034)
+                                  WHERE transform(
+                                      STBOX(
+                                          ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
+                                          SPAN(
+                                              timestamp_from_date_time_id(:start_date,:start_time),
+                                              timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)),
+                                      4326) && dt.trajectory
                                   ) t
                             ) t2
                           INNER JOIN spatial_partition sp
@@ -169,7 +170,7 @@ FROM (
                               AND ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry)
                               AND ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry)
                       ) as fdt
-                JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
+                JOIN staging.cell_5000m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
                     -- BENCHMARK: Spatial and temporal bounds
                     AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
                     AND STBOX(SPAN(
