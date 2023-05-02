@@ -41,7 +41,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def _create_configurations(self, query_file_name: str) -> Dict[str, LazyBenchmarkConfiguration]:
         area_id_geom_map = {  # xmin, ymin, xmax, ymax
             111: (3990401.028030803, 3207418.9322399576, 4006203.35118328, 3218920.138335524),
-            6: (4068764.0226458698, 3158829.822705281, 4070546.425170807, 3159780.700336136, 1633811.8864262477),
+            6: (4068764.0226458698, 3158829.822705281, 4070546.425170807, 3159780.700336136),
             12: (4171444.567003976, 3187256.2165073296, 4174494.3510139505, 3189256.9809509492),
             126: (3993510.1855945783, 3341819.0227817534, 4004818.196538742, 3349485.39323123),
             38: (3885347.645682372, 3231581.738579133, 3887828.042069245, 3233262.654634314)
@@ -66,7 +66,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                     area_name, duration_name,
                     'lazy' if query_file_name.startswith('lazy') else 'stored'
                 )
-                xmin, ymin, xmax, ymax = area_id_geom_map[area_id]
+                xmin, ymin, xmax, ymax = (area_id_geom_map[area_id])
                 configurations[name] = LazyBenchmarkConfiguration(
                     xmin, ymin, xmax, ymax, start, end
                 )
