@@ -3,7 +3,7 @@ import os
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Callable, TypeVar
+from typing import Dict, Callable, TypeVar, Any
 from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
@@ -38,6 +38,9 @@ class AbstractBenchmarkRunner(ABC):
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
         raise NotImplementedError  # To be implemented by subclasses
 
+    def _parameterise_garbage(self) -> Dict[str, Any]:
+        raise NotImplementedError  # To be implemented by subclasses
+
     def run_benchmark(self) -> None:
         """Run the benchmark defined in the benchmark runner."""
         benchmarks = self._get_benchmarks_to_run()
@@ -58,11 +61,15 @@ class AbstractBenchmarkRunner(ABC):
 
         print(f'Running {self._garbage_queries_per_iteration} garbage queries before next iteration')
         garbage_queries = self._get_queries_in_folder(self._garbage_queries_folder)
-        random_queries = random.choices(list(garbage_queries.values()), k=self._garbage_queries_per_iteration)
-        for i in range(len(random_queries)):
-            random_resolution = random.choice(self._available_resolutions)
-            query = random_queries[i].format(CELL_SIZE=random_resolution)
-            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._conn.execute(text(query)))
+        random_query_keys = random.choices(list(garbage_queries.keys()), k=self._garbage_queries_per_iteration)
+        for i in range(len(random_query_keys)):
+            query = garbage_queries[random_query_keys[i]]
+            parameters = self._parameterise_garbage()
+            cell_size = parameters['spatial_resolution'] if 'spatial_resolution' in parameters.keys() \
+                else random.choice(self._available_resolutions)
+            query = query.format(CELL_SIZE=cell_size)
+            wrap_with_timings(f'   Executing garbage query <{i+1}>',
+                              lambda: self._conn.execute(text(query), parameters=parameters))
         print('Finished running garbage queries')
 
     def _clear_cache(self) -> None:
@@ -131,20 +138,9 @@ class AbstractBenchmarkRunner(ABC):
         fail_cnt = 0
         while True:
             try:
-                worker_nodes = self._config['Database']['worker_connection_internal_hosts'].split(',')
-                for worker in worker_nodes:
-                    # Test the connection to worker
-                    print(f'Attempting to connect to worker <{worker}>')
-                    worker_conn = get_connection(self._config, host=worker)
-                    worker_conn.execute(text('SELECT 1;')).fetchall()
-                    worker_conn.commit()
-                    print(f'Attempting to connect to worker <{worker}>: Success')
-
-                print('Attempting to connect to coordinator')
                 self._conn = get_connection(self._config, auto_commit_connection=True)
                 # Enable explaining all tasks if not already set.
                 self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
-                print('Attempting to connect to coordinator: Success')
                 break
             except Exception as e:
                 fail_cnt += 1
