@@ -45,7 +45,7 @@ FROM (
                 AND fch.cell_x < :xmax / 5000 -- Always 5000
                 AND fch.cell_y >= :ymin / 5000 -- Always 5000
                 AND fch.cell_y < :ymax / 5000 -- Always 5000
-                AND fch.date_id BETWEEN 20210101 AND 20211231
+                AND fch.date_id BETWEEN :start_date_id AND :end_date_id
                 GROUP BY fch.partition_id
             ) q0
         ) q1

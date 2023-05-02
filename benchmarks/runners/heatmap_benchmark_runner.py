@@ -3,7 +3,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, get_first_query_in_file
+from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
 from typing import Dict, List, Callable, Any
 from sqlalchemy import text
 from benchmarks.decorators.benchmark import benchmark_class
@@ -135,8 +135,14 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
     def _parameterise_garbage(self) -> Dict[str, Any]:
         """Create parameters for garbage query."""
         random_bounds_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
+        start_timestamp = datetime(year=2021, month=1, day=1)
+        end_timestamp = datetime(year=2021, month=12, day=31)
         result_row = self._conn.execute(text(random_bounds_query), parameters={
-            'period_start_timestamp': datetime(year=2021, month=1, day=1),
-            'period_end_timestamp': datetime(year=2021, month=12, day=31)
+            'period_start_timestamp': start_timestamp,
+            'period_end_timestamp': end_timestamp
         }).fetchone()
-        return result_row._asdict()
+
+        return result_row._asdict() | {
+            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
+            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
+        }
