@@ -65,9 +65,11 @@ class AbstractBenchmarkRunner(ABC):
         for i in range(len(random_query_keys)):
             query = garbage_queries[random_query_keys[i]]
             parameters = self._parameterise_garbage()
-            cell_size = parameters['spatial_resolution'] if 'spatial_resolution' in parameters.keys() else random.choice(self._available_resolutions)
+            cell_size = parameters['spatial_resolution'] if 'spatial_resolution' in parameters.keys() \
+                else random.choice(self._available_resolutions)
             query = query.format(CELL_SIZE=cell_size)
-            wrap_with_timings(f'   Executing garbage query <{i+1}>', lambda: self._conn.execute(text(query), parameters=parameters))
+            wrap_with_timings(f'   Executing garbage query <{i+1}>',
+                              lambda: self._conn.execute(text(query), parameters=parameters))
         print('Finished running garbage queries')
 
     def _clear_cache(self) -> None:

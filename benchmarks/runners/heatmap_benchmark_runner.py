@@ -139,4 +139,4 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             'period_start_timestamp': datetime(year=2021, month=1, day=1),
             'period_end_timestamp': datetime(year=2021, month=12, day=31)
         }).fetchone()
-        return result_row._asdict()    
+        return result_row._asdict()
