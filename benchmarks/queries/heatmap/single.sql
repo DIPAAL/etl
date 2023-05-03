@@ -37,7 +37,7 @@ FROM (
                     fch.partition_id, ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
                 FROM spatial_bound sb, fact_cell_heatmap fch
                 JOIN dim_ship_type dst ON dst.ship_type_id = fch.ship_type_id
-                WHERE fch.spatial_resolution = 5000
+                WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
                 AND dst.ship_type = ANY(:SHIP_TYPES)
                 AND dst.mobile_type = ANY(:MOBILE_TYPES)
                 AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
