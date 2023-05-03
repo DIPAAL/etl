@@ -12,7 +12,7 @@ SELECT create_reference_table('reference_geometries');
 SELECT create_reference_table('dim_heatmap_type');
 
 -- Distribute the fact tables and trajectory dimension
-SELECT create_distributed_table('dim_trajectory', 'trajectory_sub_id');
+SELECT create_distributed_table('dim_trajectory', 'trajectory_sub_id', shard_count=>'400');
 SELECT create_distributed_table('fact_trajectory', 'trajectory_sub_id', colocate_with=>'dim_trajectory');
 
 SELECT create_distributed_table('fact_cell_5000m', 'partition_id', shard_count=>'1');
