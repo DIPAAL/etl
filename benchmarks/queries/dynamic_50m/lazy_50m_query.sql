@@ -23,8 +23,7 @@ SELECT
     END delta_heading,
     draught,
     delta_cog,
-    stbox (cell_geom, crossing_period) st_bounding_box,
-    partition_id
+    stbox (cell_geom, crossing_period) st_bounding_box
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -43,8 +42,7 @@ FROM (
         endTime,
         delta_cog,
         crossing_period,
-        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds,
-        partition_id
+        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
     FROM (
         SELECT
             *,
@@ -86,8 +84,7 @@ FROM (
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
-                date_trunc('second', endTimestamp (crossing)) endTime,
-                partition_id
+                date_trunc('second', endTimestamp (crossing)) endTime
             FROM (
                 SELECT
                     unnest(sequences (atGeometry (
@@ -131,45 +128,36 @@ FROM (
                     fdt.infer_stopped infer_stopped,
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
-                    fdt.heading heading,
-                    fdt.partition_id
-                FROM (SELECT -- Construction of split trajectories, as seen in "staging_trajectories_split.sql"
-                          t2.*,
-                          sp.partition_id
-                      FROM (SELECT
-                                t.trajectory_sub_id,
-                                t.ship_id,
-                                t.nav_status_id,
-                                t.infer_stopped,
-                                (t.split).point point,
-                                tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), 'linear', true, true) AS trajectory,
-                                t.heading,
-                                t.draught
-                            FROM (SELECT
-                                      ft.trajectory_sub_id,
-                                      ft.ship_id,
-                                      ft.nav_status_id,
-                                      ft.infer_stopped,
-                                      spaceSplit(transform(dt.trajectory, 3034), 5000, bitmatrix := false) split,
-                                      dt.heading heading,
-                                      dt.draught draught
-                                  FROM fact_trajectory ft
-                                  JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
-                                  -- BENCHMARK: Spatial and temporal bounds
-                                  WHERE transform(
-                                      STBOX(
-                                          ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
-                                          SPAN(
-                                              timestamp_from_date_time_id(:start_date,:start_time),
-                                              timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)),
+                    fdt.heading heading
+                FROM (SELECT
+                        t.trajectory_sub_id,
+                        t.ship_id,
+                        t.nav_status_id,
+                        t.infer_stopped,
+                        (t.split).point point,
+                        tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), 'linear', true, true) AS trajectory,
+                        t.heading,
+                        t.draught
+                        FROM (SELECT
+                            ft.trajectory_sub_id,
+                            ft.ship_id,
+                            ft.nav_status_id,
+                            ft.infer_stopped,
+                            spaceSplit(transform(dt.trajectory, 3034), 5000, bitmatrix := false) split,
+                            dt.heading heading,
+                            dt.draught draught
+                            FROM fact_trajectory ft
+                            JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+                            -- BENCHMARK: Spatial and temporal bounds
+                            WHERE transform(
+                                STBOX(
+                                    ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
+                                    SPAN(
+                                        timestamp_from_date_time_id(:start_date,:start_time),
+                                        timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)),
                                       4326) && dt.trajectory
                                   ) t
-                            ) t2
-                          INNER JOIN spatial_partition sp
-                              ON ST_Covers(sp.geom, t2.trajectory::geometry)
-                              AND ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry)
-                              AND ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry)
-                      ) as fdt
+                    ) as fdt
                 JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
                     -- BENCHMARK: Spatial and temporal bounds
                     AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
