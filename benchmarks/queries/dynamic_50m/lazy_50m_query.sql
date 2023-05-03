@@ -23,12 +23,7 @@ SELECT
     END delta_heading,
     draught,
     delta_cog,
-<<<<<<< HEAD
     stbox (cell_geom, crossing_period) st_bounding_box
-=======
-    stbox (cell_geom, crossing_period) st_bounding_box,
-    partition_id
->>>>>>> Added comparison query using the pre-calculated 50m fact cells
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -47,12 +42,7 @@ FROM (
         endTime,
         delta_cog,
         crossing_period,
-<<<<<<< HEAD
         (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
-=======
-        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds,
-        partition_id
->>>>>>> Added comparison query using the pre-calculated 50m fact cells
     FROM (
         SELECT
             *,
@@ -94,12 +84,7 @@ FROM (
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
-<<<<<<< HEAD
                 date_trunc('second', endTimestamp (crossing)) endTime
-=======
-                date_trunc('second', endTimestamp (crossing)) endTime,
-                partition_id
->>>>>>> Added comparison query using the pre-calculated 50m fact cells
             FROM (
                 SELECT
                     unnest(sequences (atGeometry (
