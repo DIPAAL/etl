@@ -41,17 +41,24 @@ class AbstractBenchmarkRunner(ABC):
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
         raise NotImplementedError  # To be implemented by subclasses
 
-    def run_benchmark(self) -> None:
+    def run_benchmark(self) -> None:  # noqa: C901
         """Run the benchmark defined in the benchmark runner."""
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
             for i in range(self._iterations):
-                wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
-                result = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
-                wrap_with_timings(
-                    f'Storing result for benchmark <{name}> iteration <{i+1}>',
-                    lambda: self._store_result(i+1, result)
-                )
+                while True:
+                    try:
+                        wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
+                        result = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
+                        wrap_with_timings(
+                            f'Storing result for benchmark <{name}> iteration <{i+1}>',
+                            lambda: self._store_result(i+1, result)
+                        )
+                        break
+                    except OperationalError as e:
+                        print(f'Error caught during iteration <{i+1}> of benchmark <{name}>. '
+                              f'Re-trying in 5 seconds. Error: <{e}>')
+                        time.sleep(5)
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
