@@ -61,22 +61,11 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         Arguments:
             query_file_name: file name of the query that is being configured
         """
-        area_id_geom_map = {  # xmin, ymin, xmax, ymax
-            111: (3990401.028030803, 3207418.9322399576, 4006203.35118328, 3218920.138335524),
-            6: (4068764.0226458698, 3158829.822705281, 4070546.425170807, 3159780.700336136),
-            12: (4171444.567003976, 3187256.2165073296, 4174494.3510139505, 3189256.9809509492),
-            126: (3993510.1855945783, 3341819.0227817534, 4004818.196538742, 3349485.39323123),
-            46: (3916762.466170692, 3286466.0121565587, 3918032.2848470374, 3287840.0084120547),
-            105: (3774249.7169026784, 3349361.8573706066, 4117821.215225073, 3579328.1464176113)
+        areas = {  # xmin, ymin, xmax, ymax (in ESPG:3034)
+            'south_west_lesoe': (4069967.878424203, 3342436.4153025905, 4084991.6610816685, 3353365.3303206693),
+            'near_heligoland': (3804735.697192613, 3046556.109433946, 3886739.220561706, 3134232.6485297997)
         }
-        area_id_name_map = {
-            111: 'horsens_fjord',
-            6: 'korsoer',
-            12: 'oeresundsbroen',
-            126: 'limfjorden',
-            46: 'venoe_sund_sneavring',
-            105: 'skagerak'
-        }
+
         duration_name_timestamp_map = {  # start, end
             '1_day': (datetime(year=2021, month=5, day=4),
                       datetime(year=2021, month=5, day=4, hour=23, minute=59, second=59)),
@@ -88,12 +77,12 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
         configurations = {}
         for duration_name, (start, end) in duration_name_timestamp_map.items():
-            for area_id, area_name in area_id_name_map.items():
+            for area_name, area_bounds in areas.items():
                 name = self._calculate_configuration_name(
                     area_name, duration_name,
                     'lazy' if query_file_name.startswith('lazy') else 'stored'
                 )
-                xmin, ymin, xmax, ymax = (area_id_geom_map[area_id])
+                xmin, ymin, xmax, ymax = (area_bounds)
                 configurations[name] = LazyBenchmarkConfiguration(
                     xmin, ymin, xmax, ymax, start, end
                 )
