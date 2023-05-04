@@ -63,12 +63,14 @@ class AbstractBenchmarkRunner(ABC):
 
     def _run_garbage_queries(self) -> None:
         """Run defined garbage queries."""
-        garbage_queries = [val for _, val in self._get_queries_in_folder(self._garbage_queries_folder).items()]
+        garbage_queries = self._get_queries_in_folder(self._garbage_queries_folder)
+        longest_key = len(max(garbage_queries.keys(), key=len))
+        garbage_queries = [(name[:-4], val) for name, val in garbage_queries.items()]
         random_params_query = get_first_query_in_file('benchmarks/queries/misc/random_garbage_parameters.sql')
         for _ in range(self._garbage_queries_iterations):
             random.shuffle(garbage_queries)
             for i in range(len(garbage_queries)):
-                query = garbage_queries[i]
+                name, query = garbage_queries[i]
                 random_parameters = self._conn.execute(text(random_params_query), parameters={
                     'period_start_timestamp': self._garbage_start_period_timestamp,
                     'period_end_timestamp': self._garbage_end_period_timestamp
@@ -81,7 +83,7 @@ class AbstractBenchmarkRunner(ABC):
                 }
 
                 query = query.format(CELL_SIZE=random_parameters['spatial_resolution'])
-                wrap_with_timings(f'   Executing garbage query <{i+1}>',
+                wrap_with_timings(f'   Executing garbage query <{i+1}> <{name.ljust(longest_key - 4)}>',
                                   lambda: self._conn.execute(text(query), parameters=random_parameters))
 
     def _clear_cache(self) -> None:
