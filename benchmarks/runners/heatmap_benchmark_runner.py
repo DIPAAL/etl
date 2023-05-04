@@ -123,9 +123,10 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         self._conn.execute(
             text("""
                 INSERT INTO benchmark_results
-                (test_run_id, query_name, iteration, explain, execution_time_ms)
-                VALUES (:id, :name, :it, :result, :time)
+                (test_run_id, type, query_name, iteration, explain, execution_time_ms)
+                VALUES (:id, :type, :name, :it, :result, :time)
             """),
             {'id': result.benchmark_id, 'name': result.benchmark_name,
-             'it': iteration, 'result': data, 'time': result.time_taken}
+             'it': iteration, 'result': data, 'time': result.time_taken,
+             'type': result.benchmark_type}
         )

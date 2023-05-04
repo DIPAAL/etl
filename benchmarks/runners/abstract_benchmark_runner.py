@@ -9,6 +9,7 @@ from etl.helper_functions import get_config, wrap_with_timings, get_connection, 
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
 from datetime import datetime
+from psycopg2.errors import OperationalError
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
@@ -108,8 +109,14 @@ class AbstractBenchmarkRunner(ABC):
 
     def _get_next_test_id(self) -> int:
         """Fetch the next benchmark id from data warehouse."""
-        result_cursor = self._conn.execute(text("SELECT nextval('test_run_id_seq');"))
-        return result_cursor.fetchone()[0]
+        while True:
+            try:
+                result_cursor = self._conn.execute(text("SELECT nextval('test_run_id_seq');"))
+                return result_cursor.fetchone()[0]
+            except OperationalError as e:
+                print(f'Caught error while fetching next test id, re-trying in 5 seconds. Error: <{e}>')
+                time.sleep(5)
+
 
     def _get_queries_in_folder(self, folder: str) -> Dict[str, str]:
         """
