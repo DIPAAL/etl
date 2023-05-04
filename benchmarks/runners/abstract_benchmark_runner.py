@@ -1,15 +1,14 @@
 """Module containing the abstract benchmark runner which all benchmark runners inherit from."""
 import os
 import random
-import time
 from abc import ABC, abstractmethod
 from typing import Dict, Callable, TypeVar
 from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes, \
-    get_first_query_in_file, extract_smart_date_id_from_date, extract_smart_time_id_from_date
+    get_first_query_in_file, extract_smart_date_id_from_date, extract_smart_time_id_from_date, \
+    wrap_with_retry_and_timing
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
 from datetime import datetime
-from psycopg2.errors import OperationalError
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
@@ -28,7 +27,7 @@ class AbstractBenchmarkRunner(ABC):
             iterations: how many times should each query in the benchmark be repeated (default: 10)
         """
         self._config = get_config()
-        self._setup_benchmark_connection()
+        wrap_with_retry_and_timing('Setup benchmarking connection', lambda: self._setup_benchmark_connection())
         self._garbage_queries_iterations = 3
         self._garbage_start_period_timestamp = datetime(year=2021, month=1, day=1)
         self._garbage_end_period_timestamp = datetime(year=2022, month=1, day=1)
@@ -46,25 +45,14 @@ class AbstractBenchmarkRunner(ABC):
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
             for i in range(self._iterations):
-                while True:
-                    try:
-                        wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
-                        result = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
-                        wrap_with_timings(
-                            f'Storing result for benchmark <{name}> iteration <{i+1}>',
-                            lambda: self._store_result(i+1, result)
-                        )
-                        break
-                    except OperationalError as e:
-                        print(f'Error caught during iteration <{i+1}> of benchmark <{name}>. '
-                              f'Re-trying in 5 seconds. Error: <{e}>')
-                        time.sleep(5)
+                wrap_with_retry_and_timing('Benchmark iteration',
+                                           lambda: self._run_benchmark_iteration(name, i+1, executable))
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
         # If run locally do not attempt to clear OS cache
         if not self._local_run:
-            wrap_with_timings('Clearing os cache', lambda: self._clear_cache())
+            wrap_with_retry_and_timing('Clearing os cache', lambda: self._clear_cache())
 
         wrap_with_timings('Garbage queries', lambda: self._run_garbage_queries())
 
@@ -93,26 +81,35 @@ class AbstractBenchmarkRunner(ABC):
                 wrap_with_timings(f'   Executing garbage query <{i+1}> <{name.ljust(longest_key - 4)}>',
                                   lambda: self._conn.execute(text(query), parameters=random_parameters))
 
+    def _run_benchmark_iteration(self, name: str, iteration: int, executable: Callable[[], BRT]) -> None:
+        """
+        Execute the iteration of a benchmark.
+
+        Arguments:
+            name: name of the benchmark
+            iteration: number indicating the current iteration
+            executable: execute to run the benchmark
+        """
+        wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
+        result = wrap_with_timings(f'Running benchmark <{name}> iteration <{iteration}> ', executable)
+        wrap_with_timings(
+            f'Storing result for benchmark <{name}> iteration <{iteration}>',
+            lambda: self._store_result(iteration, result)
+        )
+
     def _clear_cache(self) -> None:
         """
         Clear the OS cache of the Citus cluster.
 
         NOTE: This method should never be run locally.
         """
-        self._conn.close()
-        while True:
-            try:
-                exit_code = os.system('bash benchmarks/clear_cache.sh')
-                if exit_code != 0:
-                    raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
+        if not self._conn.closed:
+            self._conn.close()
+        exit_code = os.system('bash benchmarks/clear_cache.sh')
+        if exit_code != 0:
+            raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
 
-                self._setup_benchmark_connection()
-                break
-            except CacheClearingError as e:
-                print('Exception raised while clearing cache'
-                      f' trying again in 5 seconds <{e}>')
-                time.sleep(5)
-                continue
+        wrap_with_retry_and_timing('Setup benchmarking connection', lambda: self._setup_benchmark_connection())
 
     @abstractmethod
     def _store_result(self, iteration: int, result: BRT) -> None:
@@ -120,13 +117,8 @@ class AbstractBenchmarkRunner(ABC):
 
     def _get_next_test_id(self) -> int:
         """Fetch the next benchmark id from data warehouse."""
-        while True:
-            try:
-                result_cursor = self._conn.execute(text("SELECT nextval('test_run_id_seq');"))
-                return result_cursor.fetchone()[0]
-            except OperationalError as e:
-                print(f'Caught error while fetching next test id, re-trying in 5 seconds. Error: <{e}>')
-                time.sleep(5)
+        result_cursor = self._conn.execute(text("SELECT nextval('test_run_id_seq');"))
+        return result_cursor.fetchone()[0]
 
     def _get_queries_in_folder(self, folder: str) -> Dict[str, str]:
         """
@@ -153,27 +145,8 @@ class AbstractBenchmarkRunner(ABC):
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
 
-    def _setup_benchmark_connection(self, retry_interval_sec: int = 5, max_num_retries: int = -1) -> None:  # noqa: C901
-        """
-        Set up connection for running benchmarks.
-
-        Arguments:
-            retry_interval_sec: amount of seconds to wait before re-trying to connect to data warehouse (default: 5)
-            man_num_retries: amount of failed retries before stopping, negative value = indefinite (default: -1)
-        """
-        fail_cnt = 0
-        while True:
-            try:
-                self._conn = get_connection(self._config, auto_commit_connection=True)
-                # Enable explaining all tasks if not already set.
-                self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
-                break
-            except Exception as e:
-                fail_cnt += 1
-                print(f'Failed attempt <{fail_cnt}> at setting up connection to data warehouse, with exception <{e}>.')
-                if max_num_retries < 0 or fail_cnt < max_num_retries:
-                    print(f'Re-trying to establish connection to data warehouse in <{retry_interval_sec}> seconds')
-                    time.sleep(retry_interval_sec)
-                else:
-                    # Last retry reached, re-raise exception
-                    raise e
+    def _setup_benchmark_connection(self) -> None:
+        """Set up connection for running benchmarks."""
+        self._conn = get_connection(self._config, auto_commit_connection=True)
+        # Enable explaining all tasks if not already set.
+        self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
