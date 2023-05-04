@@ -16,9 +16,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __init__(self) -> None:
         """Initialize lazy 50m benchmark runner."""
-        super().__init__(
-            'benchmarks/garbage_queries/dynamic_50m'
-        )
+        super().__init__()
         self._queries_folder = 'benchmarks/queries/dynamic_50m'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
