@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Dict, Callable, TypeVar
 from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes, \
-    get_first_query_in_file, extract_smart_date_id_from_date
+    get_first_query_in_file, extract_smart_date_id_from_date, extract_smart_time_id_from_date
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
 from datetime import datetime
@@ -75,7 +75,9 @@ class AbstractBenchmarkRunner(ABC):
                 }).fetchone()._asdict()
                 random_parameters = random_parameters | {
                     'start_date_id': extract_smart_date_id_from_date(random_parameters['start_time']),
-                    'end_date_id': extract_smart_date_id_from_date(random_parameters['end_time'])
+                    'end_date_id': extract_smart_date_id_from_date(random_parameters['end_time']),
+                    'start_time_id': extract_smart_time_id_from_date(random_parameters['start_time']),
+                    'end_time_id': extract_smart_time_id_from_date(random_parameters['end_time'])
                 }
 
                 query = query.format(CELL_SIZE=random_parameters['spatial_resolution'])
@@ -116,7 +118,6 @@ class AbstractBenchmarkRunner(ABC):
             except OperationalError as e:
                 print(f'Caught error while fetching next test id, re-trying in 5 seconds. Error: <{e}>')
                 time.sleep(5)
-
 
     def _get_queries_in_folder(self, folder: str) -> Dict[str, str]:
         """

@@ -154,6 +154,18 @@ def extract_date_from_smart_date_id(smart_date_id: int) -> datetime:
     return datetime.strptime(str(smart_date_id), '%Y%m%d')
 
 
+def extract_smart_time_id_from_date(date: datetime) -> int:
+    """
+    Extract the smart time id from a given date.
+
+    Keyword arguments:
+        date: the date to extract the smart time id from
+    """
+    if pd.isna(date):
+        return UNKNOWN_INT_VALUE
+    return (date.hour * 10000) + (date.minute * 100) + date.second
+
+
 config = None  # Global configuration variable
 
 

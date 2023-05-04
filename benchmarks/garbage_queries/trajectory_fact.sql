@@ -5,7 +5,11 @@ WITH q_window(box) AS (
             (SELECT span(timestamptz :start_time, timestamptz :end_time))
         ) box
     )
-SELECT DISTINCT(ds.*)
+SELECT
+    dt.*,
+    ft.*,
+    ds.*,
+    dst.*
 FROM q_window
 INNER JOIN dim_trajectory dt ON atStBox(dt.trajectory, SetSRID(q_window.box,4326)) IS NOT NULL
 INNER JOIN fact_trajectory ft ON dt.date_id = ft.start_date_id AND dt.trajectory_sub_id = ft.trajectory_sub_id
