@@ -15,7 +15,8 @@ SELECT
   i2.end_time AS end_time,
   rg.geom AS geom,
   rg.geom_geodetic as geom_geodetic,
-  (SELECT array_agg(ship_type) FROM dim_ship_type ORDER BY random() LIMIT floor(random() * 8 + 2)::integer) AS ship_types -- random between 2 and 10
+  (SELECT array_agg(ship_type) FROM dim_ship_type ORDER BY random() LIMIT floor(random() * 8 + 2)::integer) AS ship_types, -- random between 2 and 10
+  (SELECT slug FROM dim_heatmap_type ORDER BY random() LIMIT 1) AS heatmap_slug
 FROM reference_geometries rg, (
     SELECT
         i1.start_time,

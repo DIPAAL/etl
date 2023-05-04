@@ -3,11 +3,10 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
-from typing import Dict, List, Callable, Any
+from etl.helper_functions import measure_time, wrap_with_retry_and_timing
+from typing import Dict, List, Callable
 from sqlalchemy import text
 from benchmarks.decorators.benchmark import benchmark_class
-from datetime import datetime
 
 
 @benchmark_class(name='HEATMAP')
@@ -16,9 +15,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __init__(self) -> None:
         """Initialize cell benchmark runner."""
-        super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/heatmap'
-        )
+        super().__init__()
         self._query_folder = 'benchmarks/queries/heatmap'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
@@ -42,14 +39,15 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """
         configured_benchmarks = {}
         for conf_name, config in configurations.items():
-            benchmark_id = self._get_next_test_id()
+            benchmark_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
             params = config.get_parameters()
             configured_benchmarks[conf_name] = \
                 lambda id=benchmark_id, params=params, benchmark_query=query, benchmark_name=conf_name: \
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: self._conn.execute(text(benchmark_query), parameters=params)),
                     id,
-                    benchmark_name
+                    benchmark_name,
+                    'heatmap'
                  )
         return configured_benchmarks
 
@@ -76,8 +74,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             95: 'storebealt',
             148: 'whole_denmark'
         }
-        ship_types = [['Cargo'], ['Pleasure']]
-        mobile_types = [['Class A'], ['Class B'], ['Class A', 'Class B']]
+        ship_types = [['Cargo', 'Pleasure', 'Fishing']]
+        mobile_types = [['Class A', 'Class B']]
         file_name = query_file_name[:-4] if query_file_name.endswith('.sql') else query_file_name
         configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
@@ -125,24 +123,10 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         self._conn.execute(
             text("""
                 INSERT INTO benchmark_results
-                (test_run_id, query_name, iteration, explain, execution_time_ms)
-                VALUES (:id, :name, :it, :result, :time)
+                (test_run_id, type, query_name, iteration, explain, execution_time_ms)
+                VALUES (:id, :type, :name, :it, :result, :time)
             """),
             {'id': result.benchmark_id, 'name': result.benchmark_name,
-             'it': iteration, 'result': data, 'time': result.time_taken}
+             'it': iteration, 'result': data, 'time': result.time_taken,
+             'type': result.benchmark_type}
         )
-
-    def _parameterise_garbage(self) -> Dict[str, Any]:
-        """Create parameters for garbage query."""
-        random_bounds_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
-        start_timestamp = datetime(year=2021, month=1, day=1)
-        end_timestamp = datetime(year=2021, month=12, day=31)
-        result_row = self._conn.execute(text(random_bounds_query), parameters={
-            'period_start_timestamp': start_timestamp,
-            'period_end_timestamp': end_timestamp
-        }).fetchone()
-
-        return result_row._asdict() | {
-            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
-            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
-        }

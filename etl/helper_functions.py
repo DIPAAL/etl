@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, Connection, Engine, text
 import pandas as pd
 import configparser
 import os
+import time
 from etl.audit.logger import global_audit_logger as gal, TIMINGS_KEY
 from etl.constants import UNKNOWN_INT_VALUE, SqlalchemyIsolationLevel
 
@@ -60,6 +61,32 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     result = func()
     end = perf_counter()
     return result, end - start
+
+
+def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_seconds: int = 5, retries: int = -1) \
+        -> T:
+    """
+    Wrap and execute a given function for a number of retries and print the time it took the function to execute.
+
+    Arguments:
+        name: identifier for the function execution, used to identify it in the output
+        func: the zero argument function to wrap
+        retry_interval_seconds: amount of seconds to wait before re-trying to connect to data warehouse (default: 5)
+        retries: amount of failed retries before stopping, negative value = indefinite (default: -1)
+    """
+    retry_counter = 0
+    while True:
+        try:
+            return wrap_with_timings(name, func)
+        except Exception as e:
+            if retries >= 0 and retry_counter >= retries:
+                print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. No more re-tries. '
+                      f'Re-raising exception: <{e}>')
+                raise e
+            print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. Re-trying in '
+                  f'<{retry_interval_seconds}> seconds. Exception: <{e}>')
+            retry_counter = retry_counter + 1
+            time.sleep(retry_interval_seconds)
 
 
 def get_connection(config, auto_commit_connection: bool = False, database: str | None = None, host: str | None = None,
@@ -152,6 +179,18 @@ def extract_date_from_smart_date_id(smart_date_id: int) -> datetime:
         smart_date_id: the smart date id to extract the date from
     """
     return datetime.strptime(str(smart_date_id), '%Y%m%d')
+
+
+def extract_smart_time_id_from_date(date: datetime) -> int:
+    """
+    Extract the smart time id from a given date.
+
+    Keyword arguments:
+        date: the date to extract the smart time id from
+    """
+    if pd.isna(date):
+        return UNKNOWN_INT_VALUE
+    return (date.hour * 10000) + (date.minute * 100) + date.second
 
 
 config = None  # Global configuration variable

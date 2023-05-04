@@ -4,10 +4,9 @@ from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResu
 from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchmarkConfigurationType
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
-from typing import Any, Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
+from typing import Dict, List, Tuple, Callable
+from etl.helper_functions import measure_time, wrap_with_retry_and_timing
 from sqlalchemy import text
-from datetime import datetime
 
 SINGLE_PARTITION_ID = 152
 SMALL_AREA_ID = 117
@@ -21,9 +20,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __init__(self) -> None:
         """Initialize a cell benchmark runner."""
-        super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/cell'
-        )
+        super().__init__()
         self._queries_folder = 'benchmarks/queries/cell'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable]:
@@ -56,7 +53,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         configured_benchmarks = {}
         for name, config in configurations.items():
             params = config.get_parameters()
-            benchmark_id = self._get_next_test_id()
+            benchmark_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
             benchmark_query = config.format_query(query)
             benchmark_query = f'{self._query_prefix} \n{benchmark_query}'
 
@@ -66,7 +63,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: (self._conn.execute(text(benchmark_query), parameters=params))),
                     benchmark_id,
-                    name
+                    name,
+                    'cell'
                 )
         return configured_benchmarks
 
@@ -164,18 +162,3 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                                                CellBenchmarkConfigurationType.TRAJECTORY)
 
         return trajectory_configurations
-
-    def _parameterise_garbage(self) -> Dict[str, Any]:
-        """Create parameters for garbage query."""
-        random_bounds_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
-        start_timestamp = datetime(year=2021, month=1, day=1)
-        end_timestamp = datetime(year=2021, month=12, day=31)
-        result_row = self._conn.execute(text(random_bounds_query), parameters={
-            'period_start_timestamp': start_timestamp,
-            'period_end_timestamp': end_timestamp
-        }).fetchone()
-
-        return result_row._asdict() | {
-            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
-            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
-        }

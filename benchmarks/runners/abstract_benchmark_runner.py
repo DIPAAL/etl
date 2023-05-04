@@ -1,12 +1,14 @@
 """Module containing the abstract benchmark runner which all benchmark runners inherit from."""
 import os
 import random
-import time
 from abc import ABC, abstractmethod
-from typing import Dict, Callable, TypeVar, Any
-from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes
+from typing import Dict, Callable, TypeVar
+from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes, \
+    get_first_query_in_file, extract_smart_date_id_from_date, extract_smart_time_id_from_date, \
+    wrap_with_retry_and_timing
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
+from datetime import datetime
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
@@ -16,21 +18,21 @@ BRT = TypeVar('BRT')
 class AbstractBenchmarkRunner(ABC):
     """Abstract superclass that all benchmark runners should inherit from."""
 
-    def __init__(self, garbage_queries_folder: str, garbage_queries_per_iteration: int = 10, iterations: int = 10) \
+    def __init__(self, iterations: int = 10) \
             -> None:
         """
         Initialize an abstract benchmark runner.
 
         Arguments:
-            garbage_queries_folder: path to folder containing queries for prewarming the OS cache
-            garbage_queries_per_iteration: how many queries should be run to prewarm cache (default: 10)
             iterations: how many times should each query in the benchmark be repeated (default: 10)
         """
         self._config = get_config()
-        self._setup_benchmark_connection()
-        self._garbage_queries_per_iteration = garbage_queries_per_iteration
+        wrap_with_retry_and_timing('Setup benchmarking connection', lambda: self._setup_benchmark_connection())
+        self._garbage_queries_iterations = 3
+        self._garbage_start_period_timestamp = datetime(year=2021, month=1, day=1)
+        self._garbage_end_period_timestamp = datetime(year=2022, month=1, day=1)
         self._iterations = iterations
-        self._garbage_queries_folder = garbage_queries_folder
+        self._garbage_queries_folder = 'benchmarks/garbage_queries'
         self._local_run = True if os.getenv('tag', 'local_dev') == 'local_dev' else False
         self._available_resolutions = get_staging_cell_sizes()
 
@@ -38,39 +40,62 @@ class AbstractBenchmarkRunner(ABC):
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
         raise NotImplementedError  # To be implemented by subclasses
 
-    def _parameterise_garbage(self) -> Dict[str, Any]:
-        raise NotImplementedError  # To be implemented by subclasses
-
     def run_benchmark(self) -> None:
         """Run the benchmark defined in the benchmark runner."""
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
             for i in range(self._iterations):
-                wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
-                result = wrap_with_timings(f'Running benchmark <{name}> iteration <{i+1}> ', executable)
-                wrap_with_timings(
-                    f'Storing result for benchmark <{name}> iteration <{i+1}>',
-                    lambda: self._store_result(i+1, result)
-                )
+                wrap_with_retry_and_timing('Benchmark iteration',
+                                           lambda: self._run_benchmark_iteration(name, i+1, executable))
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
         # If run locally do not attempt to clear OS cache
         if not self._local_run:
-            wrap_with_timings('Clearing os cache', lambda: self._clear_cache())
+            wrap_with_retry_and_timing('Clearing os cache', lambda: self._clear_cache())
 
-        print(f'Running {self._garbage_queries_per_iteration} garbage queries before next iteration')
+        wrap_with_timings('Garbage queries', lambda: self._run_garbage_queries())
+
+    def _run_garbage_queries(self) -> None:
+        """Run defined garbage queries."""
         garbage_queries = self._get_queries_in_folder(self._garbage_queries_folder)
-        random_query_keys = random.choices(list(garbage_queries.keys()), k=self._garbage_queries_per_iteration)
-        for i in range(len(random_query_keys)):
-            query = garbage_queries[random_query_keys[i]]
-            parameters = self._parameterise_garbage()
-            cell_size = parameters['spatial_resolution'] if 'spatial_resolution' in parameters.keys() \
-                else random.choice(self._available_resolutions)
-            query = query.format(CELL_SIZE=cell_size)
-            wrap_with_timings(f'   Executing garbage query <{i+1}>',
-                              lambda: self._conn.execute(text(query), parameters=parameters))
-        print('Finished running garbage queries')
+        longest_key = len(max(garbage_queries.keys(), key=len))
+        garbage_queries = [(name[:-4], val) for name, val in garbage_queries.items()]
+        random_params_query = get_first_query_in_file('benchmarks/queries/misc/random_garbage_parameters.sql')
+        for _ in range(self._garbage_queries_iterations):
+            random.shuffle(garbage_queries)
+            for i in range(len(garbage_queries)):
+                name, query = garbage_queries[i]
+                random_parameters = self._conn.execute(text(random_params_query), parameters={
+                    'period_start_timestamp': self._garbage_start_period_timestamp,
+                    'period_end_timestamp': self._garbage_end_period_timestamp
+                }).fetchone()._asdict()
+                random_parameters = random_parameters | {
+                    'start_date_id': extract_smart_date_id_from_date(random_parameters['start_time']),
+                    'end_date_id': extract_smart_date_id_from_date(random_parameters['end_time']),
+                    'start_time_id': extract_smart_time_id_from_date(random_parameters['start_time']),
+                    'end_time_id': extract_smart_time_id_from_date(random_parameters['end_time'])
+                }
+
+                query = query.format(CELL_SIZE=random_parameters['spatial_resolution'])
+                wrap_with_timings(f'   Executing garbage query <{i+1}> <{name.ljust(longest_key - 4)}>',
+                                  lambda: self._conn.execute(text(query), parameters=random_parameters))
+
+    def _run_benchmark_iteration(self, name: str, iteration: int, executable: Callable[[], BRT]) -> None:
+        """
+        Execute the iteration of a benchmark.
+
+        Arguments:
+            name: name of the benchmark
+            iteration: number indicating the current iteration
+            executable: execute to run the benchmark
+        """
+        wrap_with_timings('Cache prewarming', lambda: self._prewarm_cache())
+        result = wrap_with_timings(f'Running benchmark <{name}> iteration <{iteration}> ', executable)
+        wrap_with_timings(
+            f'Storing result for benchmark <{name}> iteration <{iteration}>',
+            lambda: self._store_result(iteration, result)
+        )
 
     def _clear_cache(self) -> None:
         """
@@ -78,20 +103,13 @@ class AbstractBenchmarkRunner(ABC):
 
         NOTE: This method should never be run locally.
         """
-        self._conn.close()
-        while True:
-            try:
-                exit_code = os.system('bash benchmarks/clear_cache.sh')
-                if exit_code != 0:
-                    raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
+        if not self._conn.closed:
+            self._conn.close()
+        exit_code = os.system('bash benchmarks/clear_cache.sh')
+        if exit_code != 0:
+            raise CacheClearingError(exit_code, f'Clearing cache failed! with exit code <{exit_code}>')
 
-                self._setup_benchmark_connection()
-                break
-            except CacheClearingError as e:
-                print('Exception raised while clearing cache'
-                      f' trying again in 5 seconds <{e}>')
-                time.sleep(5)
-                continue
+        wrap_with_retry_and_timing('Setup benchmarking connection', lambda: self._setup_benchmark_connection())
 
     @abstractmethod
     def _store_result(self, iteration: int, result: BRT) -> None:
@@ -127,27 +145,8 @@ class AbstractBenchmarkRunner(ABC):
 
         return {f: open(os.path.join(folder, f), 'r').read() for f in files}
 
-    def _setup_benchmark_connection(self, retry_interval_sec: int = 5, max_num_retries: int = -1) -> None:  # noqa: C901
-        """
-        Set up connection for running benchmarks.
-
-        Arguments:
-            retry_interval_sec: amount of seconds to wait before re-trying to connect to data warehouse (default: 5)
-            man_num_retries: amount of failed retries before stopping, negative value = indefinite (default: -1)
-        """
-        fail_cnt = 0
-        while True:
-            try:
-                self._conn = get_connection(self._config, auto_commit_connection=True)
-                # Enable explaining all tasks if not already set.
-                self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
-                break
-            except Exception as e:
-                fail_cnt += 1
-                print(f'Failed attempt <{fail_cnt}> at setting up connection to data warehouse, with exception <{e}>.')
-                if max_num_retries < 0 or fail_cnt < max_num_retries:
-                    print(f'Re-trying to establish connection to data warehouse in <{retry_interval_sec}> seconds')
-                    time.sleep(retry_interval_sec)
-                else:
-                    # Last retry reached, re-raise exception
-                    raise e
+    def _setup_benchmark_connection(self) -> None:
+        """Set up connection for running benchmarks."""
+        self._conn = get_connection(self._config, auto_commit_connection=True)
+        # Enable explaining all tasks if not already set.
+        self._conn.execute(text('SET citus.explain_all_tasks = 1;'))
