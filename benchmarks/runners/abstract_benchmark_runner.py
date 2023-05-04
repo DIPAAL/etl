@@ -40,7 +40,7 @@ class AbstractBenchmarkRunner(ABC):
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
         raise NotImplementedError  # To be implemented by subclasses
 
-    def run_benchmark(self) -> None:  # noqa: C901
+    def run_benchmark(self) -> None:
         """Run the benchmark defined in the benchmark runner."""
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
