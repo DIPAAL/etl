@@ -76,8 +76,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             95: 'storebealt',
             148: 'whole_denmark'
         }
-        ship_types = [['Cargo'], ['Pleasure']]
-        mobile_types = [['Class A'], ['Class B'], ['Class A', 'Class B']]
+        ship_types = [['Cargo', 'Pleasure', 'Fishing']]
+        mobile_types = [['Class A', 'Class B']]
         file_name = query_file_name[:-4] if query_file_name.endswith('.sql') else query_file_name
         configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
