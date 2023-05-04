@@ -29,7 +29,7 @@ class AbstractBenchmarkRunner(ABC):
         """
         self._config = get_config()
         self._setup_benchmark_connection()
-        self._garbage_queries_iterations = 4
+        self._garbage_queries_iterations = 3
         self._garbage_start_period_timestamp = datetime(year=2021, month=1, day=1)
         self._garbage_end_period_timestamp = datetime(year=2021, month=12, day=31)
         self._iterations = iterations
