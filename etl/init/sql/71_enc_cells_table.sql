@@ -22,3 +22,5 @@ CREATE INDEX enc_country_idx ON enc (country);
 CREATE INDEX slug ON enc (scale);
 
 CREATE INDEX enc_cat_idx ON enc (cat);
+
+SELECT create_reference_table('enc');
