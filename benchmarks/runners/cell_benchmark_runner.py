@@ -5,7 +5,7 @@ from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchm
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time
+from etl.helper_functions import measure_time, wrap_with_retry_and_timing
 from sqlalchemy import text
 
 SINGLE_PARTITION_ID = 152
@@ -53,7 +53,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         configured_benchmarks = {}
         for name, config in configurations.items():
             params = config.get_parameters()
-            benchmark_id = self._get_next_test_id()
+            benchmark_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
             benchmark_query = config.format_query(query)
             benchmark_query = f'{self._query_prefix} \n{benchmark_query}'
 

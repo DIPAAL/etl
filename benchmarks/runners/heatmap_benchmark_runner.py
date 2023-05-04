@@ -3,7 +3,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time
+from etl.helper_functions import measure_time, wrap_with_retry_and_timing
 from typing import Dict, List, Callable
 from sqlalchemy import text
 from benchmarks.decorators.benchmark import benchmark_class
@@ -39,7 +39,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         """
         configured_benchmarks = {}
         for conf_name, config in configurations.items():
-            benchmark_id = self._get_next_test_id()
+            benchmark_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
             params = config.get_parameters()
             configured_benchmarks[conf_name] = \
                 lambda id=benchmark_id, params=params, benchmark_query=query, benchmark_name=conf_name: \
