@@ -4,10 +4,9 @@ from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResu
 from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchmarkConfigurationType
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
-from typing import Any, Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
+from typing import Dict, List, Tuple, Callable
+from etl.helper_functions import measure_time
 from sqlalchemy import text
-from datetime import datetime
 
 SINGLE_PARTITION_ID = 152
 SMALL_AREA_ID = 117
@@ -163,18 +162,3 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                                                CellBenchmarkConfigurationType.TRAJECTORY)
 
         return trajectory_configurations
-
-    def _parameterise_garbage(self) -> Dict[str, Any]:
-        """Create parameters for garbage query."""
-        random_bounds_query = get_first_query_in_file('benchmarks/queries/misc/random_bounds.sql')
-        start_timestamp = datetime(year=2021, month=1, day=1)
-        end_timestamp = datetime(year=2021, month=12, day=31)
-        result_row = self._conn.execute(text(random_bounds_query), parameters={
-            'period_start_timestamp': start_timestamp,
-            'period_end_timestamp': end_timestamp
-        }).fetchone()
-
-        return result_row._asdict() | {
-            'start_date_id': extract_smart_date_id_from_date(start_timestamp),
-            'end_date_id': extract_smart_date_id_from_date(end_timestamp)
-        }
