@@ -21,9 +21,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __init__(self) -> None:
         """Initialize a cell benchmark runner."""
-        super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/cell'
-        )
+        super().__init__()
         self._queries_folder = 'benchmarks/queries/cell'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable]:

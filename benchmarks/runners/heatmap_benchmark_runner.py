@@ -16,9 +16,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
     def __init__(self) -> None:
         """Initialize cell benchmark runner."""
-        super().__init__(
-            garbage_queries_folder='benchmarks/garbage_queries/heatmap'
-        )
+        super().__init__()
         self._query_folder = 'benchmarks/queries/heatmap'
 
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:

@@ -2,7 +2,7 @@ WITH q_window(box) AS (
     SELECT
         STBox(
             geometry :geom_geodetic,
-            (SELECT span(timestamptz :start_time, timestamptz :start_time + interval '10 days'))
+            (SELECT span(timestamptz :start_time, timestamptz :end_time))
         ) box
     )
 SELECT DISTINCT(ds.*)

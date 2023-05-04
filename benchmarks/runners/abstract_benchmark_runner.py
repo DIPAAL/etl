@@ -3,10 +3,12 @@ import os
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Callable, TypeVar, Any
-from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes
+from typing import Dict, Callable, TypeVar
+from etl.helper_functions import get_config, wrap_with_timings, get_connection, get_staging_cell_sizes, \
+    get_first_query_in_file, extract_smart_date_id_from_date
 from benchmarks.errors.cache_clearing_error import CacheClearingError
 from sqlalchemy import text
+from datetime import datetime
 
 
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
@@ -16,29 +18,26 @@ BRT = TypeVar('BRT')
 class AbstractBenchmarkRunner(ABC):
     """Abstract superclass that all benchmark runners should inherit from."""
 
-    def __init__(self, garbage_queries_folder: str, garbage_queries_per_iteration: int = 10, iterations: int = 10) \
+    def __init__(self, iterations: int = 10) \
             -> None:
         """
         Initialize an abstract benchmark runner.
 
         Arguments:
-            garbage_queries_folder: path to folder containing queries for prewarming the OS cache
-            garbage_queries_per_iteration: how many queries should be run to prewarm cache (default: 10)
             iterations: how many times should each query in the benchmark be repeated (default: 10)
         """
         self._config = get_config()
         self._setup_benchmark_connection()
-        self._garbage_queries_per_iteration = garbage_queries_per_iteration
+        self._garbage_queries_iterations = 4
+        self._garbage_start_period_timestamp = datetime(year=2021, month=1, day=1)
+        self._garbage_end_period_timestamp = datetime(year=2021, month=12, day=31)
         self._iterations = iterations
-        self._garbage_queries_folder = garbage_queries_folder
+        self._garbage_queries_folder = 'benchmarks/garbage_queries'
         self._local_run = True if os.getenv('tag', 'local_dev') == 'local_dev' else False
         self._available_resolutions = get_staging_cell_sizes()
 
     @abstractmethod
     def _get_benchmarks_to_run(self) -> Dict[str, Callable[[], BRT]]:
-        raise NotImplementedError  # To be implemented by subclasses
-
-    def _parameterise_garbage(self) -> Dict[str, Any]:
         raise NotImplementedError  # To be implemented by subclasses
 
     def run_benchmark(self) -> None:
@@ -59,18 +58,28 @@ class AbstractBenchmarkRunner(ABC):
         if not self._local_run:
             wrap_with_timings('Clearing os cache', lambda: self._clear_cache())
 
-        print(f'Running {self._garbage_queries_per_iteration} garbage queries before next iteration')
-        garbage_queries = self._get_queries_in_folder(self._garbage_queries_folder)
-        random_query_keys = random.choices(list(garbage_queries.keys()), k=self._garbage_queries_per_iteration)
-        for i in range(len(random_query_keys)):
-            query = garbage_queries[random_query_keys[i]]
-            parameters = self._parameterise_garbage()
-            cell_size = parameters['spatial_resolution'] if 'spatial_resolution' in parameters.keys() \
-                else random.choice(self._available_resolutions)
-            query = query.format(CELL_SIZE=cell_size)
-            wrap_with_timings(f'   Executing garbage query <{i+1}>',
-                              lambda: self._conn.execute(text(query), parameters=parameters))
-        print('Finished running garbage queries')
+        wrap_with_timings('Garbage queries', lambda: self._run_garbage_queries())
+
+    def _run_garbage_queries(self) -> None:
+        """Run defined garbage queries."""
+        garbage_queries = [val for _, val in self._get_queries_in_folder(self._garbage_queries_folder).items()]
+        random_params_query = get_first_query_in_file('benchmarks/queries/misc/random_garbage_parameters.sql')
+        for _ in range(self._garbage_queries_iterations):
+            random.shuffle(garbage_queries)
+            for i in range(len(garbage_queries)):
+                query = garbage_queries[i]
+                random_parameters = self._conn.execute(text(random_params_query), parameters={
+                    'period_start_timestamp': self._garbage_start_period_timestamp,
+                    'period_end_timestamp': self._garbage_end_period_timestamp
+                }).fetchone()._asdict()
+                random_parameters = random_parameters | {
+                    'start_date_id': extract_smart_date_id_from_date(random_parameters['start_time']),
+                    'end_date_id': extract_smart_date_id_from_date(random_parameters['end_time'])
+                }
+
+                query = query.format(CELL_SIZE=random_parameters['spatial_resolution'])
+                wrap_with_timings(f'   Executing garbage query <{i+1}>',
+                                  lambda: self._conn.execute(text(query), parameters=random_parameters))
 
     def _clear_cache(self) -> None:
         """
