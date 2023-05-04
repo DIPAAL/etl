@@ -1,15 +1,15 @@
 CREATE TABLE enc (
-    title text,
-    country text,
-    scale int,
-    cat int,
-    type text,
     edition_date int,
     edition int,
     update_date int,
     update int,
+    scale int,
+    cat int,
+    title text,
+    country text,
+    type text,
     source text,
-    slug text,
+    slug text PRIMARY KEY,
     geom geometry
 );
 
