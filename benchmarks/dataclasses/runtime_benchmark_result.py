@@ -11,3 +11,4 @@ class RuntimeBenchmarkResult:
     time_taken: float
     benchmark_id: int
     benchmark_name: str
+    benchmark_type: str

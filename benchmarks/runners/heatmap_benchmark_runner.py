@@ -47,7 +47,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: self._conn.execute(text(benchmark_query), parameters=params)),
                     id,
-                    benchmark_name
+                    benchmark_name,
+                    'heatmap'
                  )
         return configured_benchmarks
 

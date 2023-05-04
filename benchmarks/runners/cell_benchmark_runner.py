@@ -64,7 +64,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: (self._conn.execute(text(benchmark_query), parameters=params))),
                     benchmark_id,
-                    name
+                    name,
+                    'cell'
                 )
         return configured_benchmarks
 
