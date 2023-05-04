@@ -63,10 +63,11 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     return result, end - start
 
 
-def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_seconds: int = 5, retries: int = -1) -> T:
+def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_seconds: int = 5, retries: int = -1) \
+        -> T:
     """
     Wrap and execute a given function for a number of retries and print the time it took the function to execute.
-    
+
     Arguments:
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to wrap
@@ -79,12 +80,13 @@ def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_
             return wrap_with_timings(name, func)
         except Exception as e:
             if retries >= 0 and retry_counter >= retries:
-                print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. No more re-tries. Re-raising exception: <{e}>')
+                print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. No more re-tries. '
+                      f'Re-raising exception: <{e}>')
                 raise e
-            print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. Re-trying in <{retry_interval_seconds}> seconds. Exception: <{e}>')
+            print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. Re-trying in '
+                  f'<{retry_interval_seconds}> seconds. Exception: <{e}>')
             retry_counter = retry_counter + 1
             time.sleep(retry_interval_seconds)
-
 
 
 def get_connection(config, auto_commit_connection: bool = False, database: str | None = None, host: str | None = None,
