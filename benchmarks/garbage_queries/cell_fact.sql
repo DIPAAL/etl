@@ -1,3 +1,4 @@
+EXPLAIN (ANALYZE)
 WITH q_window(box) AS (
     SELECT
         SetSRID(STBox(
