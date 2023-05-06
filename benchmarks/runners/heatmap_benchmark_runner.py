@@ -82,7 +82,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             for resolution, resolution_name in resolutions.items():
                 if resolution in self._available_resolutions:
                     for area_id, area_name in areas.items():
-                        if resolution_name = 'high_resolution' and area_name = 'whole_denmark':
+                        if resolution_name == 'high_resolution' and area_name == 'whole_denmark':
                             continue
                         for ship_type_list in ship_types:
                             for mobile_type_list in mobile_types:
