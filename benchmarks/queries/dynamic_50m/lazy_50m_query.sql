@@ -155,9 +155,9 @@ FROM (
                                     ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
                                     SPAN(
                                         timestamp_from_date_time_id(:start_date,:start_time),
-                                        timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)),
-                                      4326) && dt.trajectory
-                                  ) t
+                                        timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)
+                                ), 4326) && dt.trajectory
+                        ) t
                     ) as fdt
                 JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
                     -- BENCHMARK: Spatial and temporal bounds
