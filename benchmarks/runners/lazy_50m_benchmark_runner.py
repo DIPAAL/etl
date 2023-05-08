@@ -83,7 +83,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                     area_name, duration_name,
                     'lazy' if query_file_name.startswith('lazy') else 'stored'
                 )
-                xmin, ymin, xmax, ymax = (area_bounds)
+                xmin, ymin, xmax, ymax = area_bounds
                 configurations[name] = LazyBenchmarkConfiguration(
                     xmin, ymin, xmax, ymax, start, end
                 )
