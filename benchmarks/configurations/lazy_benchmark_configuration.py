@@ -7,7 +7,7 @@ from typing import Dict, Any
 class LazyBenchmarkConfiguration:
     """Class defining how a lazy 50m benchmark should be run."""
 
-    def __init__(self, xmin: int, ymin: int, xmax: int, ymax: int, start_timestamp: datetime, end_timestamp: datetime):
+    def __init__(self, xmin: float, ymin: float, xmax: float, ymax: float, start_timestamp: datetime, end_timestamp: datetime):
         """
         Initialize lazy benchmark configuration.
 
