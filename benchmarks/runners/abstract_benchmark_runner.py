@@ -49,7 +49,7 @@ class AbstractBenchmarkRunner(ABC):
             for i in range(self._iterations):
                 wrap_with_retry_and_timing('Benchmark iteration',
                                            lambda: self._run_benchmark_iteration(name, i+1, executable),
-                                           callback = lambda: self._on_exception_rollback())
+                                           callback=lambda: self._on_exception_rollback())
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
@@ -88,9 +88,7 @@ class AbstractBenchmarkRunner(ABC):
 
     # Ran into error while testing where it kept re-trying because it could not retry because a transaction was active
     def _on_exception_rollback(self) -> None:
-        """
-        Rollback DW transaction on exception.
-        """
+        """Rollback DW transaction on exception."""
         if not self._conn.closed:
             self._conn.rollback()
 

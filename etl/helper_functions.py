@@ -63,7 +63,8 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     return result, end - start
 
 
-def wrap_with_retry_and_timing(name: str, func: Callable[[], T], callback: Callable[[], None] | None = None, retry_interval_seconds: int = 5, retries: int = -1) \
+def wrap_with_retry_and_timing(name: str, func: Callable[[], T], callback: Callable[[], None] | None = None,  # noqa C901
+                               retry_interval_seconds: int = 5, retries: int = -1) \
         -> T:
     """
     Wrap and execute a given function for a number of retries and print the time it took the function to execute.
