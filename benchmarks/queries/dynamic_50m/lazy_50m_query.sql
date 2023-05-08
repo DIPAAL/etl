@@ -1,6 +1,5 @@
 -- Benchmarking query for evaluating the performance of lazy loading 50m cells.
 -- This benchmark query is mainly based on the "fact_cell_rollup.sql", but also the "staging_split_trajectories.sql" query.
-EXPLAIN (ANALYZE)
 SELECT
     cell_x,
     cell_y,

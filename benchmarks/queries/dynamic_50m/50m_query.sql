@@ -1,4 +1,3 @@
-EXPLAIN (ANALYZE)
 SELECT
     fc.cell_x,
     fc.cell_y,
