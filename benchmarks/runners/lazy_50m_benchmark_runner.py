@@ -60,6 +60,8 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         Arguments:
             query_file_name: file name of the query that is being configured
         """
+        # Areas chosen based on discussion, need a big and small area with not a lot of traffic
+        # Traffic checked based on a heatmap generated for the whole of 2021 and these areas had relatively low traffic
         areas = {  # xmin, ymin, xmax, ymax (in ESPG:3034)
             'south_west_lesoe': (4069967.878424203, 3342436.4153025905, 4084991.6610816685, 3353365.3303206693),
             'near_heligoland': (3804735.697192613, 3046556.109433946, 3886739.220561706, 3134232.6485297997)
