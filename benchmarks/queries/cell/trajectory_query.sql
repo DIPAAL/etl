@@ -1,14 +1,12 @@
 WITH
-    enc(geom, geom_geodetic) AS (SELECT geom, geom_geodetic FROM reference_geometries WHERE id = :AREA_ID AND type = 'enc'),
     q_window(box, start_date_id, end_date_id) AS (
         SELECT
             STBox(
-                enc.geom_geodetic,
+                ST_Transform(ST_MakeEnvelope(:XMIN,:YMIN, :XMAX, :YMAX, 3034), 4326),
                 span(timestamp_from_date_time_id(:START_ID, 0), timestamp_from_date_time_id(:END_ID, 0), true, false)
             ) box,
             :START_ID start_date_id,
             :END_ID end_date_id
-        FROM enc
     )
 SELECT DISTINCT(ds.*)
 FROM q_window

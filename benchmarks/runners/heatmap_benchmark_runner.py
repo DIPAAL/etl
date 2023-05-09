@@ -1,4 +1,5 @@
 """Module containing the heatmap benchmark runner."""
+from benchmarks.dataclasses.geolimits import GeoLimits
 from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntimeBenchmarkRunner
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
@@ -41,8 +42,9 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         for conf_name, config in configurations.items():
             benchmark_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
             params = config.get_parameters()
+            benchmark_query = f'{self._query_prefix} \n{query}'
             configured_benchmarks[conf_name] = \
-                lambda id=benchmark_id, params=params, benchmark_query=query, benchmark_name=conf_name: \
+                lambda id=benchmark_id, params=params, benchmark_query=benchmark_query, benchmark_name=conf_name: \
                 RuntimeBenchmarkResult(
                     *measure_time(lambda: self._conn.execute(text(benchmark_query), parameters=params)),
                     id,
@@ -70,9 +72,9 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             50: 'high_resolution'
         }
         areas = {
-            117: 'denmark',
-            95: 'storebealt',
-            148: 'whole_denmark'
+            'aarhus': GeoLimits(4012045, 3243300, 4018200, 3250900),
+            'storebaelt': GeoLimits(4032800, 3145500, 4078100, 3213300),
+            'complete': GeoLimits(3480000, 2930000, 4495000, 3645000),
         }
         ship_types = [['Cargo', 'Pleasure', 'Fishing']]
         mobile_types = [['Class A', 'Class B']]
@@ -81,13 +83,14 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
             for resolution, resolution_name in resolutions.items():
                 if resolution in self._available_resolutions:
-                    for area_id, area_name in areas.items():
+                    for area_name, geolimits in areas.items():
                         for ship_type_list in ship_types:
                             for mobile_type_list in mobile_types:
                                 conf_name = self._create_configuration_name(file_name, duration_name, resolution_name,
                                                                             area_name, ship_type_list, mobile_type_list)
                                 configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id, end_date_id,
-                                                                                          resolution, area_id, 'count',
+                                                                                          resolution, geolimits,
+                                                                                          'count',
                                                                                           ship_type_list,
                                                                                           mobile_type_list)
         return configurations
@@ -110,23 +113,3 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         ship_str = separator.join(ship_types).lower().replace(' ', separator)
         mobile_str = separator.join(mobile_types).lower().replace(' ', separator)
         return f'{duration}_{area}_{resolution}_{ship_str}_{mobile_str}_{type}_heatmap'
-
-    def _store_result(self, iteration: int, result: RuntimeBenchmarkResult) -> None:
-        """
-        Store the result of running the benchmark.
-
-        Arguments:
-            iteration: the iteration of the benchmark
-            result: all the results of running the particular benchmark
-        """
-        data = f'{{"Runtime_ms": {result.time_taken}}}'
-        self._conn.execute(
-            text("""
-                INSERT INTO benchmark_results
-                (test_run_id, type, query_name, iteration, explain, execution_time_ms)
-                VALUES (:id, :type, :name, :it, :result, :time)
-            """),
-            {'id': result.benchmark_id, 'name': result.benchmark_name,
-             'it': iteration, 'result': data, 'time': result.time_taken,
-             'type': result.benchmark_type}
-        )
