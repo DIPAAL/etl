@@ -9,6 +9,11 @@ from typing import Dict, List, Tuple, Callable
 from etl.helper_functions import measure_time, wrap_with_retry_and_timing
 from sqlalchemy import text
 
+SINGLE_PARTITION = 'single_partition'
+SMALL_AREA = 'small_area'
+MEDIUM_AREA = 'medium_area'
+LARGE_AREA = 'large_area'
+
 
 @benchmark_class(name='CELL')
 class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
@@ -72,16 +77,16 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             '90_day': (20210101, 20210401)
         }
         areas_from_resolution = {
-            50: ['single_partition', 'small_area'],
-            200: ['single_partition', 'medium_area'],
-            1000: ['single_partition', 'medium_area', 'large_area'],
-            5000: ['medium_area', 'large_area']
+            50: [SINGLE_PARTITION, SMALL_AREA],
+            200: [SINGLE_PARTITION, MEDIUM_AREA],
+            1000: [SINGLE_PARTITION, MEDIUM_AREA, LARGE_AREA],
+            5000: [MEDIUM_AREA, LARGE_AREA]
         }
         area_name_to_area = {
-            'single_partition': GeoLimits(3963950, 3124950, 3965950, 3128250),
-            'small_area': GeoLimits(4012045, 3243300, 4018200, 3250900),
-            'medium_area': GeoLimits(4003600, 3381500, 4093500, 3443000),
-            'large_area': GeoLimits(3551600, 2980550, 4427050, 3592300)
+            SINGLE_PARTITION: GeoLimits(3963950, 3124950, 3965950, 3128250),
+            SMALL_AREA: GeoLimits(4012045, 3243300, 4018200, 3250900),
+            MEDIUM_AREA: GeoLimits(4003600, 3381500, 4093500, 3443000),
+            LARGE_AREA: GeoLimits(3551600, 2980550, 4427050, 3592300)
         }
         ship_types = ['Cargo']
         configurations = {}
