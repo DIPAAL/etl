@@ -1,4 +1,3 @@
-EXPLAIN (ANALYZE)
 SELECT
     CASE WHEN q1.rast IS NULL THEN NULL ELSE
         ST_AsGDALRaster(q1.rast,'COG')
