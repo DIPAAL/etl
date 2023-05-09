@@ -151,8 +151,8 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         trajectory_configurations = {}
         for duration_name, (start_date_id, end_date_id) in duration_map.items():
             for area_name, geolimits in area_name_to_area.items():
-                conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY.value, duration_name,
-                                                          area_name, ship_types)
+                conf_name = self._calc_configuration_name(CellBenchmarkConfigurationType.TRAJECTORY.value,
+                                                          duration_name, area_name, ship_types)
                 trajectory_configurations[conf_name] = \
                     CellBenchmarkConfiguration(start_date_id, end_date_id, geolimits, ship_types,
                                                CellBenchmarkConfigurationType.TRAJECTORY)

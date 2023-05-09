@@ -1,5 +1,5 @@
 SELECT
-    ST_AsGDALRaster(ST_MapAlgebra(r1.rast, r2.rast, expression := '[rast1.val]-[rast2.val]', pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0'),'GTiff')
+    ST_AsGDALRaster(ST_MapAlgebra(r1.rast, r2.rast, expression := '[rast1.val]-[rast2.val]', pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0'),'Cog')
 FROM (
     SELECT
         -- If there are 2 bands in the raster, assume it is to calculate average by dividing the first band by the second band
