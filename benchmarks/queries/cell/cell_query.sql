@@ -1,14 +1,12 @@
 WITH
-    enc(geom) AS (SELECT geom, geom_geodetic FROM reference_geometries WHERE id = :AREA_ID AND type = 'enc'),
     q_window(box, start_date_id, end_date_id) AS (
         SELECT
-            SetSRID(STBox(
-                enc.geom,
+            STBox(
+                ST_MakeEnvelope(:XMIN,:YMIN, :XMAX, :YMAX, 3034),
                 span(timestamp_from_date_time_id(:START_ID, 0), timestamp_from_date_time_id(:END_ID, 0), true, false)
-            ), 3034) box,
+            ) box,
             :START_ID start_date_id,
             :END_ID end_date_id
-        FROM enc
     )
 SELECT distinct(ds.*)
 FROM q_window q

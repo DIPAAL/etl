@@ -17,6 +17,9 @@ spec:
         volumeMounts:
           - name: sshkey
             mountPath: /ssh/
+        resources:
+          limits:
+            memory: "4G"
       restartPolicy: Never
       volumes:
         - name: sshkey

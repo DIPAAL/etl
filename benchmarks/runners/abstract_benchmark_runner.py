@@ -14,6 +14,8 @@ from datetime import datetime
 # User-defined type used for implementing generics (BRT = Benchmark Result Type)
 BRT = TypeVar('BRT')
 
+GARBAGE_QUERY_PREFIX = 'EXPLAIN (ANALYZE) \n'
+
 
 class AbstractBenchmarkRunner(ABC):
     """Abstract superclass that all benchmark runners should inherit from."""
@@ -66,6 +68,8 @@ class AbstractBenchmarkRunner(ABC):
             random.shuffle(garbage_queries)
             for i in range(len(garbage_queries)):
                 name, query = garbage_queries[i]
+                query = GARBAGE_QUERY_PREFIX + query
+
                 random_parameters = self._conn.execute(text(random_params_query), parameters={
                     'period_start_timestamp': self._garbage_start_period_timestamp,
                     'period_end_timestamp': self._garbage_end_period_timestamp
