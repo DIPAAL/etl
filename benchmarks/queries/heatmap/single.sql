@@ -1,6 +1,6 @@
 SELECT
-    CASE WHEN q3.rast IS NULL THEN NULL ELSE
-        ST_AsGDALRaster(q3.rast,'Cog')
+    CASE WHEN q1.rast IS NULL THEN NULL ELSE
+        ST_AsGDALRaster(q1.rast,'Cog')
     END AS raster
 FROM (
     SELECT
@@ -12,7 +12,7 @@ FROM (
         END AS rast
     FROM (
         SELECT
-            fch.partition_id, ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
+            ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
         FROM fact_cell_heatmap fch
         JOIN dim_ship_type dst ON dst.ship_type_id = fch.ship_type_id
         WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
@@ -28,5 +28,5 @@ FROM (
         AND fch.date_id BETWEEN :START_ID AND :END_ID
         GROUP BY fch.partition_id
     ) q0
-)q2
+)q1
 ;
