@@ -60,7 +60,7 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             # Default parameters to avoid copy by reference in lambda
             configured_benchmarks[name] = \
                 lambda id=benchmark_id, params=params, query=benchmark_query, name=name: \
-                    self._execute_runtime_benchmark(id, params, query, name, 'cell')
+                self._execute_runtime_benchmark(id, params, query, name, 'cell')
 
         return configured_benchmarks
 

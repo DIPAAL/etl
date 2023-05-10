@@ -4,8 +4,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.decorators.benchmark import benchmark_class
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.lazy_benchmark_configuration import LazyBenchmarkConfiguration
-from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, get_first_query_in_file, extract_smart_date_id_from_date
+from etl.helper_functions import get_first_query_in_file, extract_smart_date_id_from_date
 from sqlalchemy import text
 from datetime import datetime
 
@@ -32,7 +31,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 q_parameters = configuration.get_parameters()
                 benchmarks[benchmark_name] = \
                     lambda id=run_id, params=q_parameters, query=benchmark_query, name=benchmark_name: \
-                        self._execute_runtime_benchmark(id, params, query, name, 'lazy_50m')
+                    self._execute_runtime_benchmark(id, params, query, name, 'lazy_50m')
 
         return benchmarks
 
