@@ -1,8 +1,5 @@
 SELECT
-    ST_AsGDALRaster(q1.rast,'Cog')
-FROM (
-    SELECT
-        ST_MapAlgebra(r1.rast, r2.rast, expression := '[rast1.val]-[rast2.val]', pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0') AS rast
+    ST_AsGdalRaster(ST_MapAlgebra(r1.rast, r2.rast, expression := '[rast1.val]-[rast2.val]', pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0'),'Cog')
     FROM (
         SELECT
             -- If there are 2 bands in the raster, assume it is to calculate average by dividing the first band by the second band
@@ -10,9 +7,12 @@ FROM (
                 ST_MapAlgebra(q0.rast, 1, q0.rast, 2, '[rast1.val]/[rast2.val]', extenttype := 'FIRST')
             ELSE
                 q0.rast
-            END AS rast
+            END AS rast,
+            q0.partition_id
         FROM (
-            SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
+            SELECT
+                ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast,
+                fch.partition_id
             FROM fact_cell_heatmap fch
             JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
             WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
@@ -35,9 +35,12 @@ FROM (
                 ST_MapAlgebra(q0.rast, 1, q0.rast, 2, '[rast1.val]/[rast2.val]', extenttype := 'FIRST')
             ELSE
                 q0.rast
-            END AS rast
+            END AS rast,
+            q0.partition_id
         FROM (
-            SELECT ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
+            SELECT
+                ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast,
+                fch.partition_id
             FROM fact_cell_heatmap fch
             JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
             WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
@@ -54,5 +57,4 @@ FROM (
             GROUP BY fch.partition_id
         ) q0
     ) r2
-) q1
-WHERE NOT ST_IsEmpty(q1.rast) -- Remove empty rasters
+WHERE r1.partition_id = r2.partition_id --from cartesian product to colocated
