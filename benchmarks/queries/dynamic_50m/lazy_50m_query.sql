@@ -18,8 +18,8 @@ SELECT
     ELSE
         calculate_delta_upperbounded ((
             SELECT
-                ARRAY_AGG(head)
-            FROM UNNEST(GETVALUES (heading)) AS head), 360)
+                ARRAY_AGG(LOWER(head))
+            FROM UNNEST(SPANS(GETVALUES (heading))) AS head), 360)
     END delta_heading,
     draught,
     delta_cog,
@@ -77,8 +77,8 @@ FROM (
                 (
                     calculate_delta_upperbounded (
                         (
-                            SELECT ARRAY_AGG(delta)
-                            FROM UNNEST(GETVALUES(DEGREES(AZIMUTH(crossing)))) AS delta
+                            SELECT ARRAY_AGG(LOWER(delta))
+                            FROM UNNEST(SPANS(GETVALUES(DEGREES(AZIMUTH(crossing))))) AS delta
                         ),
                         360)
                 ) AS delta_cog,
