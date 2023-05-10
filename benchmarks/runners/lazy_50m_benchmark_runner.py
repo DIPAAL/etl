@@ -31,13 +31,8 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
                 benchmark_query = f'{self._query_prefix}\n {query}'
                 q_parameters = configuration.get_parameters()
                 benchmarks[benchmark_name] = \
-                    lambda id=run_id, name=benchmark_name, query=benchmark_query, param=q_parameters: \
-                    RuntimeBenchmarkResult(
-                        *measure_time(lambda: self._conn.execute(text(query), parameters=param)),
-                        id,
-                        name,
-                        'lazy_50m'
-                    )
+                    lambda id=run_id, params=q_parameters, query=benchmark_query, name=benchmark_name: \
+                        self._execute_runtime_benchmark(id, params, query, name, 'lazy_50m')
 
         return benchmarks
 

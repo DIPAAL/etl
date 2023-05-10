@@ -4,7 +4,7 @@ from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntime
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.heatmap_benchmark_configuration import HeatmapBenchmarkConfiguration
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
-from etl.helper_functions import measure_time, wrap_with_retry_and_timing
+from etl.helper_functions import wrap_with_retry_and_timing
 from typing import Dict, List, Callable
 from sqlalchemy import text
 from benchmarks.decorators.benchmark import benchmark_class
@@ -44,13 +44,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             params = config.get_parameters()
             benchmark_query = f'{self._query_prefix} \n{query}'
             configured_benchmarks[conf_name] = \
-                lambda id=benchmark_id, params=params, benchmark_query=benchmark_query, benchmark_name=conf_name: \
-                RuntimeBenchmarkResult(
-                    *measure_time(lambda: self._conn.execute(text(benchmark_query), parameters=params)),
-                    id,
-                    benchmark_name,
-                    'heatmap'
-                 )
+                lambda id=benchmark_id, params=params, query=benchmark_query, name=conf_name: \
+                    self._execute_runtime_benchmark(id, params, query, name, 'heatmap')
         return configured_benchmarks
 
     def _get_configurations(self, query_file_name: str) -> Dict[str, HeatmapBenchmarkConfiguration]:  # noqa: C901
