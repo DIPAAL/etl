@@ -1,11 +1,9 @@
 """Module containing the lazy 50m benchmark runner."""
-from typing import Any, Callable, Dict
+from typing import Callable, Dict
 from benchmarks.runners.abstract_runtime_benchmark_runner import AbstractRuntimeBenchmarkRunner
 from benchmarks.decorators.benchmark import benchmark_class
 from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.lazy_benchmark_configuration import LazyBenchmarkConfiguration
-from etl.helper_functions import get_first_query_in_file, extract_smart_date_id_from_date
-from sqlalchemy import text
 from datetime import datetime
 
 
