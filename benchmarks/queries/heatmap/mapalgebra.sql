@@ -55,4 +55,4 @@ FROM (
         ) q0
     ) r2
 ) q1
-WHERE NOT st_isempty(q1.rast) -- Remove empty rasters
+WHERE NOT ST_IsEmpty(q1.rast) -- Remove empty rasters
