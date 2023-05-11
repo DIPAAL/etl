@@ -77,7 +77,8 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             'storebaelt': GeoLimits(4032800, 3145500, 4078100, 3213300),
             'complete': GeoLimits(3480000, 2930000, 4495000, 3645000),
         }
-        ship_types = [['Cargo', 'Pleasure', 'Fishing']]
+        ship_types_a = [['Cargo']]
+        ship_types_b = [['Pleasure']]
         mobile_types = [['Class A', 'Class B']]
         file_name = query_file_name[:-4] if query_file_name.endswith('.sql') else query_file_name
         configurations = {}
@@ -85,20 +86,25 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             for resolution, resolution_name in resolutions.items():
                 if resolution in self._available_resolutions:
                     for area_name, geolimits in areas.items():
-                        for ship_type_list in ship_types:
-                            for mobile_type_list in mobile_types:
-                                conf_name = self._create_configuration_name(file_name, duration_name, resolution_name,
-                                                                            area_name, ship_type_list, mobile_type_list)
-                                configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id, end_date_id,
-                                                                                          resolution, geolimits,
-                                                                                          'count',
-                                                                                          ship_type_list,
-                                                                                          mobile_type_list)
+                        for ship_type_list_a in ship_types_a:
+                            for ship_type_list_b in ship_types_b:
+                                for mobile_type_list in mobile_types:
+                                    conf_name = self._create_configuration_name(file_name, duration_name,
+                                                                                resolution_name, area_name,
+                                                                                ship_type_list_a, ship_type_list_b,
+                                                                                mobile_type_list)
+                                    configurations[conf_name] = HeatmapBenchmarkConfiguration(start_date_id,
+                                                                                              end_date_id,
+                                                                                              resolution, geolimits,
+                                                                                              'count',
+                                                                                              ship_type_list_a,
+                                                                                              ship_type_list_b,
+                                                                                              mobile_type_list)
         return configurations
 
     @staticmethod
-    def _create_configuration_name(type: str, duration: str, resolution: str, area: str, ship_types: List[str],
-                                   mobile_types: List[str]) -> str:
+    def _create_configuration_name(type: str, duration: str, resolution: str, area: str, ship_types_a: List[str],
+                                   ship_types_b: List[str], mobile_types: List[str]) -> str:
         """
         Create configuration name.
 
@@ -111,6 +117,7 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
             mobile_types: the mobile types used when benchmarking the configuration
         """
         separator = '_'
-        ship_str = separator.join(ship_types).lower().replace(' ', separator)
+        ship_str_a = separator.join(ship_types_a).lower().replace(' ', separator)
+        ship_str_b = separator.join(ship_types_b).lower().replace(' ', separator)
         mobile_str = separator.join(mobile_types).lower().replace(' ', separator)
-        return f'{duration}_{area}_{resolution}_{ship_str}_{mobile_str}_{type}_heatmap'
+        return f'{duration}_{area}_{resolution}_{ship_str_a}_vs_{ship_str_b}_{mobile_str}_{type}_heatmap'

@@ -38,6 +38,6 @@ class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
                 VALUES (:id, :type, :name, :it, :result, :time)
             """),
             {'id': result.benchmark_id, 'name': result.benchmark_name,
-             'it': iteration, 'result': data, 'time': result.time_taken,
+             'it': iteration, 'result': data, 'time': (result.time_taken * 1000),  # sec -> ms
              'type': result.benchmark_type}
         )

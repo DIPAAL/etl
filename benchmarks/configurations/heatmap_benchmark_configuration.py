@@ -9,7 +9,7 @@ class HeatmapBenchmarkConfiguration:
     """Contains a heatmap benchmark configuration."""
 
     def __init__(self, start_date_id: int, end_date_id: int, spatial_resolution: int, geolimits: GeoLimits,
-                 heatmap_type: str, ship_types: List[str], mobile_types: List[str]) -> None:
+                 heatmap_type: str, ship_types_a: List[str], ship_types_b: List[str], mobile_types: List[str]) -> None:
         """
         Initialize Heatmap benchmark configuration.
 
@@ -19,15 +19,17 @@ class HeatmapBenchmarkConfiguration:
             spatial_resolution: the spatial resolution for the configuration
             geolimits: the spatial limits for the configuration
             heatmap_type: the type of heatmap to create for the benchmark
-            ship_types: a list of ship types used to filter the benchmark queries
-            mobile_types: a list of mobile types used to filter the benchmark queries
+            ship_types_a: list of ship types used to filter the benchmark queries for the substractee raster
+            ship_types_b: list of ship types used to filter the benchmark queries for the substracting raster
+            mobile_types: list of mobile types used to filter the benchmark queries
         """
         self.start_date_id = start_date_id
         self.end_date_id = end_date_id
         self.resolution = spatial_resolution
         self.geolimits = geolimits
         self.heatmap_type = heatmap_type
-        self.ship_types = ship_types
+        self.ship_types_a = ship_types_a
+        self.ship_types_b = ship_types_b
         self.mobile_types = mobile_types
         self._validate_spatial_resolution()
 
@@ -48,6 +50,7 @@ class HeatmapBenchmarkConfiguration:
             'XMAX': self.geolimits.xmax,
             'YMAX': self.geolimits.ymax,
             'HEATMAP_TYPE': self.heatmap_type,
-            'SHIP_TYPES': self.ship_types,
+            'SHIP_TYPES_A': self.ship_types_a,
+            'SHIP_TYPES_B': self.ship_types_b,
             'MOBILE_TYPES': self.mobile_types
         }
