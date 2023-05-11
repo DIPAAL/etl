@@ -1,9 +1,5 @@
-INSERT INTO fact_cell_{CELL_SIZE}m (
-    cell_x, cell_y, ship_id,
-    entry_date_id, entry_time_id, exit_date_id, exit_time_id,
-    direction_id, nav_status_id, infer_stopped, trajectory_sub_id,
-    sog, delta_heading, draught, delta_cog, st_bounding_box, partition_id
-)
+-- Benchmarking query for evaluating the performance of lazy loading 50m cells.
+-- This benchmark query is mainly based on the "fact_cell_rollup.sql", but also the "staging_split_trajectories.sql" query.
 SELECT
     cell_x,
     cell_y,
@@ -16,9 +12,7 @@ SELECT
     nav_status_id,
     infer_stopped,
     trajectory_sub_id,
-    length(crossing) / GREATEST (durationSeconds, 1) * 1.94 sog, -- 1 m/s = 1.94 knots. Min 1 second to avoid division by zero
-    -- if delta_heading is null, then set as -1, else use calculate_delta
-    -- upper_bound=360, as heading goes from 0 -> 359
+    length(crossing) / GREATEST (durationSeconds, 1) * 1.94 sog,
     CASE WHEN heading IS NULL THEN
         -1
     ELSE
@@ -29,8 +23,7 @@ SELECT
     END delta_heading,
     draught,
     delta_cog,
-    stbox (cell_geom, crossing_period) st_bounding_box,
-    partition_id
+    stbox (cell_geom, crossing_period) st_bounding_box
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -49,8 +42,7 @@ FROM (
         endTime,
         delta_cog,
         crossing_period,
-        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds,
-        partition_id
+        (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds
     FROM (
         SELECT
             *,
@@ -92,11 +84,20 @@ FROM (
                 ) AS delta_cog,
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
-                date_trunc('second', endTimestamp (crossing)) endTime,
-                partition_id
+                date_trunc('second', endTimestamp (crossing)) endTime
             FROM (
                 SELECT
-                    unnest(sequences (atGeometry (fdt.trajectory, dc.geom))) crossing,
+                    unnest(sequences (atGeometry (
+                        atstbox( -- BENCHMARK: Temporal bounding box of the trajectory
+                            fdt.trajectory,
+                            stbox(
+                                    span(
+                                            timestamp_from_date_time_id(:start_date, :start_time),
+                                            timestamp_from_date_time_id(:end_date, :end_time), TRUE, TRUE
+                                        )
+                                )
+                            ),
+                        dc.geom))) crossing,
                     -- Create the 4 lines representing the cell edges
                     ST_SetSRID (
                         ST_MakeLine (
@@ -127,12 +128,44 @@ FROM (
                     fdt.infer_stopped infer_stopped,
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
-                    fdt.heading heading,
-                    fdt.partition_id
-                FROM staging.split_trajectories fdt
-                JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry)
+                    fdt.heading heading
+                FROM (SELECT
+                        t.trajectory_sub_id,
+                        t.ship_id,
+                        t.nav_status_id,
+                        t.infer_stopped,
+                        (t.split).point point,
+                        tgeompoint_seq(INSTANTS(ROUND(UNNEST(sequences((t.split).tpoint)), 3)), 'linear', true, true) AS trajectory,
+                        t.heading,
+                        t.draught
+                        FROM (SELECT
+                            ft.trajectory_sub_id,
+                            ft.ship_id,
+                            ft.nav_status_id,
+                            ft.infer_stopped,
+                            spaceSplit(transform(dt.trajectory, 3034), 5000, bitmatrix := false) split,
+                            dt.heading heading,
+                            dt.draught draught
+                            FROM fact_trajectory ft
+                            JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+                            -- BENCHMARK: Spatial and temporal bounds
+                            WHERE transform(
+                                STBOX(
+                                    ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034),
+                                    SPAN(
+                                        timestamp_from_date_time_id(:start_date,:start_time),
+                                        timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE)
+                                ), 4326) && dt.trajectory
+                        ) t
+                    ) as fdt
+                JOIN staging.cell_50m dc ON (ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry))
+                    -- BENCHMARK: Spatial and temporal bounds
+                    AND ST_Intersects(ST_Makeenvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)
+                    AND STBOX(SPAN(
+                        timestamp_from_date_time_id(:start_date,:start_time),
+                        timestamp_from_date_time_id(:end_date,:end_time), TRUE, TRUE
+                        )) && fdt.trajectory
             ) cj
         ) cid
     ) cif
-) ir
-ON CONFLICT DO NOTHING;
+) ir;

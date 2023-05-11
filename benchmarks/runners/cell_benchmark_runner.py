@@ -6,8 +6,7 @@ from benchmarks.enumerations.cell_benchmark_configuration_type import CellBenchm
 from benchmarks.configurations.cell_benchmark_configuration import CellBenchmarkConfiguration
 from benchmarks.decorators.benchmark import benchmark_class
 from typing import Dict, List, Tuple, Callable
-from etl.helper_functions import measure_time, wrap_with_retry_and_timing
-from sqlalchemy import text
+from etl.helper_functions import wrap_with_retry_and_timing
 
 SINGLE_PARTITION = 'single_partition'
 SMALL_AREA = 'small_area'
@@ -60,13 +59,9 @@ class CellBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
 
             # Default parameters to avoid copy by reference in lambda
             configured_benchmarks[name] = \
-                lambda benchmark_id=benchmark_id, params=params, benchmark_query=benchmark_query, name=name: \
-                RuntimeBenchmarkResult(
-                    *measure_time(lambda: (self._conn.execute(text(benchmark_query), parameters=params))),
-                    benchmark_id,
-                    name,
-                    'cell'
-                )
+                lambda id=benchmark_id, params=params, query=benchmark_query, name=name: \
+                self._execute_runtime_benchmark(id, params, query, name, 'cell')
+
         return configured_benchmarks
 
     def _get_benchmark_configurations(self) -> Dict[str, CellBenchmarkConfiguration]:

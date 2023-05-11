@@ -2,6 +2,8 @@
 import json
 from abc import ABC
 from sqlalchemy import text
+from typing import Dict, Any
+from etl.helper_functions import measure_time
 from benchmarks.runners.abstract_benchmark_runner import AbstractBenchmarkRunner
 from benchmarks.dataclasses.runtime_benchmark_result import RuntimeBenchmarkResult
 
@@ -40,4 +42,23 @@ class AbstractRuntimeBenchmarkRunner(AbstractBenchmarkRunner, ABC):
             {'id': result.benchmark_id, 'name': result.benchmark_name,
              'it': iteration, 'result': data, 'time': (result.time_taken * 1000),  # sec -> ms
              'type': result.benchmark_type}
+        )
+
+    def _execute_runtime_benchmark(self, id: int, params: Dict[str, Any], query: str, name: str, type: str)\
+            -> RuntimeBenchmarkResult:
+        """
+        Wrap runtime benchmark execution.
+
+        Arguments:
+            id: the test run id of the benchmark
+            params: the parameters to run the benchmark query with
+            query: the benchmark query to run
+            name: the name of the benchmark
+            type: the type of the benchmark
+        """
+        return RuntimeBenchmarkResult(
+            *measure_time(lambda: self._conn.execute(text(query), parameters=params)),
+            id,
+            name,
+            type
         )

@@ -48,7 +48,8 @@ class AbstractBenchmarkRunner(ABC):
         for name, executable in benchmarks.items():
             for i in range(self._iterations):
                 wrap_with_retry_and_timing('Benchmark iteration',
-                                           lambda: self._run_benchmark_iteration(name, i+1, executable))
+                                           lambda: self._run_benchmark_iteration(name, i+1, executable),
+                                           callback=lambda: self._on_exception_rollback())
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
@@ -84,6 +85,12 @@ class AbstractBenchmarkRunner(ABC):
                 query = query.format(CELL_SIZE=random_parameters['spatial_resolution'])
                 wrap_with_timings(f'   Executing garbage query <{i+1}> <{name.ljust(longest_key - 4)}>',
                                   lambda: self._conn.execute(text(query), parameters=random_parameters))
+
+    # Ran into error while testing where it kept re-trying because it could not retry because a transaction was active
+    def _on_exception_rollback(self) -> None:
+        """Rollback DW transaction on exception."""
+        if not self._conn.closed:
+            self._conn.rollback()
 
     def _run_benchmark_iteration(self, name: str, iteration: int, executable: Callable[[], BRT]) -> None:
         """

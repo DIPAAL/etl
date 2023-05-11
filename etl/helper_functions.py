@@ -63,7 +63,8 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
     return result, end - start
 
 
-def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_seconds: int = 5, retries: int = -1) \
+def wrap_with_retry_and_timing(name: str, func: Callable[[], T], callback: Callable[[], None] | None = None,  # noqa C901
+                               retry_interval_seconds: int = 5, retries: int = -1) \
         -> T:
     """
     Wrap and execute a given function for a number of retries and print the time it took the function to execute.
@@ -71,6 +72,7 @@ def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_
     Arguments:
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to wrap
+        callback: function that is called when exception occurs (default: None)
         retry_interval_seconds: amount of seconds to wait before re-trying to connect to data warehouse (default: 5)
         retries: amount of failed retries before stopping, negative value = indefinite (default: -1)
     """
@@ -86,6 +88,9 @@ def wrap_with_retry_and_timing(name: str, func: Callable[[], T], retry_interval_
             print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. Re-trying in '
                   f'<{retry_interval_seconds}> seconds. Exception: <{e}>')
             retry_counter = retry_counter + 1
+            # Enables additional handling on before retry, such as transaction rollback
+            if callback is not None:
+                callback()
             time.sleep(retry_interval_seconds)
 
 
