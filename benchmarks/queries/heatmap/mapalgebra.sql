@@ -19,7 +19,7 @@ SELECT
             AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
-            AND dst.ship_type = ANY(:SHIP_TYPES)
+            AND dst.ship_type = ANY(:SHIP_TYPES_A)
             AND dst.mobile_type = ANY(:MOBILE_TYPES)
             AND fch.cell_x >= :XMIN / 5000 -- Always 5000
             AND fch.cell_x < :XMAX / 5000 -- Always 5000
@@ -47,7 +47,7 @@ SELECT
             AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
-            AND dst.ship_type = ANY(:SHIP_TYPES)
+            AND dst.ship_type = ANY(:SHIP_TYPES_B)
             AND dst.mobile_type = ANY(:MOBILE_TYPES)
             AND fch.cell_x >= :XMIN / 5000 -- Always 5000
             AND fch.cell_x < :XMAX / 5000 -- Always 5000
@@ -58,3 +58,5 @@ SELECT
         ) q0
     ) r2
 WHERE r1.partition_id = r2.partition_id --from cartesian product to colocated
+  -- This is much faster than a subquery ~3 seconds vs 2+ min (on cluster 5000m)
+  AND NOT ST_IsEmpty(ST_MapAlgebra(r1.rast, r2.rast, expression := '[rast1.val]-[rast2.val]', pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0'))
