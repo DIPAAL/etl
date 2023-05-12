@@ -22,10 +22,11 @@ class HeatmapBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         benchmarks = {}
         queries = self._get_queries_in_folder(self._query_folder)
         for query_file_name, query in queries.items():
-            configurations = self._get_configurations(query_file_name)
-            benchmarks.update(
-                self._configure_benchmark(configurations, query)
-            )
+            if 'single' in query_file_name:
+                configurations = self._get_configurations(query_file_name)
+                benchmarks.update(
+                    self._configure_benchmark(configurations, query)
+                )
         return benchmarks
 
     def _configure_benchmark(self, configurations: Dict[str, HeatmapBenchmarkConfiguration], query: str) -> BRT:
