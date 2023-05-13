@@ -141,6 +141,7 @@ class BulkInserter:
             query: the query used to insert into the database
             fetch: whether to fetch the result from executing the query
         """
+        print(f"Inserting {len(batch)} rows into {self.dimension_name}...")
         column_count = batch.shape[1]
         prepared_row = f"({','.join(['%s'] * column_count)})"
         placeholders = ','.join([prepared_row] * len(batch))
