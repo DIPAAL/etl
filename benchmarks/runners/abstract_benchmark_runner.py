@@ -49,10 +49,10 @@ class AbstractBenchmarkRunner(ABC):
             for i in range(self._iterations):
                 try:
                     wrap_with_retry_and_timing('Benchmark iteration',
-                                           lambda: self._run_benchmark_iteration(name, i+1, executable),
-                                           callback=lambda: self._on_exception_rollback(),
-                                           retries=5
-                                           )
+                                               lambda: self._run_benchmark_iteration(name, i+1, executable),
+                                               callback=lambda: self._on_exception_rollback(),
+                                               retries=5
+                                               )
                 except Exception as e:
                     print(f'Error running benchmark {name} iteration {i+1}: {e}, skipping benchmark...')
                     break
