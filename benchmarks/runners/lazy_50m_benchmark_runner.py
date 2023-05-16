@@ -6,6 +6,8 @@ from benchmarks.runners.abstract_benchmark_runner import BRT
 from benchmarks.configurations.lazy_benchmark_configuration import LazyBenchmarkConfiguration
 from datetime import datetime
 
+from etl.helper_functions import wrap_with_retry_and_timing
+
 
 @benchmark_class(name='LAZY')
 class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
@@ -24,7 +26,7 @@ class Lazy50mBenchmarkRunner(AbstractRuntimeBenchmarkRunner):
         for query_name, query in queries.items():
             configurations = self._create_configurations(query_name)
             for benchmark_name, configuration in configurations.items():
-                run_id = self._get_next_test_id()
+                run_id = wrap_with_retry_and_timing('Get next test id', lambda: self._get_next_test_id())
                 benchmark_query = f'{self._query_prefix}\n {query}'
                 q_parameters = configuration.get_parameters()
                 benchmarks[benchmark_name] = \
