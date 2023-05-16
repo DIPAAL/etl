@@ -81,7 +81,7 @@ def wrap_with_retry_and_timing(name: str, func: Callable[[], T], callback: Calla
         try:
             return wrap_with_timings(name, func)
         except Exception as e:
-            if retries >= 0 and retry_counter >= retries:
+            if 0 <= retries <= retry_counter:
                 print(f'Caught exception during retry <{retry_counter}> execution of <{name}>. No more re-tries. '
                       f'Re-raising exception: <{e}>')
                 raise e

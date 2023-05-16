@@ -47,9 +47,15 @@ class AbstractBenchmarkRunner(ABC):
         benchmarks = self._get_benchmarks_to_run()
         for name, executable in benchmarks.items():
             for i in range(self._iterations):
-                wrap_with_retry_and_timing('Benchmark iteration',
+                try:
+                    wrap_with_retry_and_timing('Benchmark iteration',
                                            lambda: self._run_benchmark_iteration(name, i+1, executable),
-                                           callback=lambda: self._on_exception_rollback())
+                                           callback=lambda: self._on_exception_rollback(),
+                                           retries=5
+                                           )
+                except Exception as e:
+                    print(f'Error running benchmark {name} iteration {i+1}: {e}, skipping benchmark...')
+                    break
 
     def _prewarm_cache(self) -> None:
         """Prewarm the data warehouse cache befire running benchmarks."""
