@@ -143,7 +143,7 @@ FROM (
                             ft.ship_id,
                             ft.nav_status_id,
                             ft.infer_stopped,
-                            spaceSplit(transform(dt.trajectory, 3034), 5000, bitmatrix := false) split,
+                            spaceSplit(transform(dt.trajectory, 3034), 5000) split,
                             dt.heading heading,
                             dt.draught draught
                             FROM fact_trajectory ft
