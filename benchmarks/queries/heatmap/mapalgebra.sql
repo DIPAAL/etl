@@ -13,10 +13,10 @@ SELECT
             SELECT
                 ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast,
                 fch.partition_id
-            FROM fact_cell_heatmap fch
+            FROM fact_cell_heatmap_new_partitions fch
             JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
             WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
-            AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
+            AND fch.heatmap_type_id = :heatmap_type_id
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
             AND dst.ship_type = ANY(:SHIP_TYPES_A)
@@ -41,10 +41,10 @@ SELECT
             SELECT
                 ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast,
                 fch.partition_id
-            FROM fact_cell_heatmap fch
+            FROM fact_cell_heatmap_new_partitions fch
             JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
             WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
-            AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)
+            AND fch.heatmap_type_id = :heatmap_type_id
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= timestamp_from_date_time_id(:END_ID, 235959) -- end_timestamp
             AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= timestamp_from_date_time_id(:START_ID, 0) -- start_timestamp
             AND dst.ship_type = ANY(:SHIP_TYPES_B)

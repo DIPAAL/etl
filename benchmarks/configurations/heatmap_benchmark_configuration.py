@@ -52,5 +52,6 @@ class HeatmapBenchmarkConfiguration:
             'HEATMAP_TYPE': self.heatmap_type,
             'SHIP_TYPES_A': self.ship_types_a,
             'SHIP_TYPES_B': self.ship_types_b,
-            'MOBILE_TYPES': self.mobile_types
+            'MOBILE_TYPES': self.mobile_types,
+            'HEATMAP_TYPE_ID': 1
         }

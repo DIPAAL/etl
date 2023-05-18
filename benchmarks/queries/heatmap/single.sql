@@ -13,7 +13,7 @@ FROM (
     FROM (
         SELECT
             ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :HEATMAP_TYPE)) AS rast
-        FROM fact_cell_heatmap fch
+        FROM fact_cell_heatmap_new_partitions fch
         JOIN dim_ship_type dst ON dst.ship_type_id = fch.ship_type_id
         WHERE fch.spatial_resolution = :SPATIAL_RESOLUTION
         AND dst.ship_type = ANY(:SHIP_TYPES_A)
