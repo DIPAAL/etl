@@ -17,7 +17,7 @@ SELECT
   rg.geom_geodetic as geom_geodetic,
   (SELECT array_agg(ship_type) FROM dim_ship_type ORDER BY random() LIMIT floor(random() * 8 + 2)::integer) AS ship_types, -- random between 2 and 10
   i3.heatmap_type_id,
-  i3.slug
+  i3.slug as heatmap_slug
 FROM reference_geometries rg, (
     SELECT
         i1.start_time,
