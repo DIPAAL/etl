@@ -16,7 +16,8 @@ SELECT
   rg.geom AS geom,
   rg.geom_geodetic as geom_geodetic,
   (SELECT array_agg(ship_type) FROM dim_ship_type ORDER BY random() LIMIT floor(random() * 8 + 2)::integer) AS ship_types, -- random between 2 and 10
-  (SELECT slug FROM dim_heatmap_type ORDER BY random() LIMIT 1) AS heatmap_slug
+  i3.heatmap_type_id,
+  i3.slug
 FROM reference_geometries rg, (
     SELECT
         i1.start_time,
@@ -25,5 +26,7 @@ FROM reference_geometries rg, (
     (
         SELECT :period_start_timestamp + random() * (:period_end_timestamp - :period_start_timestamp) AS start_time
     ) i1
-) i2
+) i2, (
+    SELECT heatmap_type_id, slug FROM dim_heatmap_type ORDER BY random() LIMIT 1
+) i3
 WHERE rg.id = (SELECT id from reference_geometries WHERE type = 'enc' ORDER BY random() LIMIT 1)
