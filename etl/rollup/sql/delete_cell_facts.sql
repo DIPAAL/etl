@@ -1,5 +1,5 @@
 -- DELETE cell facts 50m WHERE it doesnt intersect with any ENC geom with country = 'Denmark' and type = 'Harbor'
-DELETE FROM fact_cell_1000m fc
+DELETE FROM fact_cell_50m fc
 WHERE NOT EXISTS (
     SELECT 1
     FROM enc
