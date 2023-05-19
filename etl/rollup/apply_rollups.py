@@ -26,7 +26,7 @@ def apply_rollups(conn: Connection, date: datetime) -> None:
     wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
     # Delete the 50m cells that are no longer needed
-    wrap_with_timings('Deleting 50m cells', lambda: delete_50m_cells(conn, date))
+    wrap_with_timings('Deleting obsolete 50m cells', lambda: delete_50m_cells(conn, date))
 
 
 def apply_simplify_query(conn: Connection, date: datetime) -> None:
