@@ -1,6 +1,5 @@
 """Ensure that the date entry exists and partitions for the given date exists in partitioned tables."""
 from etl.helper_functions import extract_date_from_smart_date_id
-from etl.constants import ACCESS_METHOD_HEAP, ACCESS_METHOD_COLUMNAR
 from sqlalchemy import Connection, text
 
 
@@ -13,27 +12,26 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         date_id: The smarte date id to ensure exists
     """
     date_partitioned_table_names = [
-        ("fact_cell_5000m", ACCESS_METHOD_HEAP),
-        ("fact_cell_1000m", ACCESS_METHOD_HEAP),
-        ("fact_cell_200m", ACCESS_METHOD_HEAP),
-        ("fact_cell_50m", ACCESS_METHOD_HEAP),
-        ("fact_trajectory", ACCESS_METHOD_HEAP),
-        ("dim_trajectory", ACCESS_METHOD_HEAP),
-        ("fact_cell_heatmap", ACCESS_METHOD_COLUMNAR)
+        "fact_cell_5000m",
+        "fact_cell_1000m",
+        "fact_cell_200m",
+        "fact_cell_50m",
+        "fact_trajectory",
+        "dim_trajectory",
+        "fact_cell_heatmap"
     ]
 
-    for table_name, access_method in date_partitioned_table_names:
-        _ensure_partition_for_table(conn, table_name, access_method, date_id)
+    for table_name in date_partitioned_table_names:
+        _ensure_partition_for_table(conn, table_name, date_id)
 
 
-def _ensure_partition_for_table(conn: Connection, table_name: str, access_method: str, date_id: int):
+def _ensure_partition_for_table(conn: Connection, table_name: str, date_id: int):
     """
     Ensure that a partition for the given date exists in the given table.
 
     Args:
         conn: The database connection
         table_name: The name of the table to ensure a partition exists for
-        access_method: The table access method to use
         date_id: The smart date id to ensure exists
     """
     rounded_smart_date_id = date_id - (date_id % 100)
@@ -55,7 +53,6 @@ def _ensure_partition_for_table(conn: Connection, table_name: str, access_method
             SET LOCAL citus.multi_shard_modify_mode TO 'sequential';
             CREATE TABLE {partition_name} PARTITION OF {table_name}
                 FOR VALUES FROM ({rounded_smart_date_id}) TO ({rounded_smart_date_id + 99})
-                USING {access_method}
         """
         conn.execute(text(query))
         conn.commit()
