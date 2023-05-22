@@ -25,6 +25,9 @@ def apply_rollups(conn: Connection, date: datetime) -> None:
     wrap_with_timings("Perform cell fact rollups", lambda: apply_cell_fact_rollups(conn, date))
     wrap_with_timings('Pre-aggregating heatmaps', lambda: apply_heatmap_aggregations(conn, date))
 
+    # Delete the 50m cells that are no longer needed
+    wrap_with_timings('Deleting obsolete 50m cells', lambda: delete_50m_cells(conn, date))
+
 
 def apply_simplify_query(conn: Connection, date: datetime) -> None:
     """
@@ -86,6 +89,7 @@ def apply_heatmap_aggregations(conn, date: datetime) -> None:
             # Audit log the information
             gal[TIMINGS_KEY][f'heatmap_{file[3:-4]}_{size}m_aggregation'] = seconds_elapsed
             gal[ROWS_KEY][f'heatmap_{file[3:-4]}_{size}m_aggregation'] = rows
+    conn.commit()
 
 
 def _apply_heatmap_aggregation(conn, date_key: int, query: str, temporal_resolution: int,
@@ -188,4 +192,26 @@ def lazy_load_dim_cell(cell_size: int, conn, parent_cell_size: int, date_smart_k
     gal[TIMINGS_KEY][f"dim_cell_{cell_size}m_lazy"] = seconds_elapsed
     gal[ROWS_KEY][f"dim_cell_{cell_size}m_lazy"] = rows
     # We need to commit as we have performed a distributed query, and now need to insert into a reference table.
+    conn.commit()
+
+
+def delete_50m_cells(conn, date: datetime) -> None:
+    """
+    Delete 50m cells outside of select ENC cells for the given date.
+
+    Args:
+        conn: The database connection
+        date_smart_key: The date smart key to delete from.
+    """
+    date_smart_key = extract_smart_date_id_from_date(date)
+    with open('etl/rollup/sql/delete_cell_facts.sql', 'r') as f:
+        delete_query = f.read()
+
+    (rows, seconds_elapsed) = measure_time(
+        lambda: execute_insert_query_on_connection(conn, delete_query, {'date_id': date_smart_key})
+    )
+
+    gal[TIMINGS_KEY]["delete_50m_cells"] = seconds_elapsed
+    gal[ROWS_KEY]["delete_50m_cells"] = rows
+
     conn.commit()
