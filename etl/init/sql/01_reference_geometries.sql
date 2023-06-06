@@ -19,7 +19,7 @@ WITH spatial_domain(geom) AS (
 )
 INSERT INTO reference_geometries (name, type, geom, geom_geodetic)
 SELECT
-    'danish_waters_spatial_domain',
+    'DIPAAL Spatial Domain',
     'spatial_domain',
     geom,
     ST_Transform(geom, 4326)
