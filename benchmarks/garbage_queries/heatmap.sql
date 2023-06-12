@@ -13,7 +13,7 @@ FROM (
     FROM (
         SELECT
             ST_Union(fch.rast, (SELECT union_type FROM dim_heatmap_type WHERE slug = :heatmap_slug)) AS rast
-        FROM fact_cell_heatmap fch
+        FROM fact_heatmap fch
         JOIN dim_ship_type dst ON dst.ship_type_id = fch.ship_type_id
         WHERE fch.spatial_resolution = :spatial_resolution
         AND dst.ship_type = ANY (:ship_types)
@@ -25,7 +25,7 @@ FROM (
         AND fch.cell_y >= :ymin / 5000 -- Always 5000
         AND fch.cell_y < :ymax / 5000 -- Always 5000
         AND fch.date_id BETWEEN :start_date_id AND :end_date_id
-        GROUP BY fch.partition_id
+        GROUP BY fch.division_id
     ) q0
 )q1
 ;

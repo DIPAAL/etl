@@ -37,7 +37,7 @@ class TrajectoryDimensionInserter(BulkInserter):
 
         query = """
             INSERT INTO dim_trajectory (
-                date_id,
+                start_date_id,
                 trajectory_sub_id,
                 trajectory,
                 rot,

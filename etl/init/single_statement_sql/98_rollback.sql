@@ -14,13 +14,13 @@ BEGIN
     END LOOP;
 
     DELETE FROM fact_trajectory WHERE start_date_id = ANY(dateid);
-    DELETE FROM dim_trajectory WHERE date_id = ANY(dateid);
+    DELETE FROM dim_trajectory WHERE start_date_id = ANY(dateid);
 
     DELETE FROM fact_cell_5000m WHERE entry_date_id = ANY(dateid);
     DELETE FROM fact_cell_1000m WHERE entry_date_id = ANY(dateid);
     DELETE FROM fact_cell_200m WHERE entry_date_id = ANY(dateid);
     DELETE FROM fact_cell_50m WHERE entry_date_id = ANY(dateid);
-    DELETE FROM fact_cell_heatmap WHERE date_id = ANY(dateid);
+    DELETE FROM fact_heatmap WHERE date_id = ANY(dateid);
 
     RAISE NOTICE 'Finished cleanup for %', dateid;
 END;

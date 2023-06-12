@@ -23,7 +23,7 @@ SELECT
     END delta_heading,
     draught,
     delta_cog,
-    stbox (cell_geom, crossing_period) st_bounding_box
+    stbox (cell_geom, crossing_period) bounding_box
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -147,7 +147,7 @@ FROM (
                             dt.heading heading,
                             dt.draught draught
                             FROM fact_trajectory ft
-                            JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+                            JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.start_date_id
                             -- BENCHMARK: Spatial and temporal bounds
                             WHERE transform(
                                 STBOX(

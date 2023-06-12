@@ -3,7 +3,7 @@ TRUNCATE staging.split_trajectories;
 INSERT INTO staging.split_trajectories
 SELECT
     t2.*,
-    sp.partition_id
+    sp.division_id
 FROM (
     SELECT
         t.trajectory_sub_id,
@@ -25,11 +25,11 @@ FROM (
             dt.heading heading,
             dt.draught draught
         FROM fact_trajectory ft
-        JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
+        JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.start_date_id
         WHERE ft.start_date_id = :date_smart_key
     ) t
 ) t2
-INNER JOIN spatial_partition sp ON
+INNER JOIN spatial_division sp ON
     ST_Covers(sp.geom, t2.trajectory::geometry) AND
         ST_YMax(sp.geom) != ST_YMin(t2.trajectory::geometry) AND
         ST_XMax(sp.geom) != ST_XMin(t2.trajectory::geometry)

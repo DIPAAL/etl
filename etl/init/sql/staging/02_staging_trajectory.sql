@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS staging.split_trajectories (
     trajectory tgeompoint,
     heading tfloat,
     draught tfloat,
-    partition_id SMALLINT
+    division_id SMALLINT
 );
 
-SELECT create_distributed_table('staging.split_trajectories', 'partition_id', colocate_with => 'fact_cell_5000m');
+SELECT create_distributed_table('staging.split_trajectories', 'division_id', colocate_with => 'fact_cell_5000m');

@@ -26,8 +26,8 @@ SELECT
     fc.delta_heading,
     fc.draught,
     fc.delta_cog,
-    fc.st_bounding_box
+    fc.bounding_box
 FROM q_window
-JOIN fact_cell_50m fc ON fc.st_bounding_box && q_window.box
+JOIN fact_cell_50m fc ON fc.bounding_box && q_window.box
 WHERE fc.entry_date_id BETWEEN :start_date AND :end_date
 ;

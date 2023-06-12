@@ -10,8 +10,8 @@ SELECT
     dd.*,
     dns.*
 FROM q_window q
-INNER JOIN fact_cell_{CELL_SIZE}m fc ON fc.st_bounding_box && setsrid(q.box, 3034)
-INNER JOIN dim_cell_{CELL_SIZE}m dc ON dc.x = fc.cell_x AND dc.y = fc.cell_y AND dc.partition_id = fc.partition_id
+INNER JOIN fact_cell_{CELL_SIZE}m fc ON fc.bounding_box && setsrid(q.box, 3034)
+INNER JOIN dim_cell_{CELL_SIZE}m dc ON dc.x = fc.cell_x AND dc.y = fc.cell_y AND dc.division_id = fc.division_id
 INNER JOIN dim_ship ds ON ds.ship_id = fc.ship_id
 INNER JOIN dim_ship_type dst ON dst.ship_type_id = ds.ship_type_id
 INNER JOIN dim_direction dd ON dd.direction_id = fc.direction_id

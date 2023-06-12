@@ -18,7 +18,7 @@ def ensure_partitions_for_partitioned_tables(conn, date_id: int):
         "fact_cell_50m",
         "fact_trajectory",
         "dim_trajectory",
-        "fact_cell_heatmap"
+        "fact_heatmap"
     ]
 
     for table_name in date_partitioned_table_names:

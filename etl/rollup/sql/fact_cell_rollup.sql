@@ -2,7 +2,7 @@ INSERT INTO fact_cell_{CELL_SIZE}m (
     cell_x, cell_y, ship_id,
     entry_date_id, entry_time_id, exit_date_id, exit_time_id,
     direction_id, nav_status_id, infer_stopped, trajectory_sub_id,
-    sog, delta_heading, draught, delta_cog, st_bounding_box, partition_id
+    sog, delta_heading, draught, delta_cog, bounding_box, division_id
 )
 SELECT
     cell_x,
@@ -29,8 +29,8 @@ SELECT
     END delta_heading,
     draught,
     delta_cog,
-    stbox (cell_geom, crossing_period) st_bounding_box,
-    partition_id
+    stbox (cell_geom, crossing_period) bounding_box,
+    division_id
 FROM (
     SELECT
         get_lowest_json_key (start_edges) entry_direction,
@@ -50,7 +50,7 @@ FROM (
         delta_cog,
         crossing_period,
         (EXTRACT(EPOCH FROM (endTime - startTime))) durationSeconds,
-        partition_id
+        division_id
     FROM (
         SELECT
             *,
@@ -93,7 +93,7 @@ FROM (
                 -- Truncate the entry and exit timestamp to second.
                 date_trunc('second', startTimestamp (crossing)) startTime,
                 date_trunc('second', endTimestamp (crossing)) endTime,
-                partition_id
+                division_id
             FROM (
                 SELECT
                     unnest(sequences (atGeometry (fdt.trajectory, dc.geom))) crossing,
@@ -128,7 +128,7 @@ FROM (
                     fdt.trajectory_sub_id trajectory_sub_id,
                     fdt.draught draught,
                     fdt.heading heading,
-                    fdt.partition_id
+                    fdt.division_id
                 FROM staging.split_trajectories fdt
                 JOIN staging.cell_{CELL_SIZE}m dc ON ST_Crosses(dc.geom, fdt.trajectory::geometry) OR ST_Contains(dc.geom, fdt.trajectory::geometry)
             ) cj
